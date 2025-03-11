@@ -1,0 +1,170 @@
+diff --git a/build/config/compiler/BUILD.gn b/build/config/compiler/BUILD.gn
+index ffbd381f00..a8007ef6aa 100644
+--- a/build/config/compiler/BUILD.gn
++++ b/build/config/compiler/BUILD.gn
+@@ -498,9 +498,9 @@ config("compiler") {
+   # Linux/Android/Fuchsia common flags setup.
+   # ---------------------------------
+   if (is_linux || is_chromeos || is_android || is_fuchsia) {
+-    asmflags += [ "-fPIC" ]
+-    cflags += [ "-fPIC" ]
+-    ldflags += [ "-fPIC" ]
++    asmflags += [ "-fPIC", "-w", ]
++    cflags += [ "-fPIC", "-w", ]
++    ldflags += [ "-fPIC", "-w", ]
+     rustflags += [ "-Crelocation-model=pic" ]
+ 
+     if (!is_clang) {
+@@ -553,9 +553,9 @@ config("compiler") {
+ 
+     # TODO(crbug.com/345541122): investigate the fuchsia binary size increase.
+     if (is_win) {
+-      cflags += [ "/Zc:sizedDealloc-" ]
++      cflags += [ "/Zc:sizedDealloc" ]
+     } else {
+-      cflags += [ "-fno-sized-deallocation" ]
++      cflags += [ "-fsized-deallocation" ]
+     }
+   }
+ 
+@@ -607,23 +607,23 @@ config("compiler") {
+     if (default_toolchain != "//build/toolchain/cros:target" &&
+         !llvm_android_mainline) {
+       cflags += [
+-        "-mllvm",
+-        "-split-threshold-for-reg-with-hint=0",
++        # "-mllvm",
++        # "-split-threshold-for-reg-with-hint=0",
+       ]
+       if (use_thin_lto && is_a_target_toolchain) {
+         if (is_win) {
+-          ldflags += [ "-mllvm:-split-threshold-for-reg-with-hint=0" ]
++          # ldflags += [ "-mllvm:-split-threshold-for-reg-with-hint=0" ]
+         } else {
+-          ldflags += [ "-Wl,-mllvm,-split-threshold-for-reg-with-hint=0" ]
++          # ldflags += [ "-Wl,-mllvm,-split-threshold-for-reg-with-hint=0" ]
+         }
+       }
+     }
+ 
+     # TODO(crbug.com/40192287): Investigate why/if this should be needed.
+     if (is_win) {
+-      cflags += [ "/clang:-ffp-contract=off" ]
++      cflags += [ "/clang:-ffp-contract=fast" ]
+     } else {
+-      cflags += [ "-ffp-contract=off" ]
++      cflags += [ "-ffp-contract=fast" ]
+     }
+ 
+     # Enable ELF CREL (see crbug.com/357878242) for all platforms that use ELF
+@@ -784,7 +784,7 @@ config("compiler") {
+     # [0]: https://pinpoint-dot-chromeperf.appspot.com/job/16984a18be0000
+     # [1]: https://pinpoint-dot-chromeperf.appspot.com/job/11984a18be0000
+     # [2]: https://ci.chromium.org/ui/p/chromium/builders/try/android-binary-size/1848442
+-    import_instr_limit = 30
++    import_instr_limit = 100
+ 
+     if (is_win) {
+       ldflags += [
+@@ -1058,6 +1058,10 @@ config("compiler") {
+ 
+     # We use clang-rt sanitizer runtimes.
+     "-Zexternal-clangrt",
++
++    "-Ctarget-cpu=x86-64-v3",
++    "-Cllvm-args=-fp-contract=fast",
++    "-Awarnings",
+   ]
+ 
+   if (!is_win || force_rustc_color_output) {
+@@ -1135,7 +1139,7 @@ config("libcxx_hardening") {
+ # building with ThinLTO, no optimization is performed in the link step.
+ config("thinlto_optimize_default") {
+   if (!is_debug && use_thin_lto && is_a_target_toolchain) {
+-    lto_opt_level = 0
++    lto_opt_level = 2
+ 
+     if (is_win) {
+       ldflags = [ "/opt:lldlto=" + lto_opt_level ]
+@@ -1168,7 +1172,7 @@ config("thinlto_optimize_max") {
+     if (thin_lto_enable_optimizations) {
+       lto_opt_level = 2
+     } else {
+-      lto_opt_level = 0
++      lto_opt_level = 2
+     }
+ 
+     if (is_win) {
+@@ -1210,7 +1214,7 @@ config("compiler_cpu_abi") {
+     if (current_cpu == "x64") {
+       cflags += [
+         "-m64",
+-        "-msse3",
++        "-march=x86-64-v3",
+       ]
+ 
+       # Minimum SIMD support for devices running lacros.
+@@ -2630,10 +2634,13 @@ config("optimize_max") {
+       # Favor speed over size, /O2 must be before the common flags.
+       # /O2 implies /Ot, /Oi, and /GF.
+       cflags = [ "/O2" ] + common_optimize_on_cflags
++      if (is_clang) {
++        cflags += [ "/clang:-O3" ]
++      }
+     } else if (optimize_for_fuzzing) {
+       cflags = [ "-O1" ] + common_optimize_on_cflags
+     } else {
+-      cflags = [ "-O2" ] + common_optimize_on_cflags
++      cflags = [ "-O3" ] + common_optimize_on_cflags
+     }
+     rustflags = [ "-Copt-level=3" ]
+   }
+@@ -3055,7 +3062,7 @@ config("minimal_symbols") {
+ # names in the final debug information.
+ config("no_symbols") {
+   if (is_win) {
+-    ldflags = [ "/DEBUG" ]
++    ldflags = [ "/DEBUG:NONE" ]
+ 
+     # All configs using /DEBUG should include this:
+     configs = [ ":win_pdbaltpath" ]
+diff --git a/build/config/win/BUILD.gn b/build/config/win/BUILD.gn
+index 9928e76832..1826560195 100644
+--- a/build/config/win/BUILD.gn
++++ b/build/config/win/BUILD.gn
+@@ -85,7 +85,7 @@ config("compiler") {
+ 
+   cflags += [
+     # Work around crbug.com/526851, bug in VS 2015 RTM compiler.
+-    "/Zc:sizedDealloc-",
++    "/Zc:sizedDealloc",
+   ]
+ 
+   if (is_clang) {
+@@ -126,7 +126,7 @@ config("compiler") {
+     # microarchitecture. MSVC only supports a subset of architectures, and the
+     # next step after SSE2 will be AVX.
+     if (current_cpu == "x86" || current_cpu == "x64") {
+-      cflags += [ "-msse3" ]
++      cflags += [ "-mtune=haswell", "-msse3", "-mssse3","-msse4.1", "-msse4.2", "-mavx", "-mavx2", "-mfma", "-mf16c", "-mlzcnt", "-mbmi2", "/clang:-w", ]
+     }
+ 
+     # Enable ANSI escape codes if something emulating them is around (cmd.exe
+@@ -196,7 +196,7 @@ config("compiler") {
+     if (use_lld) {
+       # String tail merging leads to smaller binaries, but they don't compress
+       # as well, leading to increased mini_installer size (crbug.com/838449).
+-      ldflags += [ "/OPT:NOLLDTAILMERGE" ]
++      ldflags += [ "/OPT:LLDTAILMERGE" ]
+     }
+ 
+     # TODO(siggi): Is this of any use anymore?
+@@ -204,7 +204,7 @@ config("compiler") {
+     # PDB file by about 5%) but does not otherwise alter the output binary. It
+     # is enabled opportunistically for builds where it is not prohibited (not
+     # supported when incrementally linking, or using /debug:fastlink).
+-    ldflags += [ "/PROFILE" ]
++    # ldflags += [ "/PROFILE" ]
+   }
+ 
+   # arflags apply only to static_libraries. The normal linker configs are only
