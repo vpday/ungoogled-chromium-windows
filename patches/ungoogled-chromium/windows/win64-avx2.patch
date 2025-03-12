@@ -1,5 +1,5 @@
 diff --git a/build/config/compiler/BUILD.gn b/build/config/compiler/BUILD.gn
-index ffbd381f00..a8007ef6aa 100644
+index ffbd381f00..dabf3edc4c 100644
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
 @@ -498,9 +498,9 @@ config("compiler") {
@@ -104,7 +104,17 @@ index ffbd381f00..a8007ef6aa 100644
        ]
  
        # Minimum SIMD support for devices running lacros.
-@@ -2630,10 +2634,13 @@ config("optimize_max") {
+@@ -1641,8 +1645,7 @@ config("compiler_deterministic") {
+ }
+ 
+ config("clang_revision") {
+-  if (is_clang && clang_base_path == default_clang_base_path &&
+-      current_os != "zos") {
++  if (false) {
+     update_args = [
+       "--print-revision",
+       "--verify-version=$clang_version",
+@@ -2630,10 +2633,13 @@ config("optimize_max") {
        # Favor speed over size, /O2 must be before the common flags.
        # /O2 implies /Ot, /Oi, and /GF.
        cflags = [ "/O2" ] + common_optimize_on_cflags
@@ -119,7 +129,7 @@ index ffbd381f00..a8007ef6aa 100644
      }
      rustflags = [ "-Copt-level=3" ]
    }
-@@ -3055,7 +3062,7 @@ config("minimal_symbols") {
+@@ -3055,7 +3061,7 @@ config("minimal_symbols") {
  # names in the final debug information.
  config("no_symbols") {
    if (is_win) {
@@ -129,10 +139,18 @@ index ffbd381f00..a8007ef6aa 100644
      # All configs using /DEBUG should include this:
      configs = [ ":win_pdbaltpath" ]
 diff --git a/build/config/win/BUILD.gn b/build/config/win/BUILD.gn
-index 9928e76832..1826560195 100644
+index 9928e76832..790ec68026 100644
 --- a/build/config/win/BUILD.gn
 +++ b/build/config/win/BUILD.gn
-@@ -85,7 +85,7 @@ config("compiler") {
+@@ -69,6 +69,7 @@ config("compiler") {
+   if (is_clang) {
+     cflags += [
+       "/Zc:twoPhase",
++      "-Wno-unknown-warning-option",
+ 
+       # Consistently use backslash as the path separator when expanding the
+       # __FILE__ macro when targeting Windows regardless of the build
+@@ -85,7 +86,7 @@ config("compiler") {
  
    cflags += [
      # Work around crbug.com/526851, bug in VS 2015 RTM compiler.
@@ -141,7 +159,7 @@ index 9928e76832..1826560195 100644
    ]
  
    if (is_clang) {
-@@ -126,7 +126,7 @@ config("compiler") {
+@@ -126,7 +127,7 @@ config("compiler") {
      # microarchitecture. MSVC only supports a subset of architectures, and the
      # next step after SSE2 will be AVX.
      if (current_cpu == "x86" || current_cpu == "x64") {
@@ -150,7 +168,7 @@ index 9928e76832..1826560195 100644
      }
  
      # Enable ANSI escape codes if something emulating them is around (cmd.exe
-@@ -196,7 +196,7 @@ config("compiler") {
+@@ -196,7 +197,7 @@ config("compiler") {
      if (use_lld) {
        # String tail merging leads to smaller binaries, but they don't compress
        # as well, leading to increased mini_installer size (crbug.com/838449).
@@ -159,7 +177,7 @@ index 9928e76832..1826560195 100644
      }
  
      # TODO(siggi): Is this of any use anymore?
-@@ -204,7 +204,7 @@ config("compiler") {
+@@ -204,7 +205,7 @@ config("compiler") {
      # PDB file by about 5%) but does not otherwise alter the output binary. It
      # is enabled opportunistically for builds where it is not prohibited (not
      # supported when incrementally linking, or using /debug:fastlink).
