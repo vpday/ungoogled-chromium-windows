@@ -1,18 +1,25 @@
-diff --git a/DEPS b/DEPS
-index 846076ad1c..8e4de2d47d 100644
---- a/DEPS
-+++ b/DEPS
-@@ -2850,7 +2850,7 @@ deps = {
-   },
- 
-   'src/third_party/zstd/src':
--    Var('chromium_git') + '/external/github.com/facebook/zstd.git' + '@' + 'ea0aa030cdf31f7897c5bfc153f0d36e92768095',
-+    Var('chromium_git') + '/external/github.com/facebook/zstd.git' + '@' + 'ef2bf5781112a4cd6b62ac1817f7842bbdc7ea8f',
- 
-   'src/tools/skia_goldctl/linux': {
-       'packages': [
-diff --git a/build/config/compiler/BUILD.gn b/build/config/compiler/BUILD.gn
-index ffbd381f00..dabf3edc4c 100644
+--- a/third_party/zstd/src/lib/common/compiler.h
++++ b/third_party/zstd/src/lib/common/compiler.h
+@@ -305,7 +305,7 @@ MEM_STATIC int ZSTD_isPower2(size_t u) {
+ # if defined(__GNUC__)
+ #  define ZSTD_ALIGNED(a) __attribute__((aligned(a)))
+ # elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L) /* C11 */
+-#  define ZSTD_ALIGNED(a) alignas(a)
++#  define ZSTD_ALIGNED(a) _Alignas(a)
+ #elif defined(_MSC_VER)
+ #  define ZSTD_ALIGNED(n) __declspec(align(n))
+ # else
+--- a/third_party/zstd/src/lib/common/compiler.h
++++ b/third_party/zstd/src/lib/common/compiler.h
+@@ -305,7 +305,7 @@ MEM_STATIC int ZSTD_isPower2(size_t u) {
+ # if defined(__GNUC__)
+ #  define ZSTD_ALIGNED(a) __attribute__((aligned(a)))
+ # elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L) /* C11 */
+-#  define ZSTD_ALIGNED(a) alignas(a)
++#  define ZSTD_ALIGNED(a) _Alignas(a)
+ #elif defined(_MSC_VER)
+ #  define ZSTD_ALIGNED(n) __declspec(align(n))
+ # else
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
 @@ -498,9 +498,9 @@ config("compiler") {
@@ -151,8 +158,6 @@ index ffbd381f00..dabf3edc4c 100644
  
      # All configs using /DEBUG should include this:
      configs = [ ":win_pdbaltpath" ]
-diff --git a/build/config/win/BUILD.gn b/build/config/win/BUILD.gn
-index 9928e76832..790ec68026 100644
 --- a/build/config/win/BUILD.gn
 +++ b/build/config/win/BUILD.gn
 @@ -69,6 +69,7 @@ config("compiler") {
