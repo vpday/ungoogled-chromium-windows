@@ -79,6 +79,7 @@ def _run_build_process_timeout(*args, timeout):
     cmd_input = ['call "%s" >nul' % _get_vcvars_path()]
     cmd_input.append('set DEPOT_TOOLS_WIN_TOOLCHAIN=0')
     cmd_input.append('set NINJA_SUMMARIZE_BUILD=1')
+    cmd_input.append('set NINJA_STATUS=[%p/%f/%t] (e)')
     cmd_input.append(' '.join(map('"{}"'.format, args)))
     cmd_input.append('exit\n')
     with subprocess.Popen(('cmd.exe', '/k'), encoding=ENCODING, stdin=subprocess.PIPE, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP) as proc:
@@ -89,11 +90,6 @@ def _run_build_process_timeout(*args, timeout):
             if proc.returncode != 0:
                 raise RuntimeError('Build failed!')
         except subprocess.TimeoutExpired:
-            try:
-                subprocess.run(['third_party\\ninja\\ninja.exe', '-C', 'out\\Default', '-t', 'save', '.ninja_state.backup'], timeout=300)
-            except Exception as e:
-                print(f"Error saving state: {e}")
-                pass
             print('Sending keyboard interrupt')
             for _ in range(3):
                 ctypes.windll.kernel32.GenerateConsoleCtrlEvent(1, proc.pid)
