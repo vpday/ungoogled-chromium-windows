@@ -63,7 +63,13 @@ async function run() {
     } else {
         await new Promise(r => setTimeout(r, 5000));
         await exec.exec('7z', ['a', '-tzip', 'C:\\ungoogled-chromium-windows\\artifacts.zip',
-            'C:\\ungoogled-chromium-windows\\build\\src', '-mx=3', '-mtc=on'], {ignoreReturnCode: true});
+            'C:\\ungoogled-chromium-windows\\build\\src\\out\\Default\\.ninja_deps',
+            'C:\\ungoogled-chromium-windows\\build\\src\\out\\Default\\.ninja_log',
+            'C:\\ungoogled-chromium-windows\\build\\src\\out\\Default\\.ninja_state.backup',
+            'C:\\ungoogled-chromium-windows\\build\\src\\out\\Default\\obj',
+            'C:\\ungoogled-chromium-windows\\build\\src\\out\\Default\\gen',
+            '-x!*.pdb', '-x!*.d', '-x!*.ilk', '-x!*.lib', '-x!*.exp',
+            '-mx=3', '-mtc=on'], {ignoreReturnCode: true});
         for (let i = 0; i < 5; ++i) {
             try {
                 await artifact.deleteArtifact(artifactName);
