@@ -147,21 +147,3 @@
      }
  
      # TODO(siggi): Is this of any use anymore?
---- a/chrome/installer/mini_installer/mini_installer_exe_main.cc
-+++ b/chrome/installer/mini_installer/mini_installer_exe_main.cc
-@@ -59,7 +59,7 @@ void* memset(void* dest, int c, size_t count) {
-   return dest;
- }
- 
--#if defined(_DEBUG) && defined(ARCH_CPU_ARM64)
-+// #if defined(_DEBUG) && defined(ARCH_CPU_ARM64)
- // The compiler generates calls to memcpy for ARM64 debug builds so we need to
- // supply a memcpy implementation in that configuration.
- // See comments above for why we do this incantation.
-@@ -71,5 +71,5 @@ void* memcpy(void* destination, const void* source, size_t count) {
-     *dst++ = *src++;
-   return destination;
- }
--#endif
-+// #endif
- }  // extern "C"
