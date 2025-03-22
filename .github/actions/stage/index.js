@@ -23,7 +23,7 @@ async function run() {
         const artifactInfo = await artifact.getArtifact(artifactName);
         await artifact.downloadArtifact(artifactInfo.artifact.id, {path: 'C:\\ungoogled-chromium-windows\\build'});
         await exec.exec('7z', ['x', 'C:\\ungoogled-chromium-windows\\build\\artifacts.7z',
-            '-oC:\\ungoogled-chromium-windows\\build', '-y', '-mmt=4', '-bb2', '-bt']);
+            '-oC:\\ungoogled-chromium-windows\\build', '-y', '-mmt=4', '-bt']);
         await io.rmRF('C:\\ungoogled-chromium-windows\\build\\artifacts.7z');
     }
 
@@ -63,7 +63,7 @@ async function run() {
     } else {
         await new Promise(r => setTimeout(r, 5000));
         await exec.exec('7z', ['a', 'C:\\ungoogled-chromium-windows\\artifacts.7z',
-            'C:\\ungoogled-chromium-windows\\build\\src', '-m0=LZMA2', '-mx=3', '-mtc=on', '-mmt=4', '-bb2', '-bt'], {ignoreReturnCode: true});
+            'C:\\ungoogled-chromium-windows\\build\\src', '-m0=LZMA2', '-mx=1', '-mtc=on', '-mmt=4', '-bt'], {ignoreReturnCode: true});
         for (let i = 0; i < 5; ++i) {
             try {
                 await artifact.deleteArtifact(artifactName);
