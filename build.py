@@ -282,6 +282,8 @@ def main():
 
         # Run gn gen
         _run_build_process('out\\Default\\gn.exe', 'gen', 'out\\Default', '--fail-on-unused-args')
+        # Run gn args
+        _run_build_process('out\\Default\\gn.exe', 'args', 'out\\Default', '--list')
 
     if not args.ci or not os.path.exists('third_party\\rust-toolchain\\bin\\bindgen.exe'):
         # Build bindgen
@@ -292,7 +294,7 @@ def main():
     # Run ninja
     if args.ci:
         _run_build_process_timeout('third_party\\ninja\\ninja.exe', '-C', 'out\\Default', 'chrome',
-                                   'chromedriver', 'mini_installer', timeout=3.5*60*60)
+                                   'chromedriver', 'mini_installer', timeout=4.8*60*60)
         # package
         os.chdir(_ROOT_DIR)
         subprocess.run([sys.executable, 'package.py'])

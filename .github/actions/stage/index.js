@@ -22,9 +22,9 @@ async function run() {
     if (from_artifact) {
         const artifactInfo = await artifact.getArtifact(artifactName);
         await artifact.downloadArtifact(artifactInfo.artifact.id, {path: 'C:\\ungoogled-chromium-windows\\build'});
-        await exec.exec('7z', ['x', 'C:\\ungoogled-chromium-windows\\build\\artifacts.zip',
-            '-oC:\\ungoogled-chromium-windows\\build', '-y']);
-        await io.rmRF('C:\\ungoogled-chromium-windows\\build\\artifacts.zip');
+        await exec.exec('7z', ['x', 'C:\\ungoogled-chromium-windows\\build\\artifacts.7z',
+            '-oC:\\ungoogled-chromium-windows\\build', '-y', '-mmt=4', '-bb2', '-bt']);
+        await io.rmRF('C:\\ungoogled-chromium-windows\\build\\artifacts.7z');
     }
 
     const args = ['build.py', '--ci']
@@ -62,8 +62,8 @@ async function run() {
         }
     } else {
         await new Promise(r => setTimeout(r, 5000));
-        await exec.exec('7z', ['a', '-tzip', 'C:\\ungoogled-chromium-windows\\artifacts.zip',
-            'C:\\ungoogled-chromium-windows\\build\\src', '-mx=3', '-mtc=on'], {ignoreReturnCode: true});
+        await exec.exec('7z', ['a', 'C:\\ungoogled-chromium-windows\\artifacts.7z',
+            'C:\\ungoogled-chromium-windows\\build\\src', '-m0=LZMA2', '-mx=3', '-mtc=on', '-mmt=4', '-bb2', '-bt'], {ignoreReturnCode: true});
         for (let i = 0; i < 5; ++i) {
             try {
                 await artifact.deleteArtifact(artifactName);
@@ -71,7 +71,7 @@ async function run() {
                 // ignored
             }
             try {
-                await artifact.uploadArtifact(artifactName, ['C:\\ungoogled-chromium-windows\\artifacts.zip'],
+                await artifact.uploadArtifact(artifactName, ['C:\\ungoogled-chromium-windows\\artifacts.7z'],
                     'C:\\ungoogled-chromium-windows', {retentionDays: 1, compressionLevel: 0});
                 break;
             } catch (e) {
