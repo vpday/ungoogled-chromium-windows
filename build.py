@@ -78,6 +78,7 @@ def _run_build_process_timeout(*args, timeout):
     # Add call to set VC variables
     cmd_input = ['call "%s" >nul' % _get_vcvars_path()]
     cmd_input.append('set DEPOT_TOOLS_WIN_TOOLCHAIN=0')
+    cmd_input.append('set NINJA_STATUS=[%p/%f/%t] ')
     cmd_input.append(' '.join(map('"{}"'.format, args)))
     cmd_input.append('exit\n')
     with subprocess.Popen(('cmd.exe', '/k'), encoding=ENCODING, stdin=subprocess.PIPE, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP) as proc:
