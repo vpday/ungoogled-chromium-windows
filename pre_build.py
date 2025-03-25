@@ -275,23 +275,6 @@ def main():
     # Enter source tree to run build commands
     os.chdir(source_tree)
 
-    if not args.ci or not os.path.exists('out\\Default\\gn.exe'):
-        # Run GN bootstrap
-        _run_build_process(
-            sys.executable, 'tools\\gn\\bootstrap\\bootstrap.py', '-o', 'out\\Default\\gn.exe',
-            '--skip-generate-buildfiles')
-
-        # Run gn gen
-        _run_build_process('out\\Default\\gn.exe', 'gen', 'out\\Default', '--fail-on-unused-args')
-        # Run gn args
-        _run_build_process('out\\Default\\gn.exe', 'args', 'out\\Default', '--list')
-
-    if not args.ci or not os.path.exists('third_party\\rust-toolchain\\bin\\bindgen.exe'):
-        # Build bindgen
-        _run_build_process(
-            sys.executable,
-            'tools\\rust\\build_bindgen.py')
-
 
 if __name__ == '__main__':
     main()

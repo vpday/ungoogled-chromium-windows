@@ -24,7 +24,7 @@ jobs:
         id: compressbuildfiles
         continue-on-error: true
         if: steps.prebuild.outcome == 'success' || steps.prebuild.outcome == 'failure'
-        run: 7z a "${{ env.BUILD_DIR }}\artifacts.7z" "${{ env.BUILD_DIR }}\build\src" -m0=LZMA2 -mx=5 -mtc=on -mmt=4 -bt
+        run: 7z a "${{ env.BUILD_DIR }}\artifacts.7z" "${{ env.BUILD_DIR }}\build\src" -m0=LZMA2 -mx=1 -mtc=on -mmt=4 -bt
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         if: steps.compressbuildfiles.outcome == 'success' || steps.compressbuildfiles.outcome == 'failure'
