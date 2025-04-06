@@ -127,15 +127,6 @@
      } else if (optimize_for_fuzzing) {
        cflags = [ "-O1" ] + common_optimize_on_cflags
      } else {
-@@ -3068,7 +3072,7 @@ config("minimal_symbols") {
- # names in the final debug information.
- config("no_symbols") {
-   if (is_win) {
--    ldflags = [ "/DEBUG" ]
-+    ldflags = [ "/DEBUG:NONE" ]
-
-     # All configs using /DEBUG should include this:
-     configs = [ ":win_pdbaltpath" ]
 --- a/build/config/win/BUILD.gn
 +++ b/build/config/win/BUILD.gn
 @@ -121,7 +121,7 @@ config("compiler") {
