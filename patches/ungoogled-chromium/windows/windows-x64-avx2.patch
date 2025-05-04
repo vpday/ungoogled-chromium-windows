@@ -1,6 +1,6 @@
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
-@@ -497,9 +497,9 @@ config("compiler") {
+@@ -487,9 +487,9 @@ config("compiler") {
    # Linux/Android/Fuchsia common flags setup.
    # ---------------------------------
    if (is_linux || is_chromeos || is_android || is_fuchsia) {
@@ -11,21 +11,21 @@
 +    cflags += [ "-fPIC", "-w", ]
 +    ldflags += [ "-fPIC", "-w", ]
      rustflags += [ "-Crelocation-model=pic" ]
-
+ 
      if (!is_clang) {
-@@ -552,9 +552,9 @@ config("compiler") {
-
-     # TODO(crbug.com/345541122): investigate the fuchsia binary size increase.
-     if (is_win) {
--      cflags += [ "/Zc:sizedDealloc-" ]
-+      cflags += [ "/Zc:sizedDealloc" ]
-     } else {
--      cflags += [ "-fno-sized-deallocation" ]
-+      cflags += [ "-fsized-deallocation" ]
+@@ -542,9 +542,9 @@ config("compiler") {
+ 
+     if (!use_sized_deallocation) {
+       if (is_win) {
+-        cflags += [ "/Zc:sizedDealloc-" ]
++        cflags += [ "/Zc:sizedDealloc" ]
+       } else {
+-        cflags += [ "-fno-sized-deallocation" ]
++        cflags += [ "-fsized-deallocation" ]
+       }
      }
    }
-
-@@ -606,23 +606,23 @@ config("compiler") {
+@@ -597,23 +597,23 @@ config("compiler") {
      if (default_toolchain != "//build/toolchain/cros:target" &&
          !llvm_android_mainline) {
        cflags += [
@@ -44,7 +44,7 @@
          }
        }
      }
-
+ 
      # TODO(crbug.com/40192287): Investigate why/if this should be needed.
      if (is_win) {
 -      cflags += [ "/clang:-ffp-contract=off" ]
@@ -53,19 +53,19 @@
 -      cflags += [ "-ffp-contract=off" ]
 +      cflags += [ "-ffp-contract=fast" ]
      }
-
+ 
      # Enable ELF CREL (see crbug.com/357878242) for all platforms that use ELF
-@@ -783,7 +783,7 @@ config("compiler") {
+@@ -773,7 +773,7 @@ config("compiler") {
      # [0]: https://pinpoint-dot-chromeperf.appspot.com/job/16984a18be0000
      # [1]: https://pinpoint-dot-chromeperf.appspot.com/job/11984a18be0000
      # [2]: https://ci.chromium.org/ui/p/chromium/builders/try/android-binary-size/1848442
 -    import_instr_limit = 30
 +    import_instr_limit = 100
-
+ 
      if (is_win) {
        ldflags += [
-@@ -1057,6 +1057,10 @@ config("compiler") {
-
+@@ -1048,6 +1048,10 @@ config("compiler") {
+ 
      # We use clang-rt sanitizer runtimes.
      "-Zexternal-clangrt",
 +
@@ -73,27 +73,27 @@
 +    "-Cllvm-args=-fp-contract=fast",
 +    "-Awarnings",
    ]
-
+ 
    if (!is_win || force_rustc_color_output) {
-@@ -1134,7 +1138,7 @@ config("libcxx_hardening") {
+@@ -1125,7 +1129,7 @@ config("libcxx_hardening") {
  # building with ThinLTO, no optimization is performed in the link step.
  config("thinlto_optimize_default") {
    if (!is_debug && use_thin_lto && is_a_target_toolchain) {
 -    lto_opt_level = 0
 +    lto_opt_level = 2
-
+ 
      if (is_win) {
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
-@@ -1167,7 +1171,7 @@ config("thinlto_optimize_max") {
+@@ -1158,7 +1162,7 @@ config("thinlto_optimize_max") {
      if (thin_lto_enable_optimizations) {
        lto_opt_level = 2
      } else {
 -      lto_opt_level = 0
 +      lto_opt_level = 2
      }
-
+ 
      if (is_win) {
-@@ -1209,7 +1213,7 @@ config("compiler_cpu_abi") {
+@@ -1200,7 +1204,7 @@ config("compiler_cpu_abi") {
      if (current_cpu == "x64") {
        cflags += [
          "-m64",
@@ -102,7 +102,7 @@
        ]
        ldflags += [ "-m64" ]
      } else if (current_cpu == "x86") {
-@@ -2643,10 +2647,13 @@ config("optimize_max") {
+@@ -2665,10 +2669,13 @@ config("optimize_max") {
        # Favor speed over size, /O2 must be before the common flags.
        # /O2 implies /Ot, /Oi, and /GF.
        cflags = [ "/O2" ] + common_optimize_on_cflags
@@ -117,16 +117,6 @@
      }
      rustflags = [ "-Copt-level=3" ]
    }
-@@ -2676,9 +2683,6 @@ config("optimize_speed") {
-       # Favor speed over size, /O2 must be before the common flags.
-       # /O2 implies /Ot, /Oi, and /GF.
-       cflags = [ "/O2" ] + common_optimize_on_cflags
--      if (is_clang) {
--        cflags += [ "/clang:-O3" ]
--      }
-     } else if (optimize_for_fuzzing) {
-       cflags = [ "-O1" ] + common_optimize_on_cflags
-     } else {
 --- a/build/config/win/BUILD.gn
 +++ b/build/config/win/BUILD.gn
 @@ -121,7 +121,7 @@ config("compiler") {
@@ -136,7 +126,7 @@
 -      cflags += [ "-msse3" ]
 +      cflags += [ "-mtune=haswell", "-msse3", "-mssse3","-msse4.1", "-msse4.2", "-mavx", "-mavx2", "-mfma", "-mf16c", "-mlzcnt", "-mbmi2", "/clang:-w", ]
      }
-
+ 
      # Enable ANSI escape codes if something emulating them is around (cmd.exe
 @@ -191,7 +191,7 @@ config("compiler") {
      if (use_lld) {
@@ -145,14 +135,14 @@
 -      ldflags += [ "/OPT:NOLLDTAILMERGE" ]
 +      ldflags += [ "/OPT:LLDTAILMERGE" ]
      }
-
+ 
      # TODO(siggi): Is this of any use anymore?
 --- a/chrome/installer/mini_installer/mini_installer_exe_main.cc
 +++ b/chrome/installer/mini_installer/mini_installer_exe_main.cc
 @@ -59,7 +59,7 @@ void* memset(void* dest, int c, size_t count) {
    return dest;
  }
-
+ 
 -#if defined(_DEBUG) && defined(ARCH_CPU_ARM64)
 +// #if defined(_DEBUG) && defined(ARCH_CPU_ARM64)
  // The compiler generates calls to memcpy for ARM64 debug builds so we need to
