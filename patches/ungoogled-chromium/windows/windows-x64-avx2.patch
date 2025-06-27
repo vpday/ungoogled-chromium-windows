@@ -1,19 +1,21 @@
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
-@@ -487,9 +487,9 @@ config("compiler") {
+@@ -490,10 +490,10 @@ config("compiler") {
    # Linux/Android/Fuchsia common flags setup.
    # ---------------------------------
    if (is_linux || is_chromeos || is_android || is_fuchsia) {
 -    asmflags += [ "-fPIC" ]
 -    cflags += [ "-fPIC" ]
 -    ldflags += [ "-fPIC" ]
+-    rustflags += [ "-Crelocation-model=pic" ]
 +    asmflags += [ "-fPIC", "-w", ]
 +    cflags += [ "-fPIC", "-w", ]
 +    ldflags += [ "-fPIC", "-w", ]
-     rustflags += [ "-Crelocation-model=pic" ]
++    rustflags += [ "-Crelocation-model=pic", "-Awarnings", ]
  
      if (!is_clang) {
-@@ -542,9 +542,9 @@ config("compiler") {
+       # Use pipes for communicating between sub-processes. Faster.
+@@ -545,9 +545,9 @@ config("compiler") {
  
      if (!use_sized_deallocation) {
        if (is_win) {
@@ -25,7 +27,7 @@
        }
      }
    }
-@@ -597,23 +597,23 @@ config("compiler") {
+@@ -600,23 +600,23 @@ config("compiler") {
      if (default_toolchain != "//build/toolchain/cros:target" &&
          !llvm_android_mainline) {
        cflags += [
@@ -55,7 +57,7 @@
      }
  
      # Enable ELF CREL (see crbug.com/357878242) for all platforms that use ELF
-@@ -773,7 +773,7 @@ config("compiler") {
+@@ -784,7 +784,7 @@ config("compiler") {
      # [0]: https://pinpoint-dot-chromeperf.appspot.com/job/16984a18be0000
      # [1]: https://pinpoint-dot-chromeperf.appspot.com/job/11984a18be0000
      # [2]: https://ci.chromium.org/ui/p/chromium/builders/try/android-binary-size/1848442
@@ -64,18 +66,17 @@
  
      if (is_win) {
        ldflags += [
-@@ -1048,6 +1048,10 @@ config("compiler") {
+@@ -1059,6 +1059,9 @@ config("compiler") {
  
      # We use clang-rt sanitizer runtimes.
      "-Zexternal-clangrt",
 +
 +    "-Ctarget-cpu=x86-64-v3",
 +    "-Cllvm-args=-fp-contract=fast",
-+    "-Awarnings",
    ]
  
    if (!is_win || force_rustc_color_output) {
-@@ -1125,7 +1129,7 @@ config("libcxx_hardening") {
+@@ -1142,7 +1145,7 @@ config("libcxx_hardening") {
  # building with ThinLTO, no optimization is performed in the link step.
  config("thinlto_optimize_default") {
    if (!is_debug && use_thin_lto && is_a_target_toolchain) {
@@ -84,7 +85,7 @@
  
      if (is_win) {
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
-@@ -1158,7 +1162,7 @@ config("thinlto_optimize_max") {
+@@ -1175,7 +1178,7 @@ config("thinlto_optimize_max") {
      if (thin_lto_enable_optimizations) {
        lto_opt_level = 2
      } else {
@@ -93,16 +94,16 @@
      }
  
      if (is_win) {
-@@ -1200,7 +1204,7 @@ config("compiler_cpu_abi") {
-     if (current_cpu == "x64") {
-       cflags += [
-         "-m64",
--        "-msse3",
-+        "-march=x86-64-v3",
-       ]
-       ldflags += [ "-m64" ]
+@@ -1223,7 +1226,7 @@ config("compiler_cpu_abi") {
+         cflags += [ "-m64" ]
+         ldflags += [ "-m64" ]
+       }
+-      cflags += [ "-msse3" ]
++      cflags += [ "-march=x86-64-v3" ]
      } else if (current_cpu == "x86") {
-@@ -2665,10 +2669,13 @@ config("optimize_max") {
+       if (is_clang && !is_android && !is_nacl && !is_chromeos_device) {
+         cflags += [ "--target=i386-unknown-linux-gnu" ]
+@@ -2756,10 +2759,13 @@ config("optimize_max") {
        # Favor speed over size, /O2 must be before the common flags.
        # /O2 implies /Ot, /Oi, and /GF.
        cflags = [ "/O2" ] + common_optimize_on_cflags
