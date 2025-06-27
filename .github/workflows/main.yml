@@ -108,9 +108,51 @@ jobs:
           from_artifact: true
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
+  build-6:
+    needs: build-5
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      - name: Init
+        run: Copy-Item -Path . -Destination "C:\ungoogled-chromium-windows" -Recurse
+      - name: Setup Stage
+        run: npm install
+        working-directory: ./.github/actions/stage
+      - name: Run Stage
+        id: stage
+        uses: ./.github/actions/stage
+        with:
+          finished: ${{ join(needs.*.outputs.finished) }}
+          from_artifact: true
+    outputs:
+      finished: ${{ steps.stage.outputs.finished }}
+  build-7:
+    needs: build-6
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      - name: Init
+        run: Copy-Item -Path . -Destination "C:\ungoogled-chromium-windows" -Recurse
+      - name: Setup Stage
+        run: npm install
+        working-directory: ./.github/actions/stage
+      - name: Run Stage
+        id: stage
+        uses: ./.github/actions/stage
+        with:
+          finished: ${{ join(needs.*.outputs.finished) }}
+          from_artifact: true
+    outputs:
+      finished: ${{ steps.stage.outputs.finished }}
 
   publish-release:
-    needs: [build-5]
+    needs: [build-7]
     runs-on: ubuntu-latest
     steps:
       - name: Download package
