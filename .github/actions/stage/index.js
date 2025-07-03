@@ -3,8 +3,16 @@ const io = require('@actions/io');
 const exec = require('@actions/exec');
 const {DefaultArtifactClient} = require('@actions/artifact');
 const glob = require('@actions/glob');
+const path = require('path');
 
 async function run() {
+    // Use GitHub workspace or current working directory as base path
+    const workingDir = process.env.GITHUB_WORKSPACE || process.cwd();
+    const buildDir = path.join(workingDir, 'build');
+
+    console.log(`Working directory: ${workingDir}`);
+    console.log(`Build directory: ${buildDir}`);
+
     process.on('SIGINT', function() {
     })
     const finished = core.getBooleanInput('finished', {required: true});
@@ -23,10 +31,10 @@ async function run() {
 
     if (from_artifact) {
         const artifactInfo = await artifact.getArtifact(artifactName);
-        await artifact.downloadArtifact(artifactInfo.artifact.id, {path: 'C:\\ungoogled-chromium-windows\\build'});
-        await exec.exec('7z', ['x', 'C:\\ungoogled-chromium-windows\\build\\artifacts.zip',
-            '-oC:\\ungoogled-chromium-windows\\build', '-y']);
-        await io.rmRF('C:\\ungoogled-chromium-windows\\build\\artifacts.zip');
+        await artifact.downloadArtifact(artifactInfo.artifact.id, {path: buildDir});
+        await exec.exec('7z', ['x', path.join(buildDir, 'artifacts.zip'),
+            `-o${buildDir}`, '-y']);
+        await io.rmRF(path.join(buildDir, 'artifacts.zip'));
     }
 
     const args = ['build.py', '--ci']
@@ -41,17 +49,17 @@ async function run() {
     };
 
     await exec.exec('python', ['-m', 'pip', 'install', 'httplib2'], {
-        cwd: 'C:\\ungoogled-chromium-windows',
+        cwd: workingDir,
         ignoreReturnCode: true
     });
     const retCode = await exec.exec('python', args, {
-        cwd: 'C:\\ungoogled-chromium-windows',
+        cwd: workingDir,
         ignoreReturnCode: true,
         env: env
     });
     if (retCode === 0) {
         core.setOutput('finished', true);
-        const globber = await glob.create('C:\\ungoogled-chromium-windows\\build\\ungoogled-chromium*',
+        const globber = await glob.create(path.join(buildDir, 'ungoogled-chromium*'),
             {matchDirectories: false});
         let packageList = await globber.glob();
         const finalArtifactName = x86 ? 'chromium-x86' : (arm ? 'chromium-arm' : 'chromium');
@@ -63,7 +71,7 @@ async function run() {
             }
             try {
                 await artifact.uploadArtifact(finalArtifactName, packageList,
-                    'C:\\ungoogled-chromium-windows\\build', {retentionDays: 1, compressionLevel: 0});
+                    buildDir, {retentionDays: 1, compressionLevel: 0});
                 break;
             } catch (e) {
                 console.error(`Upload artifact failed: ${e}`);
@@ -73,8 +81,8 @@ async function run() {
         }
     } else {
         await new Promise(r => setTimeout(r, 5000));
-        await exec.exec('7z', ['a', '-tzip', 'C:\\ungoogled-chromium-windows\\artifacts.zip',
-            'C:\\ungoogled-chromium-windows\\build\\src', '-mx=3', '-mtc=on'], {ignoreReturnCode: true});
+        await exec.exec('7z', ['a', '-tzip', path.join(workingDir, 'artifacts.zip'),
+            path.join(buildDir, 'src'), '-mx=3', '-mtc=on'], {ignoreReturnCode: true});
         for (let i = 0; i < 5; ++i) {
             try {
                 await artifact.deleteArtifact(artifactName);
@@ -82,8 +90,8 @@ async function run() {
                 // ignored
             }
             try {
-                await artifact.uploadArtifact(artifactName, ['C:\\ungoogled-chromium-windows\\artifacts.zip'],
-                    'C:\\ungoogled-chromium-windows', {retentionDays: 1, compressionLevel: 0});
+                await artifact.uploadArtifact(artifactName, [path.join(workingDir, 'artifacts.zip')],
+                    workingDir, {retentionDays: 1, compressionLevel: 0});
                 break;
             } catch (e) {
                 console.error(`Upload artifact failed: ${e}`);
