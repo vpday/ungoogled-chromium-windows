@@ -7,7 +7,20 @@ const path = require('path');
 
 async function run() {
     // Use GitHub workspace or current working directory as base path
-    const workingDir = process.env.GITHUB_WORKSPACE || process.cwd();
+    const workingDir = await (async () => {
+        const originalPath = process.env.GITHUB_WORKSPACE || process.cwd();
+        const shortPath = "D:\\ungoogled-chromium-windows";
+
+        try {
+            await exec.exec('mklink', ['/d', shortPath, originalPath]);
+            return shortPath;
+        } catch (e) {
+            console.error('Symlink fallback failed, trying git longpaths...');
+            await exec.exec('git', ['config', '--global', 'core.longpaths', 'true']);
+        }
+
+        return originalPath;
+    })();
     const buildDir = path.join(workingDir, 'build');
 
     console.log(`Working directory: ${workingDir}`);
