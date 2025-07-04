@@ -5,7 +5,7 @@ on:
     tags:
       - '*'
 env:
-  SHORT_PATH: "C:\\ungoogled-chromium-windows"
+  SHORT_PATH: "U:"
 jobs:
   build-1:
     runs-on: windows-2025
@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Init
-        run: cmd /c "mklink /J `"$env:SHORT_PATH`" `"$(pwd)`""
+        run: cmd /c "subst `"U:`" `"$(pwd)`""
       - name: Setup Stage
         run: npm install
         working-directory: ./.github/actions/stage
@@ -40,7 +40,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Init
-        run: cmd /c "mklink /J `"$env:SHORT_PATH`" `"$(pwd)`""
+        run: cmd /c "subst `"U:`" `"$(pwd)`""
       - name: Setup Stage
         run: npm install
         working-directory: ./.github/actions/stage
@@ -61,7 +61,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Init
-        run: cmd /c "mklink /J `"$env:SHORT_PATH`" `"$(pwd)`""
+        run: cmd /c "subst `"U:`" `"$(pwd)`""
       - name: Setup Stage
         run: npm install
         working-directory: ./.github/actions/stage
@@ -82,7 +82,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Init
-        run: cmd /c "mklink /J `"$env:SHORT_PATH`" `"$(pwd)`""
+        run: cmd /c "subst `"U:`" `"$(pwd)`""
       - name: Setup Stage
         run: npm install
         working-directory: ./.github/actions/stage
@@ -103,7 +103,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Init
-        run: cmd /c "mklink /J `"$env:SHORT_PATH`" `"$(pwd)`""
+        run: cmd /c "subst `"U:`" `"$(pwd)`""
       - name: Setup Stage
         run: npm install
         working-directory: ./.github/actions/stage
@@ -124,7 +124,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Init
-        run: cmd /c "mklink /J `"$env:SHORT_PATH`" `"$(pwd)`""
+        run: cmd /c "subst `"U:`" `"$(pwd)`""
       - name: Setup Stage
         run: npm install
         working-directory: ./.github/actions/stage
@@ -145,7 +145,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Init
-        run: cmd /c "mklink /J `"$env:SHORT_PATH`" `"$(pwd)`""
+        run: cmd /c "subst `"U:`" `"$(pwd)`""
       - name: Setup Stage
         run: npm install
         working-directory: ./.github/actions/stage
