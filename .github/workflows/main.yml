@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Init
-        run: Copy-Item -Path . -Destination "`$env:SHORT_PATH`" -Recurse
+        run: Copy-Item -Path . -Destination "$env:SHORT_PATH" -Recurse
       - name: Setup Stage
         run: npm install
         working-directory: ./.github/actions/stage
@@ -40,7 +40,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Init
-        run: Copy-Item -Path . -Destination "`$env:SHORT_PATH`" -Recurse
+        run: Copy-Item -Path . -Destination "$env:SHORT_PATH" -Recurse
       - name: Setup Stage
         run: npm install
         working-directory: ./.github/actions/stage
@@ -61,7 +61,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Init
-        run: Copy-Item -Path . -Destination "`$env:SHORT_PATH`" -Recurse
+        run: Copy-Item -Path . -Destination "$env:SHORT_PATH" -Recurse
       - name: Setup Stage
         run: npm install
         working-directory: ./.github/actions/stage
@@ -82,7 +82,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Init
-        run: Copy-Item -Path . -Destination "`$env:SHORT_PATH`" -Recurse
+        run: Copy-Item -Path . -Destination "$env:SHORT_PATH" -Recurse
       - name: Setup Stage
         run: npm install
         working-directory: ./.github/actions/stage
@@ -103,7 +103,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Init
-        run: Copy-Item -Path . -Destination "`$env:SHORT_PATH`" -Recurse
+        run: Copy-Item -Path . -Destination "$env:SHORT_PATH" -Recurse
       - name: Setup Stage
         run: npm install
         working-directory: ./.github/actions/stage
@@ -124,7 +124,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Init
-        run: Copy-Item -Path . -Destination "`$env:SHORT_PATH`" -Recurse
+        run: Copy-Item -Path . -Destination "$env:SHORT_PATH" -Recurse
       - name: Setup Stage
         run: npm install
         working-directory: ./.github/actions/stage
@@ -145,7 +145,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Init
-        run: Copy-Item -Path . -Destination "`$env:SHORT_PATH`" -Recurse
+        run: Copy-Item -Path . -Destination "$env:SHORT_PATH" -Recurse
       - name: Setup Stage
         run: npm install
         working-directory: ./.github/actions/stage
