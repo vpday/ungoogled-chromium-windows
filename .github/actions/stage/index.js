@@ -6,7 +6,7 @@ const glob = require('@actions/glob');
 const path = require('path');
 
 async function run() {
-    const workingDir = process.env.SHORT_PATH || 'U:';
+    const workingDir = process.env.SHORT_PATH || 'D:\\ucw';
     const buildDir = path.join(workingDir, 'build');
 
     process.on('SIGINT', function() {
