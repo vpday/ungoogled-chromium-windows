@@ -5,7 +5,7 @@ on:
     tags:
       - '*'
 env:
-  SHORT_PATH: "D:\\ucw"
+  SHORT_PATH: "C:\\ucw"
 jobs:
   build-1:
     runs-on: windows-2025
