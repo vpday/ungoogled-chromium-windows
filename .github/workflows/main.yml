@@ -8,7 +8,7 @@ env:
   SHORT_PATH: "C:\\ucw"
 jobs:
   build-1:
-    runs-on: windows-2025
+    runs-on: windows-2022
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-2:
     needs: build-1
-    runs-on: windows-2025
+    runs-on: windows-2022
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,7 +58,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-3:
     needs: build-2
-    runs-on: windows-2025
+    runs-on: windows-2022
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -83,7 +83,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-4:
     needs: build-3
-    runs-on: windows-2025
+    runs-on: windows-2022
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -108,7 +108,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-5:
     needs: build-4
-    runs-on: windows-2025
+    runs-on: windows-2022
     steps:
       - name: Checkout
         uses: actions/checkout@v4
