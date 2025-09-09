@@ -44,7 +44,7 @@ async function run() {
         GH_ACTIONS_START_TIME: startTime.toString()
     };
 
-    await exec.exec('python', ['-m', 'pip', 'install', 'httplib2'], {
+    await exec.exec('python', ['-m', 'pip', 'install', 'httplib2[socks]'], {
         cwd: workingDir,
         ignoreReturnCode: true
     });
