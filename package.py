@@ -17,10 +17,12 @@ import os
 import platform
 from pathlib import Path
 import shutil
+import subprocess
+import tempfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'ungoogled-chromium' / 'utils'))
 import filescfg
-from _common import ENCODING, get_chromium_version
+from _common import ENCODING, get_chromium_version, get_logger
 sys.path.pop(0)
 
 def _get_release_revision():
@@ -44,6 +46,37 @@ def _get_target_cpu(build_outputs):
                     break
     assert _cached_target_cpu
     return _cached_target_cpu
+
+def _create_7z_archive(file_list, build_outputs, output_path):
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as list_file:
+            list_file_path = list_file.name
+            for file_path in file_list:
+                list_file.write(str(file_path).replace('\\', '/') + '\n')
+
+        try:
+            cmd = [
+                '7z', 'a', '-t7z', '-mx=9', '-mtc=on',
+                str(output_path.resolve()),
+                f'@{list_file_path}'
+            ]
+
+            result = subprocess.run(
+                cmd,
+                cwd=str(build_outputs),
+                capture_output=True,
+                text=True,
+                check=True
+            )
+
+        finally:
+            try:
+                os.unlink(list_file_path)
+            except Exception:
+                pass
+
+    except Exception as e:
+        get_logger().error('7z archive creation failed: %s', e)
 
 def main():
     """Entrypoint"""
@@ -86,8 +119,17 @@ def main():
     files_generator = filescfg.filescfg_generator(
         Path('build/src/chrome/tools/build/win/FILES.cfg'),
         build_outputs, args.cpu_arch, excluded_files)
+
+    file_list = list(files_generator)
+
     filescfg.create_archive(
-        files_generator, tuple(), build_outputs, output, timestamp)
+        iter(file_list), tuple(), build_outputs, output, timestamp)
+
+    output_7z = Path('build/ungoogled-chromium_{}-{}.{}_windows_{}.7z'.format(
+        get_chromium_version(), _get_release_revision(),
+        _get_packaging_revision(), _get_target_cpu(build_outputs)))
+
+    _create_7z_archive(file_list, build_outputs, output_7z)
 
 if __name__ == '__main__':
     main()
