@@ -33,7 +33,7 @@ async function run() {
         await io.rmRF(path.join(buildDir, 'artifacts.zip'));
     }
 
-    const args = ['build.py', '--ci']
+    const args = ['build.py', '--ci', '-j', '2']
     if (x86)
         args.push('--x86')
     if (arm)
