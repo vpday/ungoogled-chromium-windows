@@ -67,7 +67,7 @@ async function run() {
             }
             try {
                 await artifact.uploadArtifact(finalArtifactName, packageList,
-                    buildDir, {retentionDays: 1, compressionLevel: 0});
+                    buildDir, {retentionDays: 3, compressionLevel: 0});
                 break;
             } catch (e) {
                 console.error(`Upload artifact failed: ${e}`);
