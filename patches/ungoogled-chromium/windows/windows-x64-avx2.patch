@@ -123,7 +123,7 @@
      } else if (current_cpu == "x86") {
        if (is_clang && !is_android && !is_chromeos_device) {
          cflags += [ "--target=i386-unknown-linux-gnu" ]
-@@ -2667,6 +2673,15 @@ if (is_win) {
+@@ -2667,6 +2673,13 @@ if (is_win) {
    common_optimize_on_cflags = [
      "/Oy-",  # Disable omitting frame pointers, must be after /O2.
      "/Zc:inline",  # Remove unreferenced COMDAT (faster links).
@@ -132,14 +132,12 @@
 +   "-mllvm", "-enable-local-reassign",
 +   "-mllvm", "-enable-nontrivial-unswitch",
 +   "-mllvm", "-enable-loopinterchange",
-+   "-mllvm", "-enable-loop-distribute",
 +   "-mllvm", "-enable-unroll-and-jam",
 +   "-mllvm", "-enable-loop-flatten",
-+   "-mllvm", "-enable-loop-versioning-licm",
    ]
    if (!is_asan) {
      common_optimize_on_cflags += [
-@@ -2680,6 +2695,19 @@ if (is_win) {
+@@ -2680,6 +2695,17 @@ if (is_win) {
    }
    common_optimize_on_ldflags = []
  
@@ -149,17 +147,15 @@
 +   "-mllvm:-enable-local-reassign",
 +   "-mllvm:-enable-nontrivial-unswitch",
 +   "-mllvm:-enable-loopinterchange",
-+   "-mllvm:-enable-loop-distribute",
 +   "-mllvm:-enable-unroll-and-jam",
 +   "-mllvm:-enable-loop-flatten",
-+   "-mllvm:-enable-loop-versioning-licm",
 +   # "-mllvm:-pass-remarks=vector",
 +  ]
 +
    # /OPT:ICF is not desirable in Debug builds, since code-folding can result in
    # misleading symbols in stack traces.
    if (!is_debug && !is_component_build) {
-@@ -2693,6 +2721,31 @@ if (is_win) {
+@@ -2693,6 +2721,27 @@ if (is_win) {
    common_optimize_on_cflags = []
    common_optimize_on_ldflags = []
  
@@ -169,10 +165,8 @@
 +   "-mllvm", "-enable-local-reassign",
 +   "-mllvm", "-enable-nontrivial-unswitch",
 +   "-mllvm", "-enable-loopinterchange",
-+   "-mllvm", "-enable-loop-distribute",
 +   "-mllvm", "-enable-unroll-and-jam",
 +   "-mllvm", "-enable-loop-flatten",
-+   "-mllvm", "-enable-loop-versioning-licm",
 +  ]
 +
 +  common_optimize_on_ldflags += [
@@ -181,10 +175,8 @@
 +   "-Wl,-mllvm,-enable-local-reassign",
 +   "-Wl,-mllvm,-enable-nontrivial-unswitch",
 +   "-Wl,-mllvm,-enable-loopinterchange",
-+   "-Wl,-mllvm,-enable-loop-distribute",
 +   "-Wl,-mllvm,-enable-unroll-and-jam",
 +   "-Wl,-mllvm,-enable-loop-flatten",
-+   "-Wl,-mllvm,-enable-loop-versioning-licm",
 +   # "-Wl,-mllvm,-pass-remarks=vector",
 +  ]
 +
