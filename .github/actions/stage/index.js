@@ -33,7 +33,7 @@ async function run() {
         await io.rmRF(zipPath);
     }
 
-    const args = ['build.py', '--ci', '-j', '2']
+    const args = ['build.py', '--ci', '-j', '2', '--7z-path', '/usr/bin/7z']
     if (x86)
         args.push('--x86')
     if (arm)
