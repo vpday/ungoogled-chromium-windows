@@ -7,6 +7,9 @@ jobs:
   build-1:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -20,6 +23,9 @@ jobs:
     needs: build-1
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -33,6 +39,9 @@ jobs:
     needs: build-2
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -46,6 +55,9 @@ jobs:
     needs: build-3
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -59,6 +71,9 @@ jobs:
     needs: build-4
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -72,6 +87,9 @@ jobs:
     needs: build-5
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -85,6 +103,9 @@ jobs:
     needs: build-6
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -98,6 +119,9 @@ jobs:
     needs: build-7
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -111,6 +135,9 @@ jobs:
     needs: build-8
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -124,6 +151,9 @@ jobs:
     needs: build-9
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -137,6 +167,9 @@ jobs:
     needs: build-10
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -150,6 +183,9 @@ jobs:
     needs: build-11
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -163,6 +199,9 @@ jobs:
     needs: build-12
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -176,6 +215,9 @@ jobs:
     needs: build-13
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -189,6 +231,9 @@ jobs:
     needs: build-14
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -202,6 +247,9 @@ jobs:
     needs: build-15
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -215,6 +263,9 @@ jobs:
   build-x86-1:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -229,6 +280,9 @@ jobs:
     needs: build-x86-1
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -243,6 +297,9 @@ jobs:
     needs: build-x86-2
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -257,6 +314,9 @@ jobs:
     needs: build-x86-3
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -271,6 +331,9 @@ jobs:
     needs: build-x86-4
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -285,6 +348,9 @@ jobs:
     needs: build-x86-5
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -299,6 +365,9 @@ jobs:
     needs: build-x86-6
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -313,6 +382,9 @@ jobs:
     needs: build-x86-7
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -327,6 +399,9 @@ jobs:
     needs: build-x86-8
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -341,6 +416,9 @@ jobs:
     needs: build-x86-9
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -355,6 +433,9 @@ jobs:
     needs: build-x86-10
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -369,6 +450,9 @@ jobs:
     needs: build-x86-11
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -383,6 +467,9 @@ jobs:
     needs: build-x86-12
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -397,6 +484,9 @@ jobs:
     needs: build-x86-13
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -411,6 +501,9 @@ jobs:
     needs: build-x86-14
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -425,6 +518,9 @@ jobs:
     needs: build-x86-15
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -439,6 +535,9 @@ jobs:
   build-arm-1:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -453,6 +552,9 @@ jobs:
     needs: build-arm-1
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -467,6 +569,9 @@ jobs:
     needs: build-arm-2
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -481,6 +586,9 @@ jobs:
     needs: build-arm-3
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -495,6 +603,9 @@ jobs:
     needs: build-arm-4
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -509,6 +620,9 @@ jobs:
     needs: build-arm-5
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -523,6 +637,9 @@ jobs:
     needs: build-arm-6
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -537,6 +654,9 @@ jobs:
     needs: build-arm-7
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -551,6 +671,9 @@ jobs:
     needs: build-arm-8
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -565,6 +688,9 @@ jobs:
     needs: build-arm-9
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -579,6 +705,9 @@ jobs:
     needs: build-arm-10
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -593,6 +722,9 @@ jobs:
     needs: build-arm-11
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -607,6 +739,9 @@ jobs:
     needs: build-arm-12
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -621,6 +756,9 @@ jobs:
     needs: build-arm-13
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -635,6 +773,9 @@ jobs:
     needs: build-arm-14
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
@@ -649,6 +790,9 @@ jobs:
     needs: build-arm-15
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
       - uses: ./.github/actions/prepare
       - name: Run Stage
         id: stage
