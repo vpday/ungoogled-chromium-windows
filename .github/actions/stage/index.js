@@ -3,6 +3,7 @@ const io = require('@actions/io');
 const exec = require('@actions/exec');
 const {DefaultArtifactClient} = require('@actions/artifact');
 const glob = require('@actions/glob');
+const path = require('path');
 
 async function run() {
     process.on('SIGINT', function() {
@@ -17,15 +18,19 @@ async function run() {
         return;
     }
 
+    const WORK_DIR = process.env.GITHUB_WORKSPACE || process.cwd();
+    const BUILD_DIR = path.join(WORK_DIR, 'build');
+    console.log(`Working Directory: ${WORK_DIR}`);
+
     const artifact = new DefaultArtifactClient();
     const artifactName = x86 ? 'build-artifact-x86' : (arm ? 'build-artifact-arm' : 'build-artifact');
 
     if (from_artifact) {
         const artifactInfo = await artifact.getArtifact(artifactName);
-        await artifact.downloadArtifact(artifactInfo.artifact.id, {path: 'C:\\ungoogled-chromium-windows\\build'});
-        await exec.exec('7z', ['x', 'C:\\ungoogled-chromium-windows\\build\\artifacts.zip',
-            '-oC:\\ungoogled-chromium-windows\\build', '-y']);
-        await io.rmRF('C:\\ungoogled-chromium-windows\\build\\artifacts.zip');
+        await artifact.downloadArtifact(artifactInfo.artifact.id, {path: BUILD_DIR});
+        const zipPath = path.join(BUILD_DIR, 'artifacts.zip');
+        await exec.exec('7z', ['x', zipPath, `-o${BUILD_DIR}`, '-y']);
+        await io.rmRF(zipPath);
     }
 
     const args = ['build.py', '--ci', '-j', '2']
@@ -33,18 +38,18 @@ async function run() {
         args.push('--x86')
     if (arm)
         args.push('--arm')
-    await exec.exec('python', ['-m', 'pip', 'install', 'httplib2==0.22.0'], {
-        cwd: 'C:\\ungoogled-chromium-windows',
+    await exec.exec('python3', ['-m', 'pip', 'install', 'httplib2==0.22.0'], {
+        cwd: WORK_DIR,
         ignoreReturnCode: true
     });
-    const retCode = await exec.exec('python', args, {
-        cwd: 'C:\\ungoogled-chromium-windows',
+    const retCode = await exec.exec('python3', args, {
+        cwd: WORK_DIR,
         ignoreReturnCode: true
     });
     if (retCode === 0) {
         core.setOutput('finished', true);
-        const globber = await glob.create('C:\\ungoogled-chromium-windows\\build\\ungoogled-chromium*',
-            {matchDirectories: false});
+        const globPattern = path.join(BUILD_DIR, 'ungoogled-chromium*');
+        const globber = await glob.create(globPattern, {matchDirectories: false});
         let packageList = await globber.glob();
         const finalArtifactName = x86 ? 'chromium-x86' : (arm ? 'chromium-arm' : 'chromium');
         for (let i = 0; i < 5; ++i) {
@@ -55,7 +60,7 @@ async function run() {
             }
             try {
                 await artifact.uploadArtifact(finalArtifactName, packageList,
-                    'C:\\ungoogled-chromium-windows\\build', {retentionDays: 4, compressionLevel: 0});
+                    BUILD_DIR, {retentionDays: 4, compressionLevel: 0});
                 break;
             } catch (e) {
                 console.error(`Upload artifact failed: ${e}`);
@@ -65,8 +70,9 @@ async function run() {
         }
     } else {
         await new Promise(r => setTimeout(r, 5000));
-        await exec.exec('7z', ['a', '-tzip', 'C:\\ungoogled-chromium-windows\\artifacts.zip',
-            'C:\\ungoogled-chromium-windows\\build\\src', '-mx=3', '-mtc=on'], {ignoreReturnCode: true});
+        const zipTarget = path.join(WORK_DIR, 'artifacts.zip');
+        const srcDir = path.join(BUILD_DIR, 'src');
+        await exec.exec('7z', ['a', '-tzip', zipTarget, srcDir, '-mx=3', '-mtc=on'], {ignoreReturnCode: true});
         for (let i = 0; i < 5; ++i) {
             try {
                 await artifact.deleteArtifact(artifactName);
@@ -74,8 +80,8 @@ async function run() {
                 // ignored
             }
             try {
-                await artifact.uploadArtifact(artifactName, ['C:\\ungoogled-chromium-windows\\artifacts.zip'],
-                    'C:\\ungoogled-chromium-windows', {retentionDays: 4, compressionLevel: 0});
+                await artifact.uploadArtifact(artifactName, [zipTarget],
+                    WORK_DIR, {retentionDays: 4, compressionLevel: 0});
                 break;
             } catch (e) {
                 console.error(`Upload artifact failed: ${e}`);

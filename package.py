@@ -5,7 +5,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 """
-ungoogled-chromium packaging script for Microsoft Windows
+ungoogled-chromium packaging script for Linux
 """
 
 import sys
@@ -13,7 +13,6 @@ if sys.version_info.major < 3:
     raise RuntimeError('Python 3 is required for this script.')
 
 import argparse
-import os
 import platform
 from pathlib import Path
 import shutil
