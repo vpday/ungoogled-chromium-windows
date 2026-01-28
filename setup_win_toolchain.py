@@ -23,7 +23,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from build_common import run_build_process, should_skip_step, mark_step_complete
+from build_common import run_build_process, should_skip_step, mark_step_complete, get_target_arch_from_args
 from setup_utils import download_from_sha1
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'ungoogled-chromium' / 'utils'))
@@ -363,7 +363,7 @@ def _download_github_toolchain(chromium_version, sdk_version, dest_dir, zip_file
     Args:
         chromium_version: Chromium version matching release tag (e.g., '144.0.7559.96')
         sdk_version: SDK version for filename pattern (e.g., '10.0.26100.0')
-        dest_dir: Destination directory (build/download_cache)
+        dest_dir: Destination directory
         zip_filename: Expected zip filename without extension (e.g., '16b53d08e9')
         sha512: Expected SHA512 checksum of the final zip file
 
@@ -415,9 +415,12 @@ def _download_github_toolchain(chromium_version, sdk_version, dest_dir, zip_file
     get_logger().info('GitHub toolchain download complete')
 
 
-def _read_toolchain_config():
+def _read_toolchain_config(target_arch='x64'):
     """
     Read Windows toolchain configuration from win_toolchain_downloads.ini
+
+    Args:
+        target_arch: Target architecture ('x64', 'x86', or 'arm64')
 
     Returns:
         dict: Dictionary with keys: 'chromium_version', 'zip_filename', 'sha512'
@@ -436,23 +439,33 @@ def _read_toolchain_config():
     config = configparser.ConfigParser()
     config.read(config_file, encoding=ENCODING)
 
-    if not config.has_section('win-toolchain'):
+    # Select section based on architecture
+    if target_arch in ('x64', 'x86'):
+        section = 'win-toolchain-noarm'
+    else:
+        # arm64
+        section = 'win-toolchain'
+
+    # Verify section exists
+    if not config.has_section(section):
+        available = ', '.join([f'[{s}]' for s in config.sections()])
         raise RuntimeError(
-            f'Invalid config: [win-toolchain] section missing in {config_file}'
+            f'Invalid config: [{section}] section missing in {config_file}. '
+            f'Required for {target_arch} builds. Available sections: {available}'
         )
 
     required_keys = ['chromium_version', 'zip_filename', 'sha512']
     result = {}
 
     for key in required_keys:
-        if not config.has_option('win-toolchain', key):
+        if not config.has_option(section, key):
             raise RuntimeError(
-                f'Invalid config: {key} missing in [win-toolchain] section'
+                f'Invalid config: {key} missing in [{section}] section'
             )
-        result[key] = config.get('win-toolchain', key)
+        result[key] = config.get(section, key)
 
-    get_logger().info('Loaded toolchain config: version=%s, zip=%s.zip',
-                      result['chromium_version'], result['zip_filename'])
+    get_logger().info('Loaded toolchain config from [%s] for %s: version=%s, zip=%s.zip',
+                      section, target_arch, result['chromium_version'], result['zip_filename'])
 
     return result
 
@@ -513,7 +526,9 @@ def setup_windows_toolchain(source_tree, ci_mode=False):
         source_tree: Path object of the source directory (build/src)
         ci_mode: Boolean indicating if running in CI mode (enables stamp-based skipping)
     """
-    get_logger().info('Setting up Windows Toolchain')
+    # Detect target architecture from command-line arguments
+    target_arch = get_target_arch_from_args()
+    get_logger().info('Setting up Windows Toolchain for architecture: %s', target_arch)
 
     # Extract toolchain hash and SDK version from vs_toolchain.py
     # These are needed to identify the correct toolchain version to download
@@ -523,14 +538,15 @@ def setup_windows_toolchain(source_tree, ci_mode=False):
     sdk_version = toolchain_info["sdk_version"]
 
     # Read toolchain configuration (Chromium version, zip filename, SHA512)
-    # from win_toolchain_downloads.ini
-    toolchain_config = _read_toolchain_config()
+    # from win_toolchain_downloads.ini based on target architecture
+    toolchain_config = _read_toolchain_config(target_arch)
 
-    # Toolchain will be downloaded to build/download_cache/
-    toolchain_dir = _ROOT_DIR / 'build' / 'download_cache'
+    # Toolchain will be downloaded to build/src/third_party/win_toolchain/
+    toolchain_dir = _ROOT_DIR / 'build/src/third_party/win_toolchain'
 
     # Download VS toolchain from GitHub
-    if should_skip_step(source_tree, '.download_vs_toolchain.stamp', ci_mode):
+    download_stamp = f'.download_vs_toolchain_{target_arch}.stamp'
+    if should_skip_step(source_tree, download_stamp, ci_mode):
         get_logger().info('Skipping VS toolchain download (already completed)')
     else:
         get_logger().info('Downloading VS toolchain from GitHub...')
@@ -553,11 +569,13 @@ def setup_windows_toolchain(source_tree, ci_mode=False):
             sha512=toolchain_config['sha512']
         )
 
-        mark_step_complete(source_tree, '.download_vs_toolchain.stamp')
+        mark_step_complete(source_tree, download_stamp)
         get_logger().info('VS toolchain download completed')
 
     # Extract and configure the toolchain using vs_toolchain.py
-    if should_skip_step(source_tree.parent, '.vs_toolchain_updated.stamp', ci_mode):
+    extraction_stamp = f'.vs_toolchain_updated_{target_arch}.stamp'
+    extraction_stamp_path = source_tree.parent
+    if should_skip_step(extraction_stamp_path, extraction_stamp, ci_mode):
         get_logger().info('Skipping VS toolchain extraction (already completed)')
     else:
         get_logger().info('Extracting and configuring VS toolchain...')
@@ -579,7 +597,7 @@ def setup_windows_toolchain(source_tree, ci_mode=False):
             '--force'
         )
 
-        mark_step_complete(source_tree.parent, '.vs_toolchain_updated.stamp')
+        mark_step_complete(extraction_stamp_path, extraction_stamp)
         get_logger().info('VS toolchain extraction completed')
 
     get_logger().info('Windows Toolchain setup completed successfully')
