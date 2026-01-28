@@ -23,7 +23,9 @@ import urllib.request
 from collections import defaultdict
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent / 'ungoogled-chromium' / 'utils'))
+sys.path.insert(
+    0, str(Path(__file__).resolve().parent / "ungoogled-chromium" / "utils")
+)
 from _common import ENCODING, get_logger, get_chromium_version
 
 sys.path.pop(0)
@@ -65,13 +67,15 @@ def download_from_sha1(sha1_file: Path, output_file: Path, bucket: str):
     # Verify SHA1
     get_logger().info("Verifying file integrity...")
     sha1 = hashlib.sha1()
-    with open(output_file, 'rb') as f:
+    with open(output_file, "rb") as f:
         while chunk := f.read(8192):
             sha1.update(chunk)
 
     actual_sha1 = sha1.hexdigest()
     if actual_sha1 != expected_sha1:
-        get_logger().error(f"SHA1 verification failed! Expected: {expected_sha1}, Actual: {actual_sha1}")
+        get_logger().error(
+            f"SHA1 verification failed! Expected: {expected_sha1}, Actual: {actual_sha1}"
+        )
         output_file.unlink()
         sys.exit(1)
 
@@ -87,31 +91,31 @@ def fix_tool_downloading(source_tree):
     replacements = [
         # commondatastorage replacement
         (
-            r'commondatastorage\.9oo91eapis\.qjz9zk',
-            'commondatastorage.googleapis.com',
+            r"commondatastorage\.9oo91eapis\.qjz9zk",
+            "commondatastorage.googleapis.com",
             [
-                'build/linux/sysroot_scripts/sysroots.json',
-                'tools/clang/scripts/update.py',
-                'tools/clang/scripts/build.py',
-            ]
+                "build/linux/sysroot_scripts/sysroots.json",
+                "tools/clang/scripts/update.py",
+                "tools/clang/scripts/build.py",
+            ],
         ),
         # chromium.googlesource replacement
         (
-            r'chromium\.9oo91esource\.qjz9zk',
-            'chromium.googlesource.com',
+            r"chromium\.9oo91esource\.qjz9zk",
+            "chromium.googlesource.com",
             [
-                'tools/clang/scripts/build.py',
-                'tools/rust/build_rust.py',
-                'tools/rust/build_bindgen.py',
-            ]
+                "tools/clang/scripts/build.py",
+                "tools/rust/build_rust.py",
+                "tools/rust/build_bindgen.py",
+            ],
         ),
         # chrome-infra-packages replacement
         (
-            r'chrome-infra-packages\.8pp2p8t\.qjz9zk',
-            'chrome-infra-packages.appspot.com',
+            r"chrome-infra-packages\.8pp2p8t\.qjz9zk",
+            "chrome-infra-packages.appspot.com",
             [
-                'tools/rust/build_rust.py',
-            ]
+                "tools/rust/build_rust.py",
+            ],
         ),
     ]
 
@@ -125,7 +129,7 @@ def fix_tool_downloading(source_tree):
     # Process each file exactly once
     for file_path, rules in file_ops.items():
         if not file_path.exists():
-            get_logger().warning('File not found for patching: %s', file_path)
+            get_logger().warning("File not found for patching: %s", file_path)
             continue
 
         try:
@@ -141,7 +145,7 @@ def fix_tool_downloading(source_tree):
                 file_path.write_text(new_content, encoding=ENCODING)
 
         except Exception as e:
-            get_logger().error('Failed to patch %s: %s', file_path, e)
+            get_logger().error("Failed to patch %s: %s", file_path, e)
             raise
 
 
@@ -157,47 +161,52 @@ def setup_sysroot(source_tree, ci_mode=False):
         ci_mode: Boolean indicating if running in CI mode (enables stamp-based skipping)
     """
     # CI mode optimization: skip if already installed
-    stamp_file = source_tree / '.sysroot_installed.stamp'
+    stamp_file = source_tree / ".sysroot_installed.stamp"
 
     if ci_mode and stamp_file.exists():
-        get_logger().info('Sysroot already installed (stamp file exists), skipping')
+        get_logger().info("Sysroot already installed (stamp file exists), skipping")
         return
 
     host_arch = get_host_arch()
     target_arch = get_target_arch_from_args()
 
     # Architecture name mapping for sysroot script
-    arch_mapping = {
-        'x64': 'amd64',
-        'x86': 'i386',
-        'arm64': 'arm64'
-    }
+    arch_mapping = {"x64": "amd64", "x86": "i386", "arm64": "arm64"}
 
-    get_logger().info('Installing sysroot for host architecture: %s, target architecture: %s',
-                      host_arch, target_arch)
+    get_logger().info(
+        "Installing sysroot for host architecture: %s, target architecture: %s",
+        host_arch,
+        target_arch,
+    )
 
     # Install host architecture sysroot
     host_sysroot_arch = arch_mapping.get(host_arch, host_arch)
-    get_logger().info('Installing host sysroot: %s', host_sysroot_arch)
+    get_logger().info("Installing host sysroot: %s", host_sysroot_arch)
     run_build_process(
         sys.executable,
-        str(source_tree / 'build' / 'linux' / 'sysroot_scripts' / 'install-sysroot.py'),
-        f'--arch={host_sysroot_arch}'
+        str(source_tree / "build" / "linux" / "sysroot_scripts" / "install-sysroot.py"),
+        f"--arch={host_sysroot_arch}",
     )
 
     # Install target architecture sysroot if different from host
     if target_arch != host_arch:
         target_sysroot_arch = arch_mapping.get(target_arch, target_arch)
-        get_logger().info('Installing target sysroot: %s', target_sysroot_arch)
+        get_logger().info("Installing target sysroot: %s", target_sysroot_arch)
         run_build_process(
             sys.executable,
-            str(source_tree / 'build' / 'linux' / 'sysroot_scripts' / 'install-sysroot.py'),
-            f'--arch={target_sysroot_arch}'
+            str(
+                source_tree
+                / "build"
+                / "linux"
+                / "sysroot_scripts"
+                / "install-sysroot.py"
+            ),
+            f"--arch={target_sysroot_arch}",
         )
 
     # Create stamp file to mark successful installation
     stamp_file.touch()
-    get_logger().info('Sysroot installation completed successfully')
+    get_logger().info("Sysroot installation completed successfully")
 
 
 def setup_toolchain(source_tree, ci_mode=False):
@@ -215,7 +224,7 @@ def setup_toolchain(source_tree, ci_mode=False):
         This function does not implement its own stamp checking.
         Stamp checking is handled by the caller (build.py) using .setup_toolchain.stamp
     """
-    get_logger().info('Setting up toolchain')
+    get_logger().info("Setting up toolchain")
 
     # get_logger().info('Building Clang from source...')
     # run_build_process(
@@ -238,15 +247,16 @@ def setup_toolchain(source_tree, ci_mode=False):
     #     '--skip-test'
     # )
 
-    get_logger().info('Building bindgen tool...')
+    get_logger().info("Building bindgen tool...")
     run_build_process(
-        sys.executable, str(source_tree / 'tools' / 'rust' / 'build_bindgen.py'),
-        '--skip-test'
+        sys.executable,
+        str(source_tree / "tools" / "rust" / "build_bindgen.py"),
+        "--skip-test",
     )
 
     # Install Linux sysroot packages for cross-compilation
     # ci_mode is passed through to enable stamp-based skipping in setup_sysroot
-    get_logger().info('Installing sysroot packages...')
+    get_logger().info("Installing sysroot packages...")
     setup_sysroot(source_tree, ci_mode)
 
-    get_logger().info('Toolchain setup completed successfully')
+    get_logger().info("Toolchain setup completed successfully")

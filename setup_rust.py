@@ -5,12 +5,15 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 """
-Rust toolchain management for ungoogled-chromium Windows build.
+Rust toolchain management for ungoogled-chromium Windows cross-compilation.
 
-This module provides Rust toolchain setup and management utilities including:
-- Multi-architecture Rust toolchain installation
-- Architecture-specific library management
-- Host/target architecture handling
+This module orchestrates the complex setup of Rust toolchains for building
+Windows Chromium from a Linux host. It handles:
+
+1. Multi-architecture support: x86_64, i686, and aarch64 toolchains
+2. Component installation: rustc, cargo, rust-std, and optional tools
+3. Directory layout: Consolidates toolchains into a unified structure
+4. Host/target separation: Host tools at top level, target libs in subdirs
 """
 
 import os
@@ -18,345 +21,407 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import List
 
-sys.path.insert(0, str(Path(__file__).resolve().parent / 'ungoogled-chromium' / 'utils'))
+sys.path.insert(
+    0, str(Path(__file__).resolve().parent / "ungoogled-chromium" / "utils")
+)
 from _common import ENCODING, get_logger
 
 sys.path.pop(0)
 
+# Configuration for Rust toolchain components to install
+COMPONENTS_CONFIG = [
+    {"name": "rustc", "has_bin": True, "has_lib": True, "required": True},
+    {"name": "cargo", "has_bin": True, "has_lib": True, "required": True},
+    {"name": "rust-std-{target}", "has_bin": False, "has_lib": True, "required": True},
+    {
+        "name": "llvm-tools-preview",
+        "has_bin": False,
+        "has_lib": True,
+        "required": False,
+    },
+    {"name": "clippy-preview", "has_bin": True, "has_lib": True, "required": False},
+    {"name": "rustfmt-preview", "has_bin": True, "has_lib": True, "required": False},
+]
 
-def fix_top_level_libs(lib_dir, host_arch):
+
+def _smart_copy(src: Path, dst: Path):
     """
-    Fix architecture-specific library files in the top-level lib directory
+    Intelligently copy a file or symlink, preserving symlink semantics.
 
-    Ensure the top-level lib directory contains only libraries for the host architecture,
-    not overwritten by other architectures
+    This function handles three cases:
+    1. Regular file: Direct copy with metadata preservation
+    2. Relative symlink: Recreate the symlink (stays relative)
+    3. Absolute symlink: Resolve and copy the target file
+
+    The destination is removed first if it exists to avoid conflicts.
 
     Args:
-        lib_dir: Path object of the lib directory
-        host_arch: Host architecture ('x86_64', 'i686', 'aarch64')
+        src: Source file or symlink path
+        dst: Destination path
+
+    Note:
+        Relative symlinks are preserved because they maintain correct
+        references when the entire directory structure is copied together.
+        Absolute symlinks are resolved to avoid breaking references to
+        paths outside the toolchain directory.
     """
-    get_logger().info('Fixing top-level lib directory for host architecture: %s', host_arch)
+    # Clean up existing destination to avoid conflicts
+    if dst.exists() or dst.is_symlink():
+        try:
+            if dst.is_dir() and not dst.is_symlink():
+                shutil.rmtree(dst)
+            else:
+                dst.unlink()
+        except OSError as e:
+            get_logger().warning(f"Failed to remove existing destination {dst}: {e}")
 
-    # Find libraries for the corresponding architecture in the rustlib directory
-    rustlib_host_lib = lib_dir / 'rustlib' / f'{host_arch}-unknown-linux-gnu' / 'lib'
+    # Handle source based on its type
+    if src.is_symlink():
+        link_target = os.readlink(str(src))
+        if not os.path.isabs(link_target):
+            # Preserve relative symlinks - they'll work in the new location
+            dst.symlink_to(link_target)
+            get_logger().debug("Created symlink: %s -> %s", dst, link_target)
+        else:
+            # Resolve absolute symlinks to avoid external dependencies
+            shutil.copy2(src, dst, follow_symlinks=True)
+            get_logger().debug("Copied (following symlink): %s -> %s", src, dst)
+    else:
+        # Regular file: copy with metadata
+        shutil.copy2(src, dst)
+        get_logger().debug("Copied: %s -> %s", src, dst)
 
+
+def _fix_top_level_libs(lib_dir: Path, host_arch: str):
+    """
+    Ensure top-level shared libraries match the host architecture.
+
+    When merging multiple Rust toolchains, the top-level lib/ directory may
+    contain shared libraries (.so files) from the wrong architecture if they
+    were overwritten during the merge process. This function verifies and
+    corrects the architecture of critical shared libraries.
+
+    The correct versions are copied from:
+        lib/rustlib/{host_arch}-unknown-linux-gnu/lib/*.so
+
+    This is necessary because:
+    1. The host's rustc/cargo binaries expect host-architecture libraries
+    2. Later architectures might overwrite host libraries during merge
+    3. Running mismatched libraries causes immediate crashes
+
+    Args:
+        lib_dir: Path to the top-level lib/ directory
+        host_arch: Host architecture ('x86_64', 'i686', or 'aarch64')
+    """
+    get_logger().info(
+        "Fixing top-level lib directory for host architecture: %s", host_arch
+    )
+
+    # Source: architecture-specific rustlib directory
+    rustlib_host_lib = lib_dir / "rustlib" / f"{host_arch}-unknown-linux-gnu" / "lib"
     if not rustlib_host_lib.exists():
-        get_logger().warning('rustlib host lib not found: %s', rustlib_host_lib)
+        get_logger().warning("rustlib host lib not found: %s", rustlib_host_lib)
         return
 
-    # Library file patterns to copy from rustlib to top level
-    lib_patterns = [
-        'libLLVM*.so*',
-        'libstd*.so*',
-        'librustc_driver*.so*',
-    ]
+    # Critical shared libraries that must match host architecture
+    lib_patterns = ["libLLVM*.so*", "libstd*.so*", "librustc_driver*.so*"]
 
     for pattern in lib_patterns:
         for lib_file in rustlib_host_lib.glob(pattern):
             target_file = lib_dir / lib_file.name
 
-            # Check if target file exists and architecture doesn't match
+            # Verify existing file's architecture if present
             if target_file.exists():
-                # Verify architecture
                 try:
                     result = subprocess.run(
-                        ['file', str(target_file)],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        encoding='utf-8',
-                        timeout=5
+                        ["file", str(target_file)],
+                        capture_output=True,
+                        text=True,
+                        timeout=5,
                     )
-
                     file_output = result.stdout.lower()
 
-                    # Check if architecture matches
+                    # Architecture detection patterns for the 'file' command
                     arch_matches = {
-                        'x86_64': 'x86-64' in file_output or 'x86_64' in file_output,
-                        'i686': 'intel 80386' in file_output or 'i386' in file_output or 'i686' in file_output,
-                        'aarch64': 'aarch64' in file_output or 'arm64' in file_output,
+                        "x86_64": "x86-64" in file_output or "x86_64" in file_output,
+                        "i686": "intel 80386" in file_output
+                        or "i386" in file_output
+                        or "i686" in file_output,
+                        "aarch64": "aarch64" in file_output or "arm64" in file_output,
                     }
 
                     if not arch_matches.get(host_arch, False):
                         get_logger().warning(
-                            'Architecture mismatch for %s (expected %s, found: %s). Replacing with correct version.',
-                            target_file.name, host_arch, file_output.strip()
+                            "Architecture mismatch for %s. Replacing with correct version.",
+                            target_file.name,
                         )
                         target_file.unlink()
                     else:
-                        # Architecture matches, skip
+                        # Architecture matches, no need to replace
                         continue
                 except Exception as e:
-                    get_logger().warning('Failed to verify architecture for %s: %s', target_file, e)
+                    get_logger().warning(
+                        "Failed to verify architecture for %s: %s", target_file, e
+                    )
 
-            # Copy or create symbolic link
-            if lib_file.is_symlink():
-                # Read symbolic link target
-                link_target = os.readlink(str(lib_file))
-
-                # If it's a relative path, keep it relative
-                if not os.path.isabs(link_target):
-                    target_file.symlink_to(link_target)
-                    get_logger().info('Created symlink: %s -> %s', target_file, link_target)
-                else:
-                    # Absolute path needs to be recalculated
-                    shutil.copy2(lib_file, target_file, follow_symlinks=True)
-                    get_logger().info('Copied (following symlink): %s -> %s', lib_file, target_file)
-            else:
-                # Regular file, copy directly
-                shutil.copy2(lib_file, target_file)
-                get_logger().info('Copied: %s -> %s', lib_file, target_file)
+            # Copy the correct architecture version
+            _smart_copy(lib_file, target_file)
 
 
-def setup_rust_toolchain(source_tree, ci_mode=False):
+def _merge_tree(src_dir: Path, dst_dir: Path):
     """
-    Set up Rust toolchain with multi-architecture support.
+    Recursively merge a source directory tree into a destination directory.
 
-    This function handles the complex Rust toolchain setup for cross-compilation,
-    managing x86_64, i686, and aarch64 toolchains simultaneously.
+    Unlike shutil.copytree(), this function merges into an existing directory
+    rather than requiring the destination to be empty. Files with the same
+    name are overwritten. This is essential for combining multiple Rust
+    component directories (cargo, rustc, rust-std) into a single toolchain.
 
     Args:
-        source_tree: Path object of the source directory
-        ci_mode: Boolean indicating if running in CI mode (skip if already installed)
+        src_dir: Source directory to merge from
+        dst_dir: Destination directory to merge into (created if needed)
+
+    Note:
+        Directories are merged recursively, while files and symlinks are
+        copied using _smart_copy() to handle symlinks correctly.
+    """
+    if not dst_dir.exists():
+        dst_dir.mkdir(parents=True, exist_ok=True)
+
+    for item in src_dir.iterdir():
+        dst_item = dst_dir / item.name
+
+        if item.is_dir() and not item.is_symlink():
+            # Recurse into subdirectories to merge their contents
+            _merge_tree(item, dst_item)
+        else:
+            # Copy files and symlinks (symlinks are treated as files)
+            _smart_copy(item, dst_item)
+
+
+def _generate_version_file(rust_dir: Path, flag_file: Path, archs: List[str]):
+    """
+    Generate a version file to track the installed Rust toolchain.
+
+    Args:
+        rust_dir: Root directory of the consolidated Rust toolchain
+        flag_file: Path to write the version info (INSTALLED_VERSION)
+        archs: List of successfully processed architectures
+
+    Writes:
+        Either the rustc version string, or a fallback message listing
+        which architectures were processed if rustc isn't executable.
+    """
+    rustc_path = rust_dir / "bin" / "rustc"
+    version_info = f'rustc not installed (processed: {", ".join(archs)})\n'
+
+    if rustc_path.exists():
+        try:
+            result = subprocess.run(
+                [str(rustc_path), "--version"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if result.returncode == 0:
+                version_info = result.stdout
+            else:
+                get_logger().warning("rustc --version failed: %s", result.stderr)
+        except Exception as e:
+            get_logger().warning("Failed to execute rustc: %s", e)
+
+    flag_file.write_text(version_info, encoding=ENCODING)
+    get_logger().info("Rust version: %s", version_info.strip())
+
+
+def setup_rust_toolchain(source_tree: Path, ci_mode: bool = False) -> Path:
+    """
+    Set up Rust toolchain with multi-architecture cross-compilation support.
+
+    This is the main entry point for Rust toolchain setup. It consolidates
+    multiple architecture-specific Rust distributions into a unified toolchain
+    layout suitable for cross-compiling Windows Chromium.
+
+    Args:
+        source_tree: Path to the Chromium source tree root
+                     (expects third_party/rust-toolchain-{x64,x86,arm}/)
+        ci_mode: If True, skip setup if INSTALLED_VERSION file exists
+                 (optimization for CI/caching systems)
 
     Returns:
-        Path: Path to the Rust toolchain directory
-    """
-    # Check if rust-toolchain folder has been populated
-    host_cpu_is_64_bit = sys.maxsize > 2 ** 32
-    rust_dir_dst = source_tree / 'third_party' / 'rust-toolchain'
-    rust_dir_src64 = source_tree / 'third_party' / 'rust-toolchain-x64'
-    rust_dir_src86 = source_tree / 'third_party' / 'rust-toolchain-x86'
-    rust_dir_srcarm = source_tree / 'third_party' / 'rust-toolchain-arm'
-    rust_flag_file = rust_dir_dst / 'INSTALLED_VERSION'
+        Path to the consolidated rust-toolchain directory
 
+    Raises:
+        SystemExit: If no architectures can be processed successfully
+    """
+    # Detect host architecture: Python's sys.maxsize reveals pointer size
+    host_cpu_is_64_bit = sys.maxsize > 2**32
+
+    third_party = source_tree / "third_party"
+    rust_dir_dst = third_party / "rust-toolchain"
+    rust_flag_file = rust_dir_dst / "INSTALLED_VERSION"
+
+    # CI mode optimization: Skip setup if already completed
+    # The INSTALLED_VERSION file acts as a stamp for CI caching
     if ci_mode and rust_flag_file.exists():
         return rust_dir_dst
 
-    get_logger().info('Setting up Rust toolchain with multi-architecture support...')
+    get_logger().info("Setting up Rust toolchain with multi-architecture support...")
 
-    # Define architecture mappings
+    # Architecture configuration: Maps architecture names to their source directories
+    # and target characteristics. The host architecture gets special treatment (top-level
+    # installation + symlinks), while target architectures get full copies in subdirs.
     arch_configs = {
-        'x86_64': {
-            'source_dir': rust_dir_src64,
-            'target_subdir': 'x86_64',
-            'is_host': host_cpu_is_64_bit,
+        "x86_64": {
+            "source": third_party
+            / "rust-toolchain-x64",  # Downloaded from downloads.ini
+            "target_subdir": "x86_64",  # Subdirectory name in consolidated layout
+            "is_host": host_cpu_is_64_bit,  # True if this is the build machine's arch
+            "rust_target": "x86_64-unknown-linux-gnu",  # Rust target triple
         },
-        'i686': {
-            'source_dir': rust_dir_src86,
-            'target_subdir': 'i686',
-            'is_host': not host_cpu_is_64_bit,
+        "i686": {
+            "source": third_party / "rust-toolchain-x86",
+            "target_subdir": "i686",
+            "is_host": not host_cpu_is_64_bit,
+            "rust_target": "i686-unknown-linux-gnu",
         },
-        'aarch64': {
-            'source_dir': rust_dir_srcarm,
-            'target_subdir': 'aarch64',
-            'is_host': False,  # ARM64 is typically not the host machine
+        "aarch64": {
+            "source": third_party / "rust-toolchain-arm",
+            "target_subdir": "aarch64",
+            "is_host": False,  # ARM64 is never the host for this build setup
+            "rust_target": "aarch64-unknown-linux-gnu",
         },
     }
 
-    # Determine host architecture
-    host_arch = None
-    for arch, config in arch_configs.items():
-        if config['is_host']:
-            host_arch = arch
-            break
-
+    # Determine which architecture is the host (only one should have is_host=True)
+    host_arch = next(
+        (arch for arch, cfg in arch_configs.items() if cfg["is_host"]), None
+    )
     if not host_arch:
-        get_logger().error('Unable to determine host architecture')
+        get_logger().error("Unable to determine host architecture")
         sys.exit(1)
 
-    get_logger().info('Host architecture: %s', host_arch)
+    get_logger().info("Host architecture: %s", host_arch)
 
-    # Create necessary target directories before processing any architecture
+    # Create the destination directory structure
     rust_dir_dst.mkdir(parents=True, exist_ok=True)
-    (rust_dir_dst / 'bin').mkdir(parents=True, exist_ok=True)
-    (rust_dir_dst / 'lib').mkdir(parents=True, exist_ok=True)
-    get_logger().info('Created target directories: %s', rust_dir_dst)
+    (rust_dir_dst / "bin").mkdir(exist_ok=True)
+    (rust_dir_dst / "lib").mkdir(exist_ok=True)
 
-    # Copy toolchain for each architecture to separate directories
-    successful_archs = []  # Track successfully processed architectures
+    # Track which architectures were successfully processed for diagnostics
+    successful_archs = []
 
+    # Process each architecture: merge its components into the consolidated layout
     for arch, config in arch_configs.items():
-        source_dir = config['source_dir']
-        target_subdir = config['target_subdir']
-        is_host = config['is_host']
+        src_root = config["source"]
+        target_subdir = config["target_subdir"]
+        rust_target = config["rust_target"]
+        is_host = config["is_host"]
 
-        get_logger().info('Processing %s architecture from %s', arch, source_dir)
-
-        # Check if source directory exists
-        if not source_dir.exists():
-            get_logger().warning('Source directory not found: %s, skipping %s', source_dir, arch)
-            continue
-
-        rustc_dir = source_dir / 'rustc'
-        cargo_dir = source_dir / 'cargo'
-
-        if not rustc_dir.exists():
-            get_logger().warning('rustc directory not found in %s, skipping %s', source_dir, arch)
-            continue
-
-        if not cargo_dir.exists():
-            get_logger().warning('cargo directory not found in %s, skipping %s', source_dir, arch)
-            continue
-
-        # Validate required subdirectories
-        required_subdirs = ['bin', 'lib']
-        missing_subdirs = [d for d in required_subdirs if not (rustc_dir / d).exists()]
-
-        if missing_subdirs:
+        # Skip this architecture if its source directory doesn't exist
+        # (e.g., if downloads.ini only includes some architectures)
+        if not src_root.exists():
             get_logger().warning(
-                'Missing required subdirectories in %s: %s, skipping %s',
-                rustc_dir, missing_subdirs, arch
+                "Source directory not found: %s, skipping %s", src_root, arch
             )
             continue
 
-        get_logger().info('Found valid rustc at: %s', rustc_dir)
-        get_logger().info('Found valid cargo at: %s', cargo_dir)
+        get_logger().info("Processing %s architecture...", arch)
 
-        # If it's the host architecture, copy to top-level directories
+        # Determine installation targets for this architecture
+        # Host: Install to top-level (rust_dir_dst)
+        # Target: Install to architecture-specific subdirectory
+        install_targets = []
         if is_host:
-            get_logger().info('Copying host architecture (%s) to top-level directories', arch)
+            install_targets.append(rust_dir_dst)
+        else:
+            arch_dir = rust_dir_dst / target_subdir
+            arch_dir.mkdir(parents=True, exist_ok=True)
+            install_targets.append(arch_dir)
 
-            # Copy rustc bin directory
-            bin_src = rustc_dir / 'bin'
-            bin_dst = rust_dir_dst / 'bin'
-            if bin_src.exists():
-                if bin_dst.exists():
-                    shutil.rmtree(bin_dst)
-                shutil.copytree(bin_src, bin_dst, symlinks=True)
-                get_logger().info('Copied rustc bin: %s -> %s', bin_src, bin_dst)
+        # Track which components are successfully installed
+        components_found = []
 
-            # Copy cargo bin directory
-            cargo_bin_src = cargo_dir / 'bin'
-            if cargo_bin_src.exists():
-                for item in cargo_bin_src.iterdir():
-                    item_dst = bin_dst / item.name
-                    if item.is_dir():
-                        if item_dst.exists():
-                            shutil.rmtree(item_dst)
-                        shutil.copytree(item, item_dst, symlinks=True)
-                    else:
-                        shutil.copy2(item, item_dst, follow_symlinks=False)
-                get_logger().info('Copied cargo bin: %s -> %s', cargo_bin_src, bin_dst)
+        # Install each component from COMPONENTS_CONFIG
+        for comp in COMPONENTS_CONFIG:
+            # Replace {target} placeholder with actual target triple
+            # e.g., "rust-std-{target}" → "rust-std-x86_64-unknown-linux-gnu"
+            comp_dir_name = comp["name"].format(target=rust_target)
+            comp_src_path = src_root / comp_dir_name
 
-            # Copy rustc lib directory
-            lib_src = rustc_dir / 'lib'
-            lib_dst = rust_dir_dst / 'lib'
-            if lib_src.exists():
-                if lib_dst.exists():
-                    shutil.rmtree(lib_dst)
-                shutil.copytree(lib_src, lib_dst, symlinks=True)
-                get_logger().info('Copied rustc lib: %s -> %s', lib_src, lib_dst)
+            # Check if this component exists in the source distribution
+            if not comp_src_path.exists():
+                if comp["required"]:
+                    get_logger().warning(
+                        "Required component %s not found in %s", comp_dir_name, src_root
+                    )
+                continue
 
-                # Fix architecture-specific libraries in top-level lib directory
-                fix_top_level_libs(lib_dst, arch)
+            components_found.append(comp_dir_name)
 
-            # Copy cargo lib directory (merge into top-level lib)
-            cargo_lib_src = cargo_dir / 'lib'
-            if cargo_lib_src.exists():
-                for item in cargo_lib_src.iterdir():
-                    item_dst = lib_dst / item.name
-                    if item.is_dir():
-                        if item_dst.exists():
-                            shutil.rmtree(item_dst)
-                        shutil.copytree(item, item_dst, symlinks=True)
-                    else:
-                        shutil.copy2(item, item_dst, follow_symlinks=False)
-                get_logger().info('Copied cargo lib: %s -> %s', cargo_lib_src, lib_dst)
+            # Merge bin/ and lib/ subdirectories if they exist for this component
+            for sub in ["bin", "lib"]:
+                # Skip subdirectories that this component doesn't provide
+                if sub == "bin" and not comp["has_bin"]:
+                    continue
+                if sub == "lib" and not comp["has_lib"]:
+                    continue
 
-        # Also copy to architecture-specific subdirectories
-        arch_target_dir = rust_dir_dst / target_subdir
-        arch_target_dir.mkdir(parents=True, exist_ok=True)
+                sub_src = comp_src_path / sub
+                if not sub_src.exists():
+                    continue
 
+                # Merge into all installation targets (usually just one)
+                for install_root in install_targets:
+                    sub_dst = install_root / sub
+                    get_logger().debug("Merging %s -> %s", sub_src, sub_dst)
+                    _merge_tree(sub_src, sub_dst)
+
+        get_logger().info(
+            "Installed components for %s: %s", arch, ", ".join(components_found)
+        )
+
+        # Special handling for host architecture
         if is_host:
-            # Host architecture: create symbolic links to top-level directories
-            for subdir in ['bin', 'lib']:
-                link_path = arch_target_dir / subdir
-                target_path = Path('..') / subdir
+            # Fix shared libraries that may have been overwritten by wrong architecture
+            # This must happen after all components are merged
+            _fix_top_level_libs(rust_dir_dst / "lib", arch)
 
+            # Create a subdirectory for the host architecture with symlinks
+            # This provides a consistent interface: all architectures have a
+            # subdirectory, and the host subdirectory just symlinks to top-level
+            host_subdir = rust_dir_dst / target_subdir
+            host_subdir.mkdir(parents=True, exist_ok=True)
+
+            for sub in ["bin", "lib"]:
+                link_path = host_subdir / sub
+                target_path = Path("..") / sub  # Relative symlink: ../bin or ../lib
+
+                # Remove existing directory/symlink if present
                 if link_path.exists() or link_path.is_symlink():
-                    if link_path.is_symlink():
-                        link_path.unlink()
-                    elif link_path.is_dir():
+                    if link_path.is_dir() and not link_path.is_symlink():
                         shutil.rmtree(link_path)
                     else:
                         link_path.unlink()
 
+                # Create relative symlink for portability
                 link_path.symlink_to(target_path)
-                get_logger().info('Created symlink: %s -> %s', link_path, target_path)
-        else:
-            # Non-host architecture: copy directly
-            for subdir in ['bin', 'lib']:
-                # Copy rustc subdirectory
-                rustc_src_dir = rustc_dir / subdir
-                dst_dir = arch_target_dir / subdir
+                get_logger().info(
+                    "Created host symlink: %s -> %s", link_path, target_path
+                )
 
-                if rustc_src_dir.exists():
-                    if dst_dir.exists():
-                        shutil.rmtree(dst_dir)
-                    shutil.copytree(rustc_src_dir, dst_dir, symlinks=True)
-                    get_logger().info('Copied rustc %s for %s: %s -> %s', subdir, arch, rustc_src_dir, dst_dir)
-
-                # Merge cargo subdirectory
-                cargo_src_dir = cargo_dir / subdir
-                if cargo_src_dir.exists():
-                    for item in cargo_src_dir.iterdir():
-                        item_dst = dst_dir / item.name
-                        if item.is_dir():
-                            if item_dst.exists():
-                                shutil.rmtree(item_dst)
-                            shutil.copytree(item, item_dst, symlinks=True)
-                        else:
-                            shutil.copy2(item, item_dst, follow_symlinks=False)
-                    get_logger().info('Copied cargo %s for %s: %s -> %s', subdir, arch, cargo_src_dir, dst_dir)
-
-        # Record successfully processed architecture
         successful_archs.append(arch)
 
-    # Verify at least one architecture was successful
+    # Verify at least one architecture was successfully processed
+    # If all architectures failed, the build cannot continue
     if not successful_archs:
-        get_logger().error(
-            'Failed to process any architecture. Please check that Rust toolchains are properly downloaded.'
-        )
+        get_logger().error("Failed to process any architecture.")
         sys.exit(1)
 
-    get_logger().info('Successfully processed architectures: %s', successful_archs)
+    # Generate version file for CI caching and diagnostics
+    _generate_version_file(rust_dir_dst, rust_flag_file, successful_archs)
 
-    # Generate version file (ensure parent directory exists)
-    get_logger().info('Generating Rust toolchain version file...')
-    rustc_path = rust_dir_dst / 'bin' / 'rustc'
-
-    if rustc_path.exists():
-        try:
-
-            # Execute rustc --version
-            result = subprocess.run(
-                [str(rustc_path), '--version'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                encoding='utf-8',
-                timeout=10
-            )
-
-            if result.returncode == 0:
-                rust_flag_file.write_text(result.stdout, encoding=ENCODING)
-                get_logger().info('Rust version: %s', result.stdout.strip())
-            else:
-                raise RuntimeError(f'rustc failed with code {result.returncode}: {result.stderr}')
-
-        except Exception as e:
-            get_logger().warning('Failed to get rustc version: %s. Using placeholder.', e)
-            rust_flag_file.write_text(
-                f'rustc unknown version (host: {host_arch}, processed: {", ".join(successful_archs)})\n',
-                encoding=ENCODING
-            )
-    else:
-        get_logger().error('rustc binary not found at %s', rustc_path)
-        rust_flag_file.write_text(
-            f'rustc not installed (processed architectures: {", ".join(successful_archs)})\n',
-            encoding=ENCODING
-        )
-
-    get_logger().info('Rust toolchain setup completed')
-
+    get_logger().info("Rust toolchain setup completed")
     return rust_dir_dst

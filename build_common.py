@@ -20,7 +20,9 @@ import sys
 
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent / 'ungoogled-chromium' / 'utils'))
+sys.path.insert(
+    0, str(Path(__file__).resolve().parent / "ungoogled-chromium" / "utils")
+)
 from _common import ENCODING
 
 sys.path.pop(0)
@@ -38,11 +40,13 @@ def run_build_process_timeout(*args, timeout):
     Runs the subprocess with the correct environment variables for building
     """
     string_args = [str(a) for a in args]
-    with subprocess.Popen(string_args, encoding=ENCODING, start_new_session=True) as proc:
+    with subprocess.Popen(
+        string_args, encoding=ENCODING, start_new_session=True
+    ) as proc:
         try:
             proc.wait(timeout)
             if proc.returncode != 0:
-                raise RuntimeError('Build failed!')
+                raise RuntimeError("Build failed!")
         except subprocess.TimeoutExpired:
             pgid = os.getpgid(proc.pid)
             os.killpg(pgid, signal.SIGINT)
@@ -61,10 +65,10 @@ def get_host_arch():
     Returns the normalized host architecture (x64, arm64, etc.)
     """
     machine = platform.machine().lower()
-    if machine in ('amd64', 'x86_64'):
-        return 'x64'
-    elif machine == 'aarch64':
-        return 'arm64'
+    if machine in ("amd64", "x86_64"):
+        return "x64"
+    elif machine == "aarch64":
+        return "arm64"
     return machine
 
 
@@ -75,11 +79,11 @@ def get_target_arch_from_args():
     Returns:
         str: Target architecture ('x64', 'x86', or 'arm64')
     """
-    if '--x86' in sys.argv:
-        return 'x86'
-    elif '--arm' in sys.argv:
-        return 'arm64'
-    return 'x64'
+    if "--x86" in sys.argv:
+        return "x86"
+    elif "--arm" in sys.argv:
+        return "arm64"
+    return "x64"
 
 
 def get_stamp_path(source_tree, stamp_name):
@@ -93,7 +97,7 @@ def get_stamp_path(source_tree, stamp_name):
     Returns:
         Path: Full path to the stamp file
     """
-    stamps_dir = source_tree / '.stamps'
+    stamps_dir = source_tree / ".stamps"
     return stamps_dir / stamp_name
 
 
