@@ -3,7 +3,7 @@ set -uo pipefail
 
 readonly TEST_DIR="/mnt/chromium-build/chromium-test-$$"
 readonly TEST_FILE="${TEST_DIR}/test-file.dat"
-readonly LARGE_TEST_SIZE_GB=0.1
+readonly LARGE_TEST_SIZE_MB=100
 
 # Counters
 TESTS_PASSED=0
@@ -86,15 +86,15 @@ test_file_write() {
 }
 
 test_large_file_write() {
-    log_section "Large file write (${LARGE_TEST_SIZE_GB}GB)"
+    log_section "Large file write (${LARGE_TEST_SIZE_MB}MB)"
 
     local start_time
     start_time=$(date +%s)
 
-    log_info "Creating ${LARGE_TEST_SIZE_GB}GB test file (may take 10-30 seconds)..."
+    log_info "Creating ${LARGE_TEST_SIZE_MB}MB test file (may take 10-30 seconds)..."
 
     # Use timeout to prevent hanging
-    if timeout 30 dd if=/dev/zero of="${TEST_DIR}/large-test.dat" bs=1M count=$((LARGE_TEST_SIZE_GB * 1024)) \
+    if timeout 30 dd if=/dev/zero of="${TEST_DIR}/large-test.dat" bs=1M count=${LARGE_TEST_SIZE_MB} \
        conv=fdatasync 2>/dev/null; then
 
         local end_time
@@ -111,7 +111,7 @@ test_large_file_write() {
 
         return 0
     else
-        log_error "Failed to write ${LARGE_TEST_SIZE_GB}GB file (timeout or I/O error)"
+        log_error "Failed to write ${LARGE_TEST_SIZE_MB}MB file (timeout or I/O error)"
         log_error "Possible causes: insufficient space, quota limit, or slow disk"
         # Clean up partial file
         rm -f "${TEST_DIR}/large-test.dat" 2>/dev/null
