@@ -189,9 +189,14 @@ def setup_rust_toolchain(source_tree, ci_mode=False):
             continue
 
         rustc_dir = source_dir / 'rustc'
+        cargo_dir = source_dir / 'cargo'
 
         if not rustc_dir.exists():
             get_logger().warning('rustc directory not found in %s, skipping %s', source_dir, arch)
+            continue
+
+        if not cargo_dir.exists():
+            get_logger().warning('cargo directory not found in %s, skipping %s', source_dir, arch)
             continue
 
         # Validate required subdirectories
@@ -206,31 +211,58 @@ def setup_rust_toolchain(source_tree, ci_mode=False):
             continue
 
         get_logger().info('Found valid rustc at: %s', rustc_dir)
+        get_logger().info('Found valid cargo at: %s', cargo_dir)
 
         # If it's the host architecture, copy to top-level directories
         if is_host:
             get_logger().info('Copying host architecture (%s) to top-level directories', arch)
 
-            # Copy bin directory
+            # Copy rustc bin directory
             bin_src = rustc_dir / 'bin'
             bin_dst = rust_dir_dst / 'bin'
             if bin_src.exists():
                 if bin_dst.exists():
                     shutil.rmtree(bin_dst)
                 shutil.copytree(bin_src, bin_dst, symlinks=True)
-                get_logger().info('Copied bin: %s -> %s', bin_src, bin_dst)
+                get_logger().info('Copied rustc bin: %s -> %s', bin_src, bin_dst)
 
-            # Copy lib directory
+            # Copy cargo bin directory
+            cargo_bin_src = cargo_dir / 'bin'
+            if cargo_bin_src.exists():
+                for item in cargo_bin_src.iterdir():
+                    item_dst = bin_dst / item.name
+                    if item.is_dir():
+                        if item_dst.exists():
+                            shutil.rmtree(item_dst)
+                        shutil.copytree(item, item_dst, symlinks=True)
+                    else:
+                        shutil.copy2(item, item_dst, follow_symlinks=False)
+                get_logger().info('Copied cargo bin: %s -> %s', cargo_bin_src, bin_dst)
+
+            # Copy rustc lib directory
             lib_src = rustc_dir / 'lib'
             lib_dst = rust_dir_dst / 'lib'
             if lib_src.exists():
                 if lib_dst.exists():
                     shutil.rmtree(lib_dst)
                 shutil.copytree(lib_src, lib_dst, symlinks=True)
-                get_logger().info('Copied lib: %s -> %s', lib_src, lib_dst)
+                get_logger().info('Copied rustc lib: %s -> %s', lib_src, lib_dst)
 
                 # Fix architecture-specific libraries in top-level lib directory
                 fix_top_level_libs(lib_dst, arch)
+
+            # Copy cargo lib directory (merge into top-level lib)
+            cargo_lib_src = cargo_dir / 'lib'
+            if cargo_lib_src.exists():
+                for item in cargo_lib_src.iterdir():
+                    item_dst = lib_dst / item.name
+                    if item.is_dir():
+                        if item_dst.exists():
+                            shutil.rmtree(item_dst)
+                        shutil.copytree(item, item_dst, symlinks=True)
+                    else:
+                        shutil.copy2(item, item_dst, follow_symlinks=False)
+                get_logger().info('Copied cargo lib: %s -> %s', cargo_lib_src, lib_dst)
 
         # Also copy to architecture-specific subdirectories
         arch_target_dir = rust_dir_dst / target_subdir
@@ -255,14 +287,28 @@ def setup_rust_toolchain(source_tree, ci_mode=False):
         else:
             # Non-host architecture: copy directly
             for subdir in ['bin', 'lib']:
-                src_dir = rustc_dir / subdir
+                # Copy rustc subdirectory
+                rustc_src_dir = rustc_dir / subdir
                 dst_dir = arch_target_dir / subdir
 
-                if src_dir.exists():
+                if rustc_src_dir.exists():
                     if dst_dir.exists():
                         shutil.rmtree(dst_dir)
-                    shutil.copytree(src_dir, dst_dir, symlinks=True)
-                    get_logger().info('Copied %s for %s: %s -> %s', subdir, arch, src_dir, dst_dir)
+                    shutil.copytree(rustc_src_dir, dst_dir, symlinks=True)
+                    get_logger().info('Copied rustc %s for %s: %s -> %s', subdir, arch, rustc_src_dir, dst_dir)
+
+                # Merge cargo subdirectory
+                cargo_src_dir = cargo_dir / subdir
+                if cargo_src_dir.exists():
+                    for item in cargo_src_dir.iterdir():
+                        item_dst = dst_dir / item.name
+                        if item.is_dir():
+                            if item_dst.exists():
+                                shutil.rmtree(item_dst)
+                            shutil.copytree(item, item_dst, symlinks=True)
+                        else:
+                            shutil.copy2(item, item_dst, follow_symlinks=False)
+                    get_logger().info('Copied cargo %s for %s: %s -> %s', subdir, arch, cargo_src_dir, dst_dir)
 
         # Record successfully processed architecture
         successful_archs.append(arch)

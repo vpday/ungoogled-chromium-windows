@@ -352,7 +352,7 @@ def _merge_tar_files(tar_files, dest_dir):
         raise RuntimeError(f'Failed to merge tar files: {e}')
 
 
-def _download_github_toolchain(chromium_version, sdk_version, dest_dir, zip_filename, sha512):
+def _download_github_toolchain(chromium_version, sdk_version, dest_dir, zip_filename, sha512, target_arch):
     """
     Download Windows toolchain from GitHub releases
 
@@ -366,6 +366,7 @@ def _download_github_toolchain(chromium_version, sdk_version, dest_dir, zip_file
         dest_dir: Destination directory
         zip_filename: Expected zip filename without extension (e.g., '16b53d08e9')
         sha512: Expected SHA512 checksum of the final zip file
+        target_arch: Target architecture ('x64', 'x86', or 'arm64')
 
     Raises:
         RuntimeError: If release not found or download fails
@@ -392,8 +393,14 @@ def _download_github_toolchain(chromium_version, sdk_version, dest_dir, zip_file
     # Fetch release information from GitHub API
     assets = _fetch_github_release_assets(chromium_version)
 
-    # Build asset pattern
-    asset_pattern = f'win_toolchain_chromium-{chromium_version}_vs-2022_sdk-{sdk_version}.tar.*'
+    # Build asset pattern based on target architecture
+    # x64/x86 use 'noarm' variant (single tar file)
+    # arm64 uses full variant (split tar files)
+    if target_arch in ('x64', 'x86'):
+        asset_pattern = f'win_toolchain_chromium-{chromium_version}_vs-2022_sdk-{sdk_version}_noarm.tar'
+    else:  # arm64
+        asset_pattern = f'win_toolchain_chromium-{chromium_version}_vs-2022_sdk-{sdk_version}.tar.*'
+
     get_logger().info('Looking for assets matching: %s', asset_pattern)
 
     # Download and validate all matching assets
@@ -566,7 +573,8 @@ def setup_windows_toolchain(source_tree, ci_mode=False):
             sdk_version=sdk_version,
             dest_dir=toolchain_dir,
             zip_filename=toolchain_config['zip_filename'],
-            sha512=toolchain_config['sha512']
+            sha512=toolchain_config['sha512'],
+            target_arch=target_arch
         )
 
         mark_step_complete(source_tree, download_stamp)
