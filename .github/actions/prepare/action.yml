@@ -22,6 +22,63 @@ runs:
         sudo apt-get update
         sudo apt-get install -y p7zip-full pkg-config libglib2.0-dev libfuse2 libfuse2t64 libnss3-dev libcups2-dev libpci-dev libdrm-dev libxkbcommon-dev
 
+    - name: Prepare /mnt Storage Directory
+      shell: bash
+      run: |
+        set -e
+
+        SCRIPT_DIR="${GITHUB_WORKSPACE}/.github/scripts"
+
+        # Verify script exists
+        if [ ! -f "${SCRIPT_DIR}/prepare-mnt-directory.sh" ]; then
+          echo "[ERROR] prepare-mnt-directory.sh not found in ${SCRIPT_DIR}"
+          exit 1
+        fi
+
+        # Make script executable
+        chmod +x "${SCRIPT_DIR}/prepare-mnt-directory.sh"
+
+        # Execute script
+        bash "${SCRIPT_DIR}/prepare-mnt-directory.sh"
+
+    - name: Verify /mnt Permissions
+      shell: bash
+      run: |
+        set -e
+
+        SCRIPT_DIR="${GITHUB_WORKSPACE}/.github/scripts"
+
+        # Verify script exists
+        if [ ! -f "${SCRIPT_DIR}/verify-mnt-permissions.sh" ]; then
+          echo "[ERROR] verify-mnt-permissions.sh not found in ${SCRIPT_DIR}"
+          exit 1
+        fi
+
+        # Make script executable
+        chmod +x "${SCRIPT_DIR}/verify-mnt-permissions.sh"
+
+        # Execute script
+        bash "${SCRIPT_DIR}/verify-mnt-permissions.sh"
+
+    - name: Setup Chromium Build Storage
+      shell: bash
+      run: |
+        set -e
+
+        SCRIPT_DIR="${GITHUB_WORKSPACE}/.github/scripts"
+
+        # Verify script exists
+        if [ ! -f "${SCRIPT_DIR}/setup-chromium-storage.sh" ]; then
+          echo "[ERROR] setup-chromium-storage.sh not found in ${SCRIPT_DIR}"
+          exit 1
+        fi
+
+        # Make script executable
+        chmod +x "${SCRIPT_DIR}/setup-chromium-storage.sh"
+
+        # Execute script
+        bash "${SCRIPT_DIR}/setup-chromium-storage.sh" --verbose
+
     - name: Set up Python ${{ inputs.python-version }}
       uses: actions/setup-python@v6
       with:
