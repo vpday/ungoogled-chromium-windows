@@ -21,7 +21,7 @@ runs:
       shell: bash
       run: |
         sudo apt-get update
-        sudo apt-get install -y zstd libzstd-dev p7zip-full pkg-config libglib2.0-dev libfuse2 libfuse2t64 libnss3-dev libcups2-dev libpci-dev libdrm-dev libxkbcommon-dev
+        sudo apt-get install -y zstd p7zip-full pkg-config libglib2.0-dev libfuse2 libfuse2t64 libnss3-dev libcups2-dev libpci-dev libdrm-dev libxkbcommon-dev
 
     - name: Prepare /mnt Build Directory
       shell: bash
@@ -55,11 +55,6 @@ runs:
           echo "[FAIL] Write test failed"
           exit 1
         fi
-
-        # Show disk space
-        echo ""
-        echo "Disk space on /mnt:"
-        df -h /mnt
 
     - name: Set up Python ${{ inputs.python-version }}
       uses: actions/setup-python@v6

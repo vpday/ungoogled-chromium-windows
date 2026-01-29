@@ -28,6 +28,7 @@ async function run() {
     if (from_artifact) {
         const artifactInfo = await artifact.getArtifact(artifactName);
         await artifact.downloadArtifact(artifactInfo.artifact.id, {path: `${GITHUB_WORKSPACE}/build`});
+        await exec.exec('mkdir', ['-p', BUILD_DIR]);
         const archivePath = `${GITHUB_WORKSPACE}/build/artifacts.tar.zst`;
         await exec.exec('tar', ['-I', 'zstd -T0', '-xf', archivePath, '-C', BUILD_DIR]);
         await io.rmRF(`${GITHUB_WORKSPACE}/build`);
