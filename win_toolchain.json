@@ -31,7 +31,7 @@
       },
       {
         "sequence": 4,
-        "url": "https://github.com/{repo}/releases/download/{chromium_version}/win_toolchain_chromium-{chromium_version}_vs-{vs_version}_sdk-{sdk_version}.tar.003",
+        "url": "https://github.com/{repo}/releases/download/{chromium_version}/win_toolchain_chromium-{chromium_version}_vs-{vs_version}_sdk-{sdk_version}.tar.004",
         "filename": "win_toolchain_chromium-{chromium_version}_vs-{vs_version}_sdk-{sdk_version}.tar.004",
         "sha256": "827689d382d9f81ae933376fc5154a8b6b990a669c30274dd699aa62b4daff48"
       }
