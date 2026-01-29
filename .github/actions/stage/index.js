@@ -70,9 +70,22 @@ async function run() {
         }
     } else {
         await new Promise(r => setTimeout(r, 5000));
+
+        // Show source directory size before compression
+        const srcDir = `${BUILD_DIR}/src`;
+        console.log('Source directory:');
+        await exec.exec('du', ['-sh', srcDir]);
+        // Create compressed archive using tar + zstd
         const archivePath = `${GITHUB_WORKSPACE}/artifacts.tar.zst`;
+        console.log(`Creating archive: ${archivePath}`);
+        console.log('Compression started...');
         await exec.exec('tar', ['-I', 'zstd -10 -T0', '-cf', archivePath, '-C', BUILD_DIR, 'src'],
             {ignoreReturnCode: true});
+        console.log('Compression completed');
+        // Show compressed file size
+        console.log('Compressed archive:');
+        await exec.exec('du', ['-sh', archivePath]);
+
         for (let i = 0; i < 5; ++i) {
             try {
                 await artifact.deleteArtifact(artifactName);
