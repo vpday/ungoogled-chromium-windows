@@ -420,6 +420,44 @@ def setup_rust_toolchain(source_tree: Path, ci_mode: bool = False) -> Path:
         get_logger().error("Failed to process any architecture.")
         sys.exit(1)
 
+    # Install Windows target standard libraries for cross-compilation
+    get_logger().info("Installing Windows target standard libraries...")
+    windows_std_configs = {
+        "x86_64-pc-windows-msvc": third_party / "rust-std-windows-x64",
+        "i686-pc-windows-msvc": third_party / "rust-std-windows-x86",
+        "aarch64-pc-windows-msvc": third_party / "rust-std-windows-arm",
+    }
+
+    for target_triple, src_dir in windows_std_configs.items():
+        if not src_dir.exists():
+            get_logger().warning(
+                "Windows std source not found: %s (skipping %s)",
+                src_dir,
+                target_triple,
+            )
+            continue
+
+        # The std component directory structure is: rust-std-{target}/lib/
+        std_comp_dir = src_dir / f"rust-std-{target_triple}"
+        if not std_comp_dir.exists():
+            get_logger().warning(
+                "Expected component directory not found: %s", std_comp_dir
+            )
+            continue
+
+        std_lib_src = std_comp_dir / "lib"
+        if std_lib_src.exists():
+            std_lib_dst = rust_dir_dst / "lib"
+            get_logger().info(
+                "Merging Windows std for %s: %s -> %s",
+                target_triple,
+                std_lib_src,
+                std_lib_dst,
+            )
+            _merge_tree(std_lib_src, std_lib_dst)
+        else:
+            get_logger().warning("lib directory not found in %s", std_comp_dir)
+
     # Generate version file for CI caching and diagnostics
     _generate_version_file(rust_dir_dst, rust_flag_file, successful_archs)
 

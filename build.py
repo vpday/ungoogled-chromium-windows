@@ -300,7 +300,6 @@ def main():
 
     ninja_dir = source_tree / 'third_party' / 'ninja'
     os.environ['PATH'] = f"{os.environ.get('PATH', '')}:{ninja_dir}:{clang_bin_str}"
-    os.environ['NINJA_STATUS'] = '[%p/%f/%t/%w] '
 
     if should_skip_step(source_tree, '.setup_toolchain.stamp', args.ci):
         get_logger().info('Skipping toolchain setup (already completed)')
