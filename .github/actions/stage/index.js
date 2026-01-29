@@ -3,7 +3,6 @@ const io = require('@actions/io');
 const exec = require('@actions/exec');
 const {DefaultArtifactClient} = require('@actions/artifact');
 const glob = require('@actions/glob');
-const path = require('path');
 
 async function run() {
     process.on('SIGINT', function() {
@@ -18,8 +17,9 @@ async function run() {
         return;
     }
 
-    const WORK_DIR = process.env.GITHUB_WORKSPACE || process.cwd();
-    const BUILD_DIR = path.join(WORK_DIR, 'build');
+    const WORK_DIR = '/mnt/chromium-build';
+    const BUILD_DIR = `${WORK_DIR}/build`;
+    const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE || process.cwd();
     console.log(`Working Directory: ${WORK_DIR}`);
 
     const artifact = new DefaultArtifactClient();
@@ -27,10 +27,10 @@ async function run() {
 
     if (from_artifact) {
         const artifactInfo = await artifact.getArtifact(artifactName);
-        await artifact.downloadArtifact(artifactInfo.artifact.id, {path: BUILD_DIR});
-        const zipPath = path.join(BUILD_DIR, 'artifacts.zip');
-        await exec.exec('7z', ['x', zipPath, `-o${BUILD_DIR}`, '-y']);
-        await io.rmRF(zipPath);
+        await artifact.downloadArtifact(artifactInfo.artifact.id, {path: `${GITHUB_WORKSPACE}/build`});
+        const archivePath = `${GITHUB_WORKSPACE}/build/artifacts.tar.zst`;
+        await exec.exec('tar', ['-I', 'zstd -T0', '-xf', archivePath, '-C', BUILD_DIR]);
+        await io.rmRF(`${GITHUB_WORKSPACE}/build`);
     }
 
     const args = ['build.py', '--ci', '-j', '2', '--7z-path', '/usr/bin/7z']
@@ -48,8 +48,7 @@ async function run() {
     });
     if (retCode === 0) {
         core.setOutput('finished', true);
-        const globPattern = path.join(BUILD_DIR, 'ungoogled-chromium*');
-        const globber = await glob.create(globPattern, {matchDirectories: false});
+        const globber = await glob.create(`${BUILD_DIR}/ungoogled-chromium*`, {matchDirectories: false});
         let packageList = await globber.glob();
         const finalArtifactName = x86 ? 'chromium-x86' : (arm ? 'chromium-arm' : 'chromium');
         for (let i = 0; i < 5; ++i) {
@@ -70,9 +69,9 @@ async function run() {
         }
     } else {
         await new Promise(r => setTimeout(r, 5000));
-        const zipTarget = path.join(WORK_DIR, 'artifacts.zip');
-        const srcDir = path.join(BUILD_DIR, 'src');
-        await exec.exec('7z', ['a', '-tzip', zipTarget, srcDir, '-mx=3', '-mtc=on'], {ignoreReturnCode: true});
+        const archivePath = `${GITHUB_WORKSPACE}/artifacts.tar.zst`;
+        await exec.exec('tar', ['-I', 'zstd -10 -T0', '-cf', archivePath, '-C', BUILD_DIR, 'src'],
+            {ignoreReturnCode: true});
         for (let i = 0; i < 5; ++i) {
             try {
                 await artifact.deleteArtifact(artifactName);
@@ -80,8 +79,8 @@ async function run() {
                 // ignored
             }
             try {
-                await artifact.uploadArtifact(artifactName, [zipTarget],
-                    WORK_DIR, {retentionDays: 4, compressionLevel: 0});
+                await artifact.uploadArtifact(artifactName, [archivePath],
+                    GITHUB_WORKSPACE, {retentionDays: 4, compressionLevel: 0});
                 break;
             } catch (e) {
                 console.error(`Upload artifact failed: ${e}`);

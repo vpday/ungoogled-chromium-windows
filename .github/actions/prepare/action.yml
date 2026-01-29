@@ -15,69 +15,51 @@ runs:
         dotnet: true
         haskell: true
         docker-images: true
+        swap-storage: false
 
     - name: Install System Dependencies
       shell: bash
       run: |
         sudo apt-get update
-        sudo apt-get install -y p7zip-full pkg-config libglib2.0-dev libfuse2 libfuse2t64 libnss3-dev libcups2-dev libpci-dev libdrm-dev libxkbcommon-dev
+        sudo apt-get install -y zstd libzstd-dev p7zip-full pkg-config libglib2.0-dev libfuse2 libfuse2t64 libnss3-dev libcups2-dev libpci-dev libdrm-dev libxkbcommon-dev
 
-    - name: Prepare /mnt Storage Directory
+    - name: Prepare /mnt Build Directory
       shell: bash
       run: |
         set -e
 
-        SCRIPT_DIR="${GITHUB_WORKSPACE}/.github/scripts"
+        # Create /mnt build directory with proper ownership
+        STORAGE_DIR="/mnt/chromium-build"
 
-        # Verify script exists
-        if [ ! -f "${SCRIPT_DIR}/prepare-mnt-directory.sh" ]; then
-          echo "[ERROR] prepare-mnt-directory.sh not found in ${SCRIPT_DIR}"
+        echo "Creating build directory: ${STORAGE_DIR}"
+        sudo mkdir -p "${STORAGE_DIR}"
+
+        # Set ownership to current user
+        CURRENT_USER=$(whoami)
+        CURRENT_GROUP=$(id -gn)
+        echo "Setting ownership to ${CURRENT_USER}:${CURRENT_GROUP}"
+        sudo chown "${CURRENT_USER}:${CURRENT_GROUP}" "${STORAGE_DIR}"
+
+        # Set permissions
+        sudo chmod 755 "${STORAGE_DIR}"
+
+        # Verify
+        echo "Directory created successfully:"
+        ls -ld "${STORAGE_DIR}"
+
+        # Test write permissions
+        if touch "${STORAGE_DIR}/.write-test" 2>/dev/null; then
+          echo "[PASS] Write test successful"
+          rm "${STORAGE_DIR}/.write-test"
+        else
+          echo "[FAIL] Write test failed"
           exit 1
         fi
 
-        # Make script executable
-        chmod +x "${SCRIPT_DIR}/prepare-mnt-directory.sh"
-
-        # Execute script
-        bash "${SCRIPT_DIR}/prepare-mnt-directory.sh"
-
-    - name: Verify /mnt Permissions
-      shell: bash
-      run: |
-        set -e
-
-        SCRIPT_DIR="${GITHUB_WORKSPACE}/.github/scripts"
-
-        # Verify script exists
-        if [ ! -f "${SCRIPT_DIR}/verify-mnt-permissions.sh" ]; then
-          echo "[ERROR] verify-mnt-permissions.sh not found in ${SCRIPT_DIR}"
-          exit 1
-        fi
-
-        # Make script executable
-        chmod +x "${SCRIPT_DIR}/verify-mnt-permissions.sh"
-
-        # Execute script
-        bash "${SCRIPT_DIR}/verify-mnt-permissions.sh"
-
-    - name: Setup Chromium Build Storage
-      shell: bash
-      run: |
-        set -e
-
-        SCRIPT_DIR="${GITHUB_WORKSPACE}/.github/scripts"
-
-        # Verify script exists
-        if [ ! -f "${SCRIPT_DIR}/setup-chromium-storage.sh" ]; then
-          echo "[ERROR] setup-chromium-storage.sh not found in ${SCRIPT_DIR}"
-          exit 1
-        fi
-
-        # Make script executable
-        chmod +x "${SCRIPT_DIR}/setup-chromium-storage.sh"
-
-        # Execute script
-        bash "${SCRIPT_DIR}/setup-chromium-storage.sh" --verbose
+        # Show disk space
+        echo ""
+        echo "Disk space on /mnt:"
+        df -h /mnt
 
     - name: Set up Python ${{ inputs.python-version }}
       uses: actions/setup-python@v6
@@ -88,3 +70,13 @@ runs:
       shell: bash
       run: npm install
       working-directory: ./.github/actions/stage
+
+    - name: Copy Workspace to /mnt
+      shell: bash
+      run: |
+        set -e
+
+        STORAGE_DIR="/mnt/chromium-build"
+
+        echo "Copying workspace from ${GITHUB_WORKSPACE} to ${STORAGE_DIR}"
+        cp -r "${GITHUB_WORKSPACE}/"* "${GITHUB_WORKSPACE}/".* "${STORAGE_DIR}/" 2>/dev/null || true
