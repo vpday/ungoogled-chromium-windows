@@ -211,10 +211,7 @@ def setup_sysroot(source_tree, ci_mode=False):
 
 def setup_toolchain(source_tree, ci_mode=False):
     """
-    Sets up the toolchain (Clang/Rust) based on host architecture.
-
-    For x64 hosts: Downloads prebuilt Clang and Rust binaries
-    For other architectures: Builds Clang and Rust from source
+    Sets up the toolchain components required for cross-compiling Windows Chromium.
 
     Args:
         source_tree: Path object of the source directory
@@ -225,27 +222,6 @@ def setup_toolchain(source_tree, ci_mode=False):
         Stamp checking is handled by the caller (build.py) using .setup_toolchain.stamp
     """
     get_logger().info("Setting up toolchain")
-
-    # get_logger().info('Building Clang from source...')
-    # run_build_process(
-    #     sys.executable, str(source_tree / 'tools' / 'clang' / 'scripts' / 'build.py'),
-    #     '--without-fuchsia',
-    #     '--without-android',
-    #     '--disable-asserts',
-    #     '--host-cc=clang',
-    #     '--host-cxx=clang++',
-    #     '--use-system-cmake',
-    #     '--with-ml-inliner-model='
-    # )
-
-    # Build Rust (requires CARGO_HOME environment variable)
-    # get_logger().info('Building Rust from source...')
-    # os.environ['CARGO_HOME'] = str(source_tree / 'third_party' / 'rust-src' / 'cargo-home')
-
-    # run_build_process(
-    #     sys.executable, str(source_tree / 'tools' / 'rust' / 'build_rust.py'),
-    #     '--skip-test'
-    # )
 
     get_logger().info("Building bindgen tool...")
     run_build_process(
