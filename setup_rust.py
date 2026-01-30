@@ -330,16 +330,15 @@ def setup_rust_toolchain(source_tree: Path, ci_mode: bool = False) -> Path:
 
         get_logger().info("Processing %s architecture...", arch)
 
-        # Determine installation targets for this architecture
-        # Host: Install to top-level (rust_dir_dst)
-        # Target: Install to architecture-specific subdirectory
-        install_targets = []
+        bin_install_targets = []
+        lib_install_targets = [rust_dir_dst]
+
         if is_host:
-            install_targets.append(rust_dir_dst)
+            bin_install_targets.append(rust_dir_dst)
         else:
             arch_dir = rust_dir_dst / target_subdir
             arch_dir.mkdir(parents=True, exist_ok=True)
-            install_targets.append(arch_dir)
+            bin_install_targets.append(arch_dir)
 
         # Track which components are successfully installed
         components_found = []
@@ -373,7 +372,12 @@ def setup_rust_toolchain(source_tree: Path, ci_mode: bool = False) -> Path:
                 if not sub_src.exists():
                     continue
 
-                # Merge into all installation targets (usually just one)
+                # Choose appropriate installation targets based on subdirectory type
+                install_targets = (
+                    lib_install_targets if sub == "lib" else bin_install_targets
+                )
+
+                # Merge into all installation targets
                 for install_root in install_targets:
                     sub_dst = install_root / sub
                     get_logger().debug("Merging %s -> %s", sub_src, sub_dst)
@@ -383,34 +387,35 @@ def setup_rust_toolchain(source_tree: Path, ci_mode: bool = False) -> Path:
             "Installed components for %s: %s", arch, ", ".join(components_found)
         )
 
-        # Special handling for host architecture
+        # Create subdirectory with symlinks for consistent interface
+        # All architectures get a subdirectory with lib symlink to top-level
+        arch_subdir = rust_dir_dst / target_subdir
+        arch_subdir.mkdir(parents=True, exist_ok=True)
+
         if is_host:
-            # Fix shared libraries that may have been overwritten by wrong architecture
-            # This must happen after all components are merged
-            _fix_top_level_libs(rust_dir_dst / "lib", arch)
+            # Host architecture: both bin and lib are symlinks to top-level
+            symlink_dirs = ["bin", "lib"]
+        else:
+            # Non-host architecture: only lib is symlink (bin is real directory)
+            # bin was already installed to arch_subdir, so we only symlink lib
+            symlink_dirs = ["lib"]
 
-            # Create a subdirectory for the host architecture with symlinks
-            # This provides a consistent interface: all architectures have a
-            # subdirectory, and the host subdirectory just symlinks to top-level
-            host_subdir = rust_dir_dst / target_subdir
-            host_subdir.mkdir(parents=True, exist_ok=True)
+        for sub in symlink_dirs:
+            link_path = arch_subdir / sub
+            target_path = Path("..") / sub  # Relative symlink: ../bin or ../lib
 
-            for sub in ["bin", "lib"]:
-                link_path = host_subdir / sub
-                target_path = Path("..") / sub  # Relative symlink: ../bin or ../lib
+            # Remove existing directory/symlink if present
+            if link_path.exists() or link_path.is_symlink():
+                if link_path.is_dir() and not link_path.is_symlink():
+                    shutil.rmtree(link_path)
+                else:
+                    link_path.unlink()
 
-                # Remove existing directory/symlink if present
-                if link_path.exists() or link_path.is_symlink():
-                    if link_path.is_dir() and not link_path.is_symlink():
-                        shutil.rmtree(link_path)
-                    else:
-                        link_path.unlink()
-
-                # Create relative symlink for portability
-                link_path.symlink_to(target_path)
-                get_logger().info(
-                    "Created host symlink: %s -> %s", link_path, target_path
-                )
+            # Create relative symlink for portability
+            link_path.symlink_to(target_path)
+            get_logger().info(
+                "Created symlink for %s: %s -> %s", arch, link_path, target_path
+            )
 
         successful_archs.append(arch)
 
@@ -419,6 +424,12 @@ def setup_rust_toolchain(source_tree: Path, ci_mode: bool = False) -> Path:
     if not successful_archs:
         get_logger().error("Failed to process any architecture.")
         sys.exit(1)
+
+    # Fix top-level shared libraries after all architectures are merged
+    # This ensures the top-level .so files match the host architecture
+    # Must happen after all architectures are processed to avoid being overwritten
+    get_logger().info("Fixing top-level shared libraries for host architecture...")
+    _fix_top_level_libs(rust_dir_dst / "lib", host_arch)
 
     # Install Windows target standard libraries for cross-compilation
     get_logger().info("Installing Windows target standard libraries...")
