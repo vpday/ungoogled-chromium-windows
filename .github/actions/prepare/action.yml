@@ -57,10 +57,10 @@ runs:
           echo "[FAIL] Write test failed"
           exit 1
         fi
-        
-        du / -lh --max-depth=1 --exclude=proc
-        du /mnt -lh --max-depth=1
-        lscpu
+
+        sudo du / -lh --max-depth=1 --exclude=proc
+        sudo du /mnt -lh --max-depth=1
+        sudo lscpu
 
     - name: Set up Python ${{ inputs.python-version }}
       uses: actions/setup-python@v6
