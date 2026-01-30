@@ -24,7 +24,7 @@ from build_common import (
     mark_step_complete,
 )
 from setup_rust import setup_rust_toolchain
-from setup_utils import fix_tool_downloading, setup_toolchain
+from setup_utils import fix_tool_downloading, setup_toolchain, download_from_sha1
 from setup_win_toolchain import setup_windows_toolchain
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'ungoogled-chromium' / 'utils'))
@@ -306,6 +306,19 @@ def main():
     else:
         fix_tool_downloading(source_tree)
         setup_toolchain(source_tree, ci_mode=args.ci)
+
+        # Download rc binary for cross-compilation
+        rc_sha1_file = source_tree / 'build/toolchain/win/rc/linux64/rc.sha1'
+        rc_binary = source_tree / 'build/toolchain/win/rc/linux64/rc'
+        if rc_sha1_file.exists() and not rc_binary.exists():
+            get_logger().info('Downloading rc binary for Linux cross-compilation...')
+            download_from_sha1(rc_sha1_file, rc_binary, 'chromium-browser-clang/rc')
+            get_logger().info('rc binary downloaded successfully')
+        elif rc_binary.exists():
+            get_logger().info('rc binary already exists, skipping download')
+        else:
+            get_logger().warning('rc.sha1 file not found, skipping rc binary download')
+
         mark_step_complete(source_tree, '.setup_toolchain.stamp')
 
     resource_dir = subprocess.check_output(
