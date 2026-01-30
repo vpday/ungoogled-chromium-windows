@@ -58,8 +58,7 @@ runs:
           exit 1
         fi
 
-        sudo du / -lh --max-depth=1 --exclude=proc
-        sudo du /mnt -lh --max-depth=1
+        echo "Get CPU Info:"
         sudo lscpu
 
     - name: Set up Python ${{ inputs.python-version }}
