@@ -8,12 +8,14 @@ runs:
   using: "composite"
   steps:
     - name: Free Disk Space
-      uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
+      uses: BRAINSia/free-disk-space@v2
       with:
         tool-cache: false
+        mandb: true
         android: true
         dotnet: true
         haskell: true
+        large-packages: true
         docker-images: true
         swap-storage: false
 
@@ -55,6 +57,10 @@ runs:
           echo "[FAIL] Write test failed"
           exit 1
         fi
+        
+        du / -lh --max-depth=1 --exclude=proc
+        du /mnt -lh --max-depth=1
+        lscpu
 
     - name: Set up Python ${{ inputs.python-version }}
       uses: actions/setup-python@v6

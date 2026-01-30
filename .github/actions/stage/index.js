@@ -3,6 +3,7 @@ const io = require('@actions/io');
 const exec = require('@actions/exec');
 const {DefaultArtifactClient} = require('@actions/artifact');
 const glob = require('@actions/glob');
+const fs = require('fs');
 
 async function run() {
     process.on('SIGINT', function() {
@@ -32,6 +33,18 @@ async function run() {
         const archivePath = `${GITHUB_WORKSPACE}/build/artifacts.tar.zst`;
         await exec.exec('tar', ['-I', 'zstd -T0', '-xf', archivePath, '-C', BUILD_DIR]);
         await io.rmRF(`${GITHUB_WORKSPACE}/build`);
+
+        // Clean up ciopfs directories if they were included in the artifact
+        const vsFilesPath = `${BUILD_DIR}/src/third_party/depot_tools/win_toolchain/vs_files`;
+        const vsCiopfsPath = `${vsFilesPath}.ciopfs`;
+        if (fs.existsSync(vsFilesPath)) {
+            console.log(`Removing ciopfs mountpoint directory: ${vsFilesPath}`);
+            await io.rmRF(vsFilesPath);
+        }
+        if (fs.existsSync(vsCiopfsPath)) {
+            console.log(`Removing ciopfs source directory: ${vsCiopfsPath}`);
+            await io.rmRF(vsCiopfsPath);
+        }
     }
 
     const args = ['build.py', '--ci', '-j', '2', '--7z-path', '/usr/bin/7z']
@@ -79,8 +92,14 @@ async function run() {
         const archivePath = `${GITHUB_WORKSPACE}/artifacts.tar.zst`;
         console.log(`Creating archive: ${archivePath}`);
         console.log('Compression started...');
-        await exec.exec('tar', ['-I', 'zstd -10 -T0', '-cf', archivePath, '-C', BUILD_DIR, 'src'],
-            {ignoreReturnCode: true});
+        await exec.exec('tar', [
+            '-I', 'zstd -10 -T0',
+            '-cf', archivePath,
+            '-C', BUILD_DIR,
+            '--exclude=src/third_party/depot_tools/win_toolchain/vs_files',
+            '--exclude=src/third_party/depot_tools/win_toolchain/vs_files.ciopfs',
+            'src'
+        ], {ignoreReturnCode: true});
         console.log('Compression completed');
         // Show compressed file size
         console.log('Compressed archive:');
