@@ -268,6 +268,8 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: true
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -285,6 +287,8 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: true
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -302,6 +306,8 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: true
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -319,6 +325,8 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: true
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -336,6 +344,8 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: true
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -353,6 +363,8 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: true
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -370,6 +382,8 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: true
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -387,6 +401,8 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: true
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -404,6 +420,8 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: true
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -421,6 +439,8 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: true
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -438,6 +458,8 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: true
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -455,6 +477,8 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: true
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -472,6 +496,8 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: true
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -489,6 +515,8 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: true
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -506,6 +534,8 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: true
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -523,6 +553,8 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: true
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage

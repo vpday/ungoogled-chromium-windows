@@ -4,6 +4,10 @@ inputs:
   python-version:
     description: 'Python version'
     default: '3.12'
+  x86:
+    description: 'Building for x86 architecture'
+    required: false
+    default: 'false'
 runs:
   using: "composite"
   steps:
@@ -24,6 +28,15 @@ runs:
       run: |
         sudo apt-get update
         sudo apt-get install -y zstd p7zip-full pkg-config libglib2.0-dev libfuse2 libfuse2t64 libnss3-dev libcups2-dev libpci-dev libdrm-dev libxkbcommon-dev
+
+    - name: Install 32-bit Development Libraries
+      if: ${{ inputs.x86 == 'true' }}
+      shell: bash
+      run: |
+        echo "Installing 32-bit development libraries for x86 cross-compilation..."
+        sudo dpkg --add-architecture i386
+        sudo apt-get update
+        sudo apt-get install -y libc6-dev-i386 linux-libc-dev:i386 gcc-multilib g++-multilib
 
     - name: Prepare /mnt Build Directory
       shell: bash
