@@ -12,6 +12,26 @@
  import filecmp
  import io
  import operator
+@@ -328,9 +329,6 @@ def main(arch, gendir, outdir, dynamic_guids, tlb, h, dlldata, iid, proxy,
+   source_exists = True
+   if not os.path.isdir(source):
+     source_exists = False
+-    if sys.platform != 'win32':
+-      print('Directory %s needs to be populated from Windows first' % source)
+-      return 1
+ 
+     # This is a brand new IDL file that does not have outputs under
+     # third_party\win_build_output\midl. We create an empty directory for now.
+@@ -360,9 +358,6 @@ def main(arch, gendir, outdir, dynamic_guids, tlb, h, dlldata, iid, proxy,
+     file_path = os.path.join(source, source_file)
+     if not os.path.isfile(file_path):
+       source_exists = False
+-      if sys.platform != 'win32':
+-        print('File %s needs to be generated from Windows first' % file_path)
+-        return 1
+ 
+       # Either this is a brand new IDL file that does not have outputs under
+       # third_party\win_build_output\midl or the file is (unexpectedly) missing.
 @@ -444,41 +445,13 @@ def main(arch, gendir, outdir, dynamic_g
    if returncode != 0:
      return returncode
