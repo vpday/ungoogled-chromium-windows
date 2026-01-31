@@ -34,20 +34,15 @@ async function run() {
         await exec.exec('tar', ['-I', 'zstd -T0', '-xf', archivePath, '-C', BUILD_DIR]);
         await io.rmRF(`${GITHUB_WORKSPACE}/build`);
 
-        // Clean up ciopfs directories if they were included in the artifact
+        // Clean up ciopfs mountpoint directory (will be remounted by vs_toolchain.py)
         const vsFilesPath = `${BUILD_DIR}/src/third_party/depot_tools/win_toolchain/vs_files`;
-        const vsCiopfsPath = `${vsFilesPath}.ciopfs`;
         if (fs.existsSync(vsFilesPath)) {
-            console.log(`Removing ciopfs mountpoint directory: ${vsFilesPath}`);
+            console.log(`Cleaning up ciopfs mountpoint: ${vsFilesPath}`);
             await io.rmRF(vsFilesPath);
-        }
-        if (fs.existsSync(vsCiopfsPath)) {
-            console.log(`Removing ciopfs source directory: ${vsCiopfsPath}`);
-            await io.rmRF(vsCiopfsPath);
         }
     }
 
-    const args = ['build.py', '--ci', '-j', '2', '--7z-path', '/usr/bin/7z']
+    const args = ['build.py', '--ci', '-j', '4', '--7z-path', '/usr/bin/7z']
     if (x86)
         args.push('--x86')
     if (arm)
@@ -84,6 +79,25 @@ async function run() {
     } else {
         await new Promise(r => setTimeout(r, 5000));
 
+        // Unmount ciopfs before archiving to avoid packing the FUSE mountpoint
+        console.log('Unmounting ciopfs if mounted...');
+        const vsFilesMount = `${BUILD_DIR}/src/third_party/depot_tools/win_toolchain/vs_files`;
+
+        // Check if vs_files is a mountpoint
+        try {
+            const {exitCode} = await exec.getExecOutput('mountpoint', ['-q', vsFilesMount], {ignoreReturnCode: true});
+            if (exitCode === 0) {
+                console.log(`${vsFilesMount} is mounted, unmounting...`);
+                await exec.exec('fusermount', ['-u', vsFilesMount], {ignoreReturnCode: true});
+                await new Promise(r => setTimeout(r, 3000));  // Wait for unmount
+                console.log('Unmount completed');
+            } else {
+                console.log(`${vsFilesMount} is not a mountpoint, skipping unmount`);
+            }
+        } catch (e) {
+            console.log(`Could not check/unmount vs_files: ${e}`);
+        }
+
         // Show source directory size before compression
         const srcDir = `${BUILD_DIR}/src`;
         console.log('Source directory:');
@@ -97,7 +111,6 @@ async function run() {
             '-cf', archivePath,
             '-C', BUILD_DIR,
             '--exclude=src/third_party/depot_tools/win_toolchain/vs_files',
-            '--exclude=src/third_party/depot_tools/win_toolchain/vs_files.ciopfs',
             'src'
         ], {ignoreReturnCode: true});
         console.log('Compression completed');
