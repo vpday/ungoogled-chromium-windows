@@ -21,6 +21,7 @@ async function run() {
     const WORK_DIR = '/mnt/chromium-build';
     const BUILD_DIR = `${WORK_DIR}/build`;
     const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE || process.cwd();
+    const BUILD_START_TIME = Date.now();
     console.log(`Working Directory: ${WORK_DIR}`);
 
     const artifact = new DefaultArtifactClient();
@@ -53,7 +54,11 @@ async function run() {
     });
     const retCode = await exec.exec('python3', args, {
         cwd: WORK_DIR,
-        ignoreReturnCode: true
+        ignoreReturnCode: true,
+        env: {
+            ...process.env,
+            GH_ACTIONS_START_TIME: BUILD_START_TIME.toString()
+        }
     });
     if (retCode === 0) {
         core.setOutput('finished', true);

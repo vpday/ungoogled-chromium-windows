@@ -32,7 +32,8 @@ def run_build_process(*args, **kwargs):
     """
     Runs the subprocess with the correct environment variables for building
     """
-    subprocess.run(args, check=True, encoding=ENCODING, **kwargs)
+    string_args = [str(a) for a in args]
+    subprocess.run(string_args, check=True, encoding=ENCODING, **kwargs)
 
 
 def run_build_process_timeout(*args, timeout):

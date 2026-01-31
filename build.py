@@ -13,6 +13,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from build_common import (
@@ -363,7 +364,31 @@ def main():
 
     # Run ninja
     if args.ci:
-        run_build_process_timeout(*ninja_commandline, timeout=3.5 * 60 * 60)
+        # Calculate dynamic timeout based on GitHub Actions remaining time
+        # Default timeout: 5.2 hours, 5.2*60*60=18720
+        timeout = 18720
+        try:
+            # Get current time in milliseconds
+            current_time = int(time.time() * 1000)
+            # GitHub Actions start time in milliseconds
+            gh_start_time = int(os.environ.get('GH_ACTIONS_START_TIME', '0'))
+            # GitHub Actions maximum runtime is 6 hours
+            gh_max_runtime = int(6 * 60 * 60 * 1000)
+            # Reserve 20 minutes as a buffer for cleanup operations
+            gh_buffer_time = int(20 * 60 * 1000)
+
+            if gh_start_time > 0:
+                elapsed_ms = current_time - gh_start_time
+                available_ms = max(0, gh_max_runtime - elapsed_ms - gh_buffer_time)
+                timeout = int(available_ms / 1000)
+                get_logger().info(f'Calculated dynamic timeout: {timeout} seconds')
+            else:
+                get_logger().info(f'Using default timeout: {timeout} seconds')
+        except (ValueError, TypeError) as e:
+            get_logger().warning(f'Error calculating timeout from environment variables: {e}')
+            get_logger().info(f'Falling back to default timeout: {timeout} seconds')
+
+        run_build_process_timeout(*ninja_commandline, timeout=timeout)
         # package
         os.chdir(_ROOT_DIR)
         subprocess.run([sys.executable, 'package.py'])
