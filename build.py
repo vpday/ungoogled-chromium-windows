@@ -374,8 +374,8 @@ def main():
             gh_start_time = int(os.environ.get('GH_ACTIONS_START_TIME', '0'))
             # GitHub Actions maximum runtime is 6 hours
             gh_max_runtime = int(6 * 60 * 60 * 1000)
-            # Reserve 20 minutes as a buffer for cleanup operations
-            gh_buffer_time = int(20 * 60 * 1000)
+            # Reserve 30 minutes as a buffer for cleanup operations
+            gh_buffer_time = int(30 * 60 * 1000)
 
             if gh_start_time > 0:
                 elapsed_ms = current_time - gh_start_time

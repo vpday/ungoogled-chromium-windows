@@ -27,7 +27,7 @@ runs:
       shell: bash
       run: |
         sudo apt-get update
-        sudo apt-get install -y zstd p7zip-full pkg-config libglib2.0-dev libfuse2 libfuse2t64 libnss3-dev libcups2-dev libpci-dev libdrm-dev libxkbcommon-dev gperf
+        sudo apt-get install -y zstd p7zip-full pkg-config libglib2.0-dev libfuse2 libfuse2t64 libnss3-dev libcups2-dev libpci-dev libdrm-dev libxkbcommon-dev gperf libkrb5-dev
 
     - name: Install 32-bit Development Libraries
       if: ${{ inputs.x86 == 'true' }}
