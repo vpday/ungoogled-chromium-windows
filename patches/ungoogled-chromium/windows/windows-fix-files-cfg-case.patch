@@ -1,0 +1,11 @@
+--- a/chrome/tools/build/win/FILES.cfg
++++ b/chrome/tools/build/win/FILES.cfg
+@@ -361,7 +361,7 @@ FILES = [
+   },
+   # ANGLE files:
+   {
+-    'filename': 'D3DCompiler_47.dll',
++    'filename': 'd3dcompiler_47.dll',
+     'buildtype': ['official'],
+   },
+   {
