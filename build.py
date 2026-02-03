@@ -180,31 +180,24 @@ def main():
         downloads.unpack_downloads(download_info_win, downloads_cache, None, source_tree, extractors)
         mark_step_complete(source_tree, '.unpack_windows_downloads.stamp')
 
-    # Move all contents from the LLVM-*-Linux-X64 folder to the Release+Asserts directory.
-    if should_skip_step(source_tree, '.flatten_llvm_directory.stamp', args.ci):
-        get_logger().info('Skipping LLVM directory flattening (already completed)')
+    # Setup 7z symlink (7za -> 7zz)
+    if should_skip_step(source_tree, '.setup_7z_symlink.stamp', args.ci):
+        get_logger().info('Skipping 7z symlink setup (already completed)')
     else:
-        llvm_release_root = source_tree / 'third_party' / 'llvm-build' / 'Release+Asserts'
-        if llvm_release_root.exists():
-            versioned_dirs = list(llvm_release_root.glob('LLVM-*-Linux-X64'))
-            if versioned_dirs:
-                src_dir = versioned_dirs[0]
-                get_logger().info('Flattening LLVM directory: %s -> %s', src_dir.name, llvm_release_root.name)
+        get_logger().info('Setting up 7z symlink for installer archive creation...')
+        lzma_bin_dir = source_tree / 'third_party' / 'lzma_sdk' / 'bin' / 'host_platform'
+        symlink_7za = lzma_bin_dir / '7za'
+        target_7zz = lzma_bin_dir / '7zz'
 
-                for item in src_dir.iterdir():
-                    dest_item = llvm_release_root / item.name
-                    if dest_item.is_dir() and dest_item.exists():
-                        shutil.rmtree(dest_item)
-                    elif dest_item.is_file() and dest_item.exists():
-                        dest_item.unlink()
+        if target_7zz.exists():
+            if symlink_7za.exists() or symlink_7za.is_symlink():
+                symlink_7za.unlink()
+            symlink_7za.symlink_to('7zz')
+            get_logger().info('Created symlink: 7za -> 7zz')
+        else:
+            get_logger().warning('7zz binary not found at %s, skipping symlink creation', target_7zz)
 
-                    shutil.move(str(item), str(llvm_release_root))
-
-                if src_dir.exists():
-                    shutil.rmtree(src_dir)
-            else:
-                get_logger().warning('No versioned LLVM directory found to flatten in %s', llvm_release_root)
-        mark_step_complete(source_tree, '.flatten_llvm_directory.stamp')
+        mark_step_complete(source_tree, '.setup_7z_symlink.stamp')
 
     # Apply patches
     if should_skip_step(source_tree, '.apply_patches.stamp', args.ci):
