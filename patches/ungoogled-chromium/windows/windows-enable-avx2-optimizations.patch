@@ -1,0 +1,244 @@
+--- a/build/config/compiler/BUILD.gn
++++ b/build/config/compiler/BUILD.gn
+@@ -558,10 +558,10 @@ config("compiler") {
+   # Linux/Android/Fuchsia common flags setup.
+   # ---------------------------------
+   if (is_linux || is_chromeos || is_android || is_fuchsia) {
+-    asmflags += [ "-fPIC" ]
+-    cflags += [ "-fPIC" ]
+-    ldflags += [ "-fPIC" ]
+-    rustflags += [ "-Crelocation-model=pic" ]
++    asmflags += [ "-fPIC", "-w", ]
++    cflags += [ "-fPIC", "-w", ]
++    ldflags += [ "-fPIC", "-w", ]
++    rustflags += [ "-Crelocation-model=pic", "-Awarnings", ]
+ 
+     if (!is_clang) {
+       # Use pipes for communicating between sub-processes. Faster.
+@@ -637,13 +637,13 @@ config("compiler") {
+     # (https://crbug.com/829795).
+     cflags += [ "-fmerge-all-constants" ]
+ 
+-    if (!use_sized_deallocation) {
++    # if (!use_sized_deallocation) {
+       if (is_win) {
+-        cflags += [ "/Zc:sizedDealloc-" ]
++        cflags += [ "/Zc:sizedDealloc" ]
+       } else {
+-        cflags += [ "-fno-sized-deallocation" ]
++        cflags += [ "-fsized-deallocation" ]
+       }
+-    }
++    # }
+ 
+     if (diagnostics_print_source_range_info && !is_win) {
+       cflags += [ "-fdiagnostics-print-source-range-info" ]
+@@ -696,23 +696,23 @@ config("compiler") {
+     # other problems.
+     if (default_toolchain != "//build/toolchain/cros:target") {
+       cflags += [
+-        "-mllvm",
+-        "-split-threshold-for-reg-with-hint=0",
++        # "-mllvm",
++        # "-split-threshold-for-reg-with-hint=0",
+       ]
+       if (use_thin_lto && is_a_target_toolchain) {
+         if (is_win) {
+-          ldflags += [ "-mllvm:-split-threshold-for-reg-with-hint=0" ]
++          # ldflags += [ "-mllvm:-split-threshold-for-reg-with-hint=0" ]
+         } else {
+-          ldflags += [ "-Wl,-mllvm,-split-threshold-for-reg-with-hint=0" ]
++          # ldflags += [ "-Wl,-mllvm,-split-threshold-for-reg-with-hint=0" ]
+         }
+       }
+     }
+ 
+     # TODO(crbug.com/40192287): Investigate why/if this should be needed.
+     if (is_win) {
+-      cflags += [ "/clang:-ffp-contract=off" ]
++      cflags += [ "/clang:-ffp-contract=fast" ]
+     } else {
+-      cflags += [ "-ffp-contract=off" ]
++      cflags += [ "-ffp-contract=fast" ]
+     }
+ 
+     # Enable ELF CREL (see crbug.com/357878242) for all platforms that use ELF.
+@@ -839,6 +839,7 @@ config("compiler") {
+     cflags += [
+       "-flto=thin",
+       "-fsplit-lto-unit",
++      "-mllvm", "-indexed-codegen-data-read-function-map-names=false",
+     ]
+ 
+     if (thin_lto_enable_cache) {
+@@ -883,9 +884,11 @@ config("compiler") {
+         "/opt:lldltojobs=all",
+         "-mllvm:-import-instr-limit=$import_instr_limit",
+         "-mllvm:-disable-auto-upgrade-debug-info",
++        "-mllvm:-indexed-codegen-data-read-function-map-names=false",
+       ]
+     } else {
+       ldflags += [ "-flto=thin" ]
++      ldflags +=[ "-Wl,-mllvm,-indexed-codegen-data-read-function-map-names=false" ]
+ 
+       # Enabling ThinLTO on Chrome OS too, in an effort to reduce the memory
+       # usage in crbug.com/1038040. Note this will increase build time in
+@@ -1153,6 +1156,9 @@ config("compiler") {
+ 
+       # We use clang-rt sanitizer runtimes.
+       "-Zexternal-clangrt",
++
++     "-Ctarget-cpu=x86-64-v3",
++     "-Cllvm-args=-fp-contract=fast",
+     ]
+   }
+ 
+@@ -1230,7 +1236,7 @@ config("disallow_unstable_features") {
+ # building with ThinLTO, no optimization is performed in the link step.
+ config("thinlto_optimize_default") {
+   if (!is_debug && use_thin_lto && is_a_target_toolchain) {
+-    lto_opt_level = 0
++    lto_opt_level = 3
+ 
+     if (is_win) {
+       ldflags = [ "/opt:lldlto=" + lto_opt_level ]
+@@ -1261,9 +1267,9 @@ config("thinlto_optimize_default") {
+ config("thinlto_optimize_max") {
+   if (!is_debug && use_thin_lto && is_a_target_toolchain) {
+     if (thin_lto_enable_optimizations) {
+-      lto_opt_level = 2
++      lto_opt_level = 3
+     } else {
+-      lto_opt_level = 0
++      lto_opt_level = 3
+     }
+ 
+     if (is_win) {
+@@ -1310,7 +1316,7 @@ config("compiler_cpu_abi") {
+         cflags += [ "-m64" ]
+         ldflags += [ "-m64" ]
+       }
+-      cflags += [ "-msse3" ]
++      cflags += [ "-march=x86-64-v3" ]
+     } else if (current_cpu == "x86") {
+       if (is_clang && !is_android && !is_chromeos_device) {
+         cflags += [ "--target=i386-unknown-linux-gnu" ]
+@@ -2667,6 +2673,10 @@ if (is_win) {
+   common_optimize_on_cflags = [
+     "/Oy-",  # Disable omitting frame pointers, must be after /O2.
+     "/Zc:inline",  # Remove unreferenced COMDAT (faster links).
++   "-mllvm", "-adce-remove-loops",
++   "-mllvm", "-enable-gvn-hoist",
++   "-mllvm", "-enable-local-reassign",
++   "-mllvm", "-enable-nontrivial-unswitch",
+   ]
+   if (!is_asan) {
+     common_optimize_on_cflags += [
+@@ -2680,6 +2695,14 @@ if (is_win) {
+   }
+   common_optimize_on_ldflags = []
+ 
++  common_optimize_on_ldflags += [
++   "-mllvm:-adce-remove-loops",
++   "-mllvm:-enable-gvn-hoist",
++   "-mllvm:-enable-local-reassign",
++   "-mllvm:-enable-nontrivial-unswitch",
++   # "-mllvm:-pass-remarks=vector",
++  ]
++
+   # /OPT:ICF is not desirable in Debug builds, since code-folding can result in
+   # misleading symbols in stack traces.
+   if (!is_debug && !is_component_build) {
+@@ -2693,6 +2721,21 @@ if (is_win) {
+   common_optimize_on_cflags = []
+   common_optimize_on_ldflags = []
+ 
++  common_optimize_on_cflags += [
++   "-mllvm", "-adce-remove-loops",
++   "-mllvm", "-enable-gvn-hoist",
++   "-mllvm", "-enable-local-reassign",
++   "-mllvm", "-enable-nontrivial-unswitch",
++  ]
++
++  common_optimize_on_ldflags += [
++   "-Wl,-mllvm,-adce-remove-loops",
++   "-Wl,-mllvm,-enable-gvn-hoist",
++   "-Wl,-mllvm,-enable-local-reassign",
++   "-Wl,-mllvm,-enable-nontrivial-unswitch",
++   # "-Wl,-mllvm,-pass-remarks=vector",
++  ]
++
+   if (is_android) {
+     # TODO(jdduke) Re-enable on mips after resolving linking
+     # issues with libc++ (crbug.com/456380).
+@@ -2797,7 +2850,7 @@ config("optimize") {
+     # consistency with the other platforms.
+     cflags = [
+                "/O2",
+-               "/clang:-O2",
++               "/clang:-O3",
+              ] + common_optimize_on_cflags
+ 
+     # The `-O3` for clang turns on extra optimizations compared to the standard
+@@ -2829,7 +2882,7 @@ config("optimize") {
+     # vectorization while otherwise optimizing for size.
+     rustflags = [ "-Copt-level=s" ]
+   } else {
+-    cflags = [ "-O2" ] + common_optimize_on_cflags
++    cflags = [ "-O3" ] + common_optimize_on_cflags
+ 
+     # The `-O3` for clang turns on extra optimizations compared to the standard
+     # `-O2`. But for rust, `-Copt-level=3` is the default and is thus reliable
+@@ -2881,10 +2934,13 @@ config("optimize_max") {
+     # Favor speed over size, /O2 must be before the common flags.
+     # /O2 implies /Ot, /Oi, and /GF.
+     cflags = [ "/O2" ] + common_optimize_on_cflags
++    if (is_clang) {
++      cflags += [ "/clang:-O3" ]
++    }
+   } else if (optimize_for_fuzzing) {
+     cflags = [ "-O1" ] + common_optimize_on_cflags
+   } else {
+-    cflags = [ "-O2" ] + common_optimize_on_cflags
++    cflags = [ "-O3" ] + common_optimize_on_cflags
+   }
+   rustflags = [ "-Copt-level=3" ]
+ }
+--- a/build/config/win/BUILD.gn
++++ b/build/config/win/BUILD.gn
+@@ -120,7 +120,7 @@ config("compiler") {
+     # microarchitecture. MSVC only supports a subset of architectures, and the
+     # next step after SSE2 will be AVX.
+     if (current_cpu == "x86" || current_cpu == "x64") {
+-      cflags += [ "-msse3" ]
++      cflags += [ "-mtune=haswell", "-msse3", "-mssse3","-msse4.1", "-msse4.2", "-mavx", "-mavx2", "-mfma", "-mf16c", "-mlzcnt", "-mbmi2", "/clang:-w", ]
+     }
+ 
+     # Enable ANSI escape codes if something emulating them is around (cmd.exe
+@@ -190,7 +190,7 @@ config("compiler") {
+     if (use_lld) {
+       # String tail merging leads to smaller binaries, but they don't compress
+       # as well, leading to increased mini_installer size (crbug.com/838449).
+-      ldflags += [ "/OPT:NOLLDTAILMERGE" ]
++      ldflags += [ "/OPT:LLDTAILMERGE" ]
+     }
+ 
+     # TODO(siggi): Is this of any use anymore?
+--- a/chrome/installer/mini_installer/mini_installer_exe_main.cc
++++ b/chrome/installer/mini_installer/mini_installer_exe_main.cc
+@@ -59,7 +59,7 @@ void* memset(void* dest, int c, size_t count) {
+   return dest;
+ }
+ 
+-#if defined(_DEBUG) && defined(ARCH_CPU_ARM64)
++// #if defined(_DEBUG) && defined(ARCH_CPU_ARM64)
+ // The compiler generates calls to memcpy for ARM64 debug builds so we need to
+ // supply a memcpy implementation in that configuration.
+ // See comments above for why we do this incantation.
+@@ -71,5 +71,5 @@ void* memcpy(void* destination, const void* source, size_t count) {
+     *dst++ = *src++;
+   return destination;
+ }
+-#endif
++// #endif
+ }  // extern "C"

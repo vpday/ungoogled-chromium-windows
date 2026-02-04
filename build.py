@@ -203,6 +203,40 @@ def main():
     if should_skip_step(source_tree, '.apply_patches.stamp', args.ci):
         get_logger().info('Skipping patch application (already completed)')
     else:
+        # Prepare patches/series for x64 AVX2 optimizations
+        series_file = _ROOT_DIR / 'patches' / 'series'
+        avx2_patch_line = 'ungoogled-chromium/windows/windows-enable-avx2-optimizations.patch'
+
+        # Determine if current build is x64
+        is_x64 = not args.x86 and not args.arm
+
+        # Read current series content
+        series_content = series_file.read_text(encoding=ENCODING)
+        series_lines = series_content.splitlines()
+
+        # Check if AVX2 optimization patch is already in series
+        has_avx2_patch = avx2_patch_line in series_lines
+
+        # Verify patch file exists before modifying series
+        avx2_patch_file = _ROOT_DIR / 'patches' / avx2_patch_line
+        if not avx2_patch_file.exists():
+            get_logger().warning('AVX2 optimization patch file not found: %s', avx2_patch_file)
+        else:
+            if is_x64 and not has_avx2_patch:
+                # x64 build: add AVX2 optimizations patch
+                series_lines.append(avx2_patch_line)
+                new_content = '\n'.join(series_lines) + '\n'
+                with series_file.open('w', encoding=ENCODING, newline='\n') as f:
+                    f.write(new_content)
+                get_logger().info('Added AVX2 optimization patch for x64 build')
+            elif not is_x64 and has_avx2_patch:
+                # Non-x64 build: remove AVX2 optimizations patch if present
+                series_lines = [line for line in series_lines if line != avx2_patch_line]
+                new_content = '\n'.join(series_lines) + '\n'
+                with series_file.open('w', encoding=ENCODING, newline='\n') as f:
+                    f.write(new_content)
+                get_logger().info('Removed AVX2 optimization patch for non-x64 build')
+
         # First, ungoogled-chromium-patches
         get_logger().info('Applying ungoogled-chromium patches...')
         patches.apply_patches(
