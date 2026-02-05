@@ -25,7 +25,12 @@ from build_common import (
     mark_step_complete,
 )
 from setup_rust import setup_rust_toolchain
-from setup_utils import fix_tool_downloading, setup_toolchain, download_from_sha1
+from setup_utils import (
+    fix_tool_downloading,
+    setup_toolchain,
+    download_from_sha1,
+    download_v8_builtins_pgo_profiles
+)
 from setup_win_toolchain import setup_windows_toolchain
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'ungoogled-chromium' / 'utils'))
@@ -136,6 +141,28 @@ def main():
                 '-p', platform_str,
                 '-s', sysroot_arch
             )
+
+            # Initialize V8 git submodule
+            if not (source_tree / "v8" / "BUILD.gn").exists():
+                get_logger().info("Initializing v8 submodule...")
+                run_build_process(
+                    "git",
+                    "submodule",
+                    "update",
+                    "--init",
+                    "--depth=1",
+                    "--progress",
+                    "v8",
+                    cwd=source_tree,
+                )
+                get_logger().info("v8 submodule initialized successfully")
+
+            # Download V8 Builtins PGO profiles (V8-specific optimization data)
+            get_logger().info("Downloading V8 Builtins PGO profiles...")
+            download_v8_builtins_pgo_profiles(
+                source_tree, args.disable_ssl_verification
+            )
+
             mark_step_complete(source_tree, '.clone_chromium_sources.stamp')
 
     # Retrieve windows downloads

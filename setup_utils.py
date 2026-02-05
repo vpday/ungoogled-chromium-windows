@@ -16,7 +16,7 @@ This module provides toolchain and environment setup utilities including:
 """
 
 import hashlib
-import os
+import json
 import re
 import sys
 import urllib.request
@@ -26,7 +26,7 @@ from pathlib import Path
 sys.path.insert(
     0, str(Path(__file__).resolve().parent / "ungoogled-chromium" / "utils")
 )
-from _common import ENCODING, get_logger, get_chromium_version
+from _common import ENCODING, get_logger
 
 sys.path.pop(0)
 
@@ -82,6 +82,136 @@ def download_from_sha1(sha1_file: Path, output_file: Path, bucket: str):
     # Set executable permission
     output_file.chmod(0o755)
     get_logger().info(f"Download complete: {output_file}")
+
+
+def download_v8_builtins_pgo_profiles(source_tree, disable_ssl_verification=False):
+    """
+    Download V8 Builtins PGO profiles from Google Cloud Storage.
+
+    This function automatically fetches the list of available profile files for the
+    current V8 version and downloads them. If the API query fails, it falls back to
+    a known list of profile files.
+
+    Args:
+        source_tree: Path to the Chromium source tree (build/src)
+        disable_ssl_verification: Whether to disable SSL verification for downloads
+    """
+
+    # Parse V8 version from v8-version.h
+    version_file = source_tree / "v8" / "include" / "v8-version.h"
+    if not version_file.exists():
+        get_logger().warning(f"V8 version file not found: {version_file}")
+        return
+
+    version_content = version_file.read_text(encoding="utf-8")
+    version_pattern = r"#define V8_MAJOR_VERSION (\d+)\s+#define V8_MINOR_VERSION (\d+)\s+#define V8_BUILD_NUMBER (\d+)\s+#define V8_PATCH_LEVEL (\d+)"
+    match = re.search(version_pattern, version_content, re.MULTILINE | re.DOTALL)
+
+    if not match:
+        get_logger().warning("Could not parse V8 version from v8-version.h")
+        return
+
+    major, minor, build, patch = match.groups()
+    v8_version = f"{major}.{minor}.{build}.{patch}"
+    get_logger().info(f"V8 version: {v8_version}")
+
+    # Check if build and patch are both 0 (no profiles exist)
+    if build == "0" and patch == "0":
+        get_logger().info("V8 version has no PGO profiles (development version)")
+        return
+
+    # Profile files directory
+    profiles_dir = source_tree / "v8" / "tools" / "builtins-pgo" / "profiles"
+    profiles_dir.mkdir(parents=True, exist_ok=True)
+
+    bucket = "chromium-v8-builtins-pgo"
+    version_prefix = f"by-version/{v8_version}/"
+
+    # Configure SSL context if needed
+    if disable_ssl_verification:
+        import ssl
+
+        ssl_context = ssl._create_unverified_context()
+    else:
+        ssl_context = None
+
+    # Fetch list of available profile files from GCS JSON API
+    api_url = f"https://storage.googleapis.com/storage/v1/b/{bucket}/o?prefix={version_prefix}"
+    get_logger().info(f"Fetching file list from GCS: {api_url}")
+
+    try:
+        if ssl_context:
+            response = urllib.request.urlopen(api_url, context=ssl_context)
+        else:
+            response = urllib.request.urlopen(api_url)
+
+        data = json.loads(response.read().decode("utf-8"))
+
+        if "items" not in data or not data["items"]:
+            get_logger().warning(f"No PGO profiles found for V8 version {v8_version}")
+            return
+
+        # Extract file names from the response
+        profile_files = []
+        for item in data["items"]:
+            # Remove the version prefix to get just the filename
+            filename = item["name"].replace(version_prefix, "")
+            if filename:  # Skip empty names (directory itself)
+                profile_files.append(filename)
+
+        get_logger().info(
+            f"Found {len(profile_files)} profile files: {', '.join(profile_files)}"
+        )
+
+    except Exception as e:
+        get_logger().warning(f"Failed to fetch file list from GCS: {e}")
+        get_logger().info("Falling back to known profile file list")
+        # Fallback to known files if API query fails
+        profile_files = [
+            "x64.profile",
+            "x64-rl.profile",
+            "x86.profile",
+            "x86-rl.profile",
+            "meta.json",
+        ]
+
+    # Download each profile file
+    base_url = f"https://storage.googleapis.com/{bucket}/{version_prefix}"
+    downloaded_count = 0
+
+    for profile_file in profile_files:
+        output_path = profiles_dir / profile_file
+
+        # Skip if already exists
+        if output_path.exists():
+            get_logger().info(f"Profile already exists: {profile_file}")
+            downloaded_count += 1
+            continue
+
+        url = f"{base_url}{profile_file}"
+        get_logger().info(f"Downloading {profile_file}")
+
+        try:
+            if ssl_context:
+                urllib.request.urlretrieve(url, output_path)
+            else:
+                urllib.request.urlretrieve(url, output_path)
+            get_logger().info(f"Downloaded: {profile_file}")
+            downloaded_count += 1
+        except Exception as e:
+            get_logger().warning(f"Failed to download {profile_file}: {e}")
+            # Clean up partial download
+            if output_path.exists():
+                output_path.unlink()
+
+    if downloaded_count == len(profile_files):
+        get_logger().info("All V8 Builtins PGO profiles downloaded successfully")
+    elif downloaded_count > 0:
+        get_logger().info(
+            f"Downloaded {downloaded_count}/{len(profile_files)} V8 Builtins PGO profiles"
+        )
+    else:
+        get_logger().warning("No V8 Builtins PGO profiles were downloaded")
 
 
 def fix_tool_downloading(source_tree):
@@ -187,22 +317,6 @@ def setup_sysroot(source_tree, ci_mode=False):
         str(source_tree / "build" / "linux" / "sysroot_scripts" / "install-sysroot.py"),
         f"--arch={host_sysroot_arch}",
     )
-
-    # Install target architecture sysroot if different from host
-    if target_arch != host_arch:
-        target_sysroot_arch = arch_mapping.get(target_arch, target_arch)
-        get_logger().info("Installing target sysroot: %s", target_sysroot_arch)
-        run_build_process(
-            sys.executable,
-            str(
-                source_tree
-                / "build"
-                / "linux"
-                / "sysroot_scripts"
-                / "install-sysroot.py"
-            ),
-            f"--arch={target_sysroot_arch}",
-        )
 
     # Create stamp file to mark successful installation
     stamp_file.touch()
