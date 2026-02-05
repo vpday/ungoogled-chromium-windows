@@ -318,6 +318,22 @@ def setup_sysroot(source_tree, ci_mode=False):
         f"--arch={host_sysroot_arch}",
     )
 
+    # Install target architecture sysroot if different from host
+    if target_arch != host_arch:
+        target_sysroot_arch = arch_mapping.get(target_arch, target_arch)
+        get_logger().info("Installing target sysroot: %s", target_sysroot_arch)
+        run_build_process(
+            sys.executable,
+            str(
+                source_tree
+                / "build"
+                / "linux"
+                / "sysroot_scripts"
+                / "install-sysroot.py"
+            ),
+            f"--arch={target_sysroot_arch}",
+        )
+
     # Create stamp file to mark successful installation
     stamp_file.touch()
     get_logger().info("Sysroot installation completed successfully")
