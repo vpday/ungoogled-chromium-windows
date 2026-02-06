@@ -54,7 +54,7 @@ async function run() {
 
     // Use timeout command to enforce 5.35 hour build limit (19260 seconds)
     const BUILD_TIMEOUT_SECONDS = 19260;
-    const timeoutArgs = ['v', '-k', '5m', '-s', 'INT', BUILD_TIMEOUT_SECONDS.toString(), 'python3', ...args];
+    const timeoutArgs = ['-v', '-k', '5m', '-s', 'INT', BUILD_TIMEOUT_SECONDS.toString(), 'python3', ...args];
 
     const retCode = await exec.exec('timeout', timeoutArgs, {
         cwd: WORK_DIR,
