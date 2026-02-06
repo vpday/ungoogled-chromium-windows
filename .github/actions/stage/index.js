@@ -21,7 +21,6 @@ async function run() {
     const WORK_DIR = '/mnt/chromium-build';
     const BUILD_DIR = `${WORK_DIR}/build`;
     const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE || process.cwd();
-    const BUILD_START_TIME = Date.now();
     console.log(`Working Directory: ${WORK_DIR}`);
 
     const artifact = new DefaultArtifactClient();
@@ -52,13 +51,14 @@ async function run() {
         cwd: WORK_DIR,
         ignoreReturnCode: true
     });
-    const retCode = await exec.exec('python3', args, {
+
+    // Use timeout command to enforce 5.35 hour build limit (19260 seconds)
+    const BUILD_TIMEOUT_SECONDS = 19260;
+    const timeoutArgs = ['v', '-k', '5m', '-s', 'INT', BUILD_TIMEOUT_SECONDS.toString(), 'python3', ...args];
+
+    const retCode = await exec.exec('timeout', timeoutArgs, {
         cwd: WORK_DIR,
-        ignoreReturnCode: true,
-        env: {
-            ...process.env,
-            GH_ACTIONS_START_TIME: BUILD_START_TIME.toString()
-        }
+        ignoreReturnCode: true
     });
     if (retCode === 0) {
         core.setOutput('finished', true);
