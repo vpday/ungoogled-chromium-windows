@@ -420,7 +420,7 @@ The build system supports three Windows target architectures:
 
 ### AVX2 Optimizations
 
-For x64 builds, the system automatically applies AVX2 SIMD optimizations via `patches/ungoogled-chromium/windows/windows-enable-avx2-optimizations.patch`. This patch is conditionally added to `patches/series` based on the target architecture.
+For x64 builds, the system automatically applies AVX2 optimizations via `patches/ungoogled-chromium/windows/windows-enable-avx2-optimizations.patch`. This patch is conditionally added to `patches/series` based on the target architecture.
 
 ## License
 

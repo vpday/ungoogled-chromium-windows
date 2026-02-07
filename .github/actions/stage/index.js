@@ -30,9 +30,9 @@ async function run() {
         const artifactInfo = await artifact.getArtifact(artifactName);
         await artifact.downloadArtifact(artifactInfo.artifact.id, {path: `${GITHUB_WORKSPACE}/build`});
         await exec.exec('mkdir', ['-p', BUILD_DIR]);
-        const archivePath = `${GITHUB_WORKSPACE}/build/artifacts.tar.zst`;
-        await exec.exec('tar', ['-I', 'zstd -T0', '-xf', archivePath, '-C', BUILD_DIR]);
-        await io.rmRF(`${GITHUB_WORKSPACE}/build`);
+        const archivePath = `${GITHUB_WORKSPACE}/build/artifacts.7z`;
+        await exec.exec('7z', ['x', archivePath, `-o${BUILD_DIR}`, '-y']);
+        await io.rmRF(archivePath);
 
         // Clean up ciopfs mountpoint directory (will be remounted by vs_toolchain.py)
         const vsFilesPath = `${BUILD_DIR}/src/third_party/depot_tools/win_toolchain/vs_files`;
@@ -52,8 +52,8 @@ async function run() {
         ignoreReturnCode: true
     });
 
-    // Use timeout command to enforce 5.35 hour build limit (19260 seconds)
-    const BUILD_TIMEOUT_SECONDS = 19260;
+    // Use timeout command to enforce 5 hour build limit (18000 seconds)
+    const BUILD_TIMEOUT_SECONDS = 18000;
     const timeoutArgs = ['-v', '-k', '5m', '-s', 'INT', BUILD_TIMEOUT_SECONDS.toString(), 'python3', ...args];
 
     const retCode = await exec.exec('timeout', timeoutArgs, {
@@ -103,25 +103,16 @@ async function run() {
             console.log(`Could not check/unmount vs_files: ${e}`);
         }
 
-        // Show source directory size before compression
-        const srcDir = `${BUILD_DIR}/src`;
-        console.log('Source directory:');
-        await exec.exec('du', ['-sh', srcDir]);
-        // Create compressed archive using tar + zstd
-        const archivePath = `${GITHUB_WORKSPACE}/artifacts.tar.zst`;
+        // Create compressed archive using 7z + zstd
+        const archivePath = `${GITHUB_WORKSPACE}/artifacts.7z`;
         console.log(`Creating archive: ${archivePath}`);
         console.log('Compression started...');
-        await exec.exec('tar', [
-            '-I', 'zstd -10 -T0',
-            '-cf', archivePath,
-            '-C', BUILD_DIR,
-            '--exclude=src/third_party/depot_tools/win_toolchain/vs_files',
-            'src'
-        ], {ignoreReturnCode: true});
+            await exec.exec('7z', ['a', '-m0=zstd', '-mx=10', '-mmt=on',
+            `-xr!src/third_party/depot_tools/win_toolchain/vs_files`, archivePath, 'src'], {
+            cwd: BUILD_DIR,
+            ignoreReturnCode: true
+        });
         console.log('Compression completed');
-        // Show compressed file size
-        console.log('Compressed archive:');
-        await exec.exec('du', ['-sh', archivePath]);
 
         for (let i = 0; i < 5; ++i) {
             try {
