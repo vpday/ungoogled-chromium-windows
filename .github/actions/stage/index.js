@@ -27,9 +27,34 @@ async function run() {
     const artifactName = x86 ? 'build-artifact-x86' : (arm ? 'build-artifact-arm' : 'build-artifact');
 
     if (from_artifact) {
-        const artifactInfo = await artifact.getArtifact(artifactName);
-        await artifact.downloadArtifact(artifactInfo.artifact.id, {path: `${GITHUB_WORKSPACE}/build`});
-        await exec.exec('mkdir', ['-p', BUILD_DIR]);
+        let downloadSuccess = false;
+
+        // Retry loop: maximum 3 attempts
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                console.log(`Downloading artifact (attempt ${attempt}/3): ${artifactName}`);
+
+                const artifactInfo = await artifact.getArtifact(artifactName);
+                await artifact.downloadArtifact(artifactInfo.artifact.id, {path: `${GITHUB_WORKSPACE}/build`});
+
+                console.log(`Artifact download complete: ${artifactName}`);
+                downloadSuccess = true;
+                break;
+            } catch (e) {
+                console.error(`Artifact download failed (attempt ${attempt}/3): ${e}`);
+                // Wait 10 seconds between the attempts
+                await new Promise(r => setTimeout(r, 10000));
+            }
+        }
+
+        // If all retries failed, set output and exit
+        if (!downloadSuccess) {
+            console.error(`Failed to download artifact after 3 attempts, stopping stage`);
+            core.setOutput('finished', false);
+            return;
+        }
+
+        // Extract and clean up
         const archivePath = `${GITHUB_WORKSPACE}/build/artifacts.7z`;
         await exec.exec('7z', ['x', archivePath, `-o${BUILD_DIR}`, '-y']);
         await io.rmRF(archivePath);
