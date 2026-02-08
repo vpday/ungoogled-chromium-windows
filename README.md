@@ -17,7 +17,7 @@ This project builds Windows Chromium binaries on Linux through cross-compilation
 ```bash
 # Install system dependencies
 sudo apt-get update
-sudo apt-get install -y zstd p7zip-full pkg-config libglib2.0-dev \
+sudo apt-get install -y p7zip-full pkg-config libglib2.0-dev \
     libfuse2 libnss3-dev libcups2-dev libpci-dev libdrm-dev \
     libxkbcommon-dev gperf libkrb5-dev python3 git
 
