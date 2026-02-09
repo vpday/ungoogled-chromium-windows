@@ -20,6 +20,7 @@ async function run() {
 
     const WORK_DIR = '/mnt/chromium-build';
     const BUILD_DIR = `${WORK_DIR}/build`;
+    const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE || process.cwd();
     console.log(`Working Directory: ${WORK_DIR}`);
 
     const artifact = new DefaultArtifactClient();
@@ -34,7 +35,7 @@ async function run() {
                 console.log(`Downloading artifact (attempt ${attempt}/3): ${artifactName}`);
 
                 const artifactInfo = await artifact.getArtifact(artifactName);
-                await artifact.downloadArtifact(artifactInfo.artifact.id, {path: BUILD_DIR});
+                await artifact.downloadArtifact(artifactInfo.artifact.id, {path: GITHUB_WORKSPACE});
 
                 console.log(`Artifact download complete: ${artifactName}`);
                 downloadSuccess = true;
@@ -54,7 +55,7 @@ async function run() {
         }
 
         // Extract and clean up
-        const archivePath = `${BUILD_DIR}/artifacts.7z`;
+        const archivePath = `${GITHUB_WORKSPACE}/artifacts.7z`;
         await exec.exec('7z', ['x', archivePath, `-o${BUILD_DIR}`, '-y']);
         await io.rmRF(archivePath);
 
@@ -128,10 +129,10 @@ async function run() {
         }
 
         // Create compressed archive using 7z + zstd
-        const archivePath = `${BUILD_DIR}/artifacts.7z`;
+        const archivePath = `${GITHUB_WORKSPACE}/artifacts.7z`;
         console.log(`Creating archive: ${archivePath}`);
         console.log('Compression started...');
-            await exec.exec('7z', ['a', '-m0=zstd', '-mx=10', '-mmt=on',
+            await exec.exec('7z', ['a', '-m0=zstd', '-mx=11', '-mmt=on',
             `-xr!src/third_party/depot_tools/win_toolchain/vs_files`, archivePath, 'src'], {
             cwd: BUILD_DIR,
             ignoreReturnCode: true
@@ -145,7 +146,8 @@ async function run() {
                 // ignored
             }
             try {
-                await artifact.uploadArtifact(artifactName, [archivePath], {retentionDays: 4, compressionLevel: 0});
+                await artifact.uploadArtifact(artifactName, [archivePath],
+                    GITHUB_WORKSPACE, {retentionDays: 4, compressionLevel: 0});
                 break;
             } catch (e) {
                 console.error(`Upload artifact failed: ${e}`);
