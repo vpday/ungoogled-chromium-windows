@@ -58,6 +58,7 @@ runs:
     - name: Install 7-Zip-Zstd
       shell: bash
       run: |
+        set -e
         wget -q https://github.com/mcmilk/7-Zip-zstd/releases/download/v25.01-v1.5.7-R4/linux-clang-x64.zip -O 7z-zstd.zip
         mkdir -p tmp_7z
         unzip -o 7z-zstd.zip -d tmp_7z
@@ -67,41 +68,11 @@ runs:
         echo "7-Zip-Zstd installed version:"
         7z --version
 
-    - name: Prepare /mnt Build Directory
+    - name: Setup Build Storage
       shell: bash
       run: |
-        set -e
-
-        # Create /mnt build directory with proper ownership
-        STORAGE_DIR="/mnt/chromium-build"
-
-        echo "Creating build directory: ${STORAGE_DIR}"
-        sudo mkdir -p "${STORAGE_DIR}"
-
-        # Set ownership to current user
-        CURRENT_USER=$(whoami)
-        CURRENT_GROUP=$(id -gn)
-        echo "Setting ownership to ${CURRENT_USER}:${CURRENT_GROUP}"
-        sudo chown "${CURRENT_USER}:${CURRENT_GROUP}" "${STORAGE_DIR}"
-
-        # Set permissions
-        sudo chmod 755 "${STORAGE_DIR}"
-
-        # Verify
-        echo "Directory created successfully:"
-        ls -ld "${STORAGE_DIR}"
-
-        # Test write permissions
-        if touch "${STORAGE_DIR}/.write-test" 2>/dev/null; then
-          echo "[PASS] Write test successful"
-          rm "${STORAGE_DIR}/.write-test"
-        else
-          echo "[FAIL] Write test failed"
-          exit 1
-        fi
-
-        echo "Get CPU Info:"
-        sudo lscpu
+        chmod +x "${GITHUB_WORKSPACE}/.github/scripts/setup-storage.sh"
+        "${GITHUB_WORKSPACE}/.github/scripts/setup-storage.sh"
 
     - name: Set up Python ${{ inputs.python-version }}
       uses: actions/setup-python@v6
