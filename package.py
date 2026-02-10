@@ -17,6 +17,8 @@ import platform
 from pathlib import Path
 import shutil
 
+_ROOT_DIR = Path(__file__).resolve().parent
+
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'ungoogled-chromium' / 'utils'))
 import filescfg
 from _common import ENCODING, get_chromium_version
@@ -56,11 +58,18 @@ def main():
         help=('Filter build outputs by a target CPU. '
               'This is the same as the "arch" key in FILES.cfg. '
               'Default (from platform.architecture()): %(default)s'))
+    parser.add_argument(
+        '--out-dir',
+        type=Path,
+        default=None,
+        metavar='DIR',
+        help='Build output directory. Default: build/src/out/Default'
+    )
     args = parser.parse_args()
 
-    build_outputs = Path('build/src/out/Default')
+    build_outputs = (args.out_dir if args.out_dir else _ROOT_DIR / 'build' / 'src' / 'out' / 'Default').resolve()
 
-    shutil.copyfile('build/src/out/Default/mini_installer.exe',
+    shutil.copyfile(str(build_outputs / 'mini_installer.exe'),
         'build/ungoogled-chromium_{}-{}.{}_installer_{}.exe'.format(
             get_chromium_version(), _get_release_revision(),
             _get_packaging_revision(), _get_target_cpu(build_outputs)))

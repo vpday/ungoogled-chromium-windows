@@ -77,11 +77,19 @@ def main():
         '--tarball',
         action='store_true'
     )
+    parser.add_argument(
+        '--out-dir',
+        type=Path,
+        default=None,
+        metavar='DIR',
+        help='GN output directory. Default: build/src/out/Default'
+    )
     args = parser.parse_args()
 
     # Set common variables
     source_tree = _ROOT_DIR / 'build' / 'src'
     downloads_cache = _ROOT_DIR / 'build' / 'download_cache'
+    out_dir = (args.out_dir if args.out_dir else source_tree / 'out' / 'Default').resolve()
 
     # Setup environment
     source_tree.mkdir(parents=True, exist_ok=True)
@@ -304,7 +312,7 @@ def main():
     if should_skip_step(source_tree, '.write_gn_args.stamp', args.ci):
         get_logger().info('Skipping GN args generation (already completed)')
     else:
-        (source_tree / 'out/Default').mkdir(parents=True, exist_ok=True)
+        out_dir.mkdir(parents=True, exist_ok=True)
         gn_flags = (_ROOT_DIR / 'ungoogled-chromium' / 'flags.gn').read_text(encoding=ENCODING)
         gn_flags += '\n'
         windows_flags = (_ROOT_DIR / 'flags.windows.gn').read_text(encoding=ENCODING)
@@ -315,7 +323,7 @@ def main():
         if args.tarball:
             windows_flags += '\nchrome_pgo_phase=0\n'
         gn_flags += windows_flags
-        (source_tree / 'out/Default/args.gn').write_text(gn_flags, encoding=ENCODING)
+        (out_dir / 'args.gn').write_text(gn_flags, encoding=ENCODING)
         mark_step_complete(source_tree, '.write_gn_args.stamp')
 
     # Configure Windows Toolchain environment
@@ -384,6 +392,15 @@ def main():
         current_flags = os.environ.get(flag_name, '')
         os.environ[flag_name] = current_flags + flags_to_append
 
+    # When out_dir is outside source_tree (e.g. CI split-disk layout), GN-generated
+    # scripts use relative paths like ../../third_party/... from the build dir.
+    # Create a third_party symlink at out_dir/../.. so those paths resolve correctly.
+    gn_parent = out_dir.parent.parent
+    if gn_parent.resolve() != source_tree.resolve():
+        third_party_link = gn_parent / 'third_party'
+        if gn_parent.exists() and not third_party_link.exists():
+            third_party_link.symlink_to(source_tree / 'third_party')
+
     # Enter source tree to run build commands
     os.chdir(source_tree)
 
@@ -392,15 +409,25 @@ def main():
         get_logger().info('Skipping GN bootstrap (already completed)')
     else:
         run_build_process(
-            sys.executable, 'tools/gn/bootstrap/bootstrap.py', '-o', 'out/Default/gn',
+            sys.executable, 'tools/gn/bootstrap/bootstrap.py', '-o', str(out_dir / 'gn'),
             '--skip-generate-buildfiles')
         mark_step_complete(source_tree, '.gn_bootstrap.stamp')
+
+    # Create buildtools/linux64/gn symlink for licenses.py GN discovery
+    gn_binary = out_dir / 'gn'
+    buildtools_gn = source_tree / 'buildtools' / 'linux64' / 'gn'
+    if gn_binary.exists():
+        buildtools_gn.parent.mkdir(parents=True, exist_ok=True)
+        if not buildtools_gn.exists() or buildtools_gn.is_symlink():
+            if buildtools_gn.is_symlink():
+                buildtools_gn.unlink()
+            buildtools_gn.symlink_to(gn_binary)
 
     # Run gn gen
     if should_skip_step(source_tree, '.gn_gen.stamp', args.ci):
         get_logger().info('Skipping GN gen (already completed)')
     else:
-        run_build_process('out/Default/gn', 'gen', 'out/Default', '--fail-on-unused-args')
+        run_build_process(str(out_dir / 'gn'), 'gen', str(out_dir), '--fail-on-unused-args')
         mark_step_complete(source_tree, '.gn_gen.stamp')
 
     # Ninja commandline
@@ -409,7 +436,7 @@ def main():
         ninja_commandline.append('-j')
         ninja_commandline.append(args.thread_count)
     ninja_commandline.append('-C')
-    ninja_commandline.append('out/Default')
+    ninja_commandline.append(str(out_dir))
     ninja_commandline.append('chrome')
     ninja_commandline.append('chromedriver')
     ninja_commandline.append('mini_installer')
@@ -420,7 +447,7 @@ def main():
     # Package (CI mode only)
     if args.ci:
         os.chdir(_ROOT_DIR)
-        subprocess.run([sys.executable, 'package.py'])
+        subprocess.run([sys.executable, 'package.py', '--out-dir', str(out_dir)])
 
 
 if __name__ == '__main__':

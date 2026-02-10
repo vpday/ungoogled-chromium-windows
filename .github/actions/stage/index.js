@@ -27,6 +27,12 @@ async function run() {
     const artifactName = x86 ? 'build-artifact-x86' : (arm ? 'build-artifact-arm' : 'build-artifact');
     const archivePath = `${GITHUB_WORKSPACE}/artifacts.tar.zst`;
 
+    const outArtifactName = x86 ? 'out-artifact-x86' : (arm ? 'out-artifact-arm' : 'out-artifact');
+    const outArchivePath = `${GITHUB_WORKSPACE}/out-archive.tar.zst`;
+    const outPath = `${GITHUB_WORKSPACE}/build/out`;
+    const outDefaultPath = `${outPath}/Default`;
+    await io.mkdirP(outDefaultPath);
+
     if (from_artifact) {
         let downloadSuccess = false;
 
@@ -59,6 +65,33 @@ async function run() {
         await exec.exec('tar', ['-I', 'zstd -T0', '-xf', archivePath, '-C', BUILD_DIR]);
         await io.rmRF(archivePath);
 
+        let outDownloadSuccess = false;
+
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                console.log(`Downloading out artifact (attempt ${attempt}/3): ${outArtifactName}`);
+
+                const outArtifactInfo = await artifact.getArtifact(outArtifactName);
+                await artifact.downloadArtifact(outArtifactInfo.artifact.id, {path: GITHUB_WORKSPACE});
+
+                console.log(`Out artifact download complete: ${outArtifactName}`);
+                outDownloadSuccess = true;
+                break;
+            } catch (e) {
+                console.error(`Out artifact download failed (attempt ${attempt}/3): ${e}`);
+                await new Promise(r => setTimeout(r, 10000));
+            }
+        }
+
+        if (!outDownloadSuccess) {
+            console.error(`Failed to download out artifact after 3 attempts, stopping stage`);
+            core.setOutput('finished', false);
+            return;
+        }
+
+        await exec.exec('tar', ['-I', 'zstd -T0', '-xf', outArchivePath, '-C', outPath]);
+        await io.rmRF(outArchivePath);
+
         // Clean up ciopfs mountpoint directory (will be remounted by vs_toolchain.py)
         const vsFilesPath = `${BUILD_DIR}/src/third_party/depot_tools/win_toolchain/vs_files`;
         if (fs.existsSync(vsFilesPath)) {
@@ -67,7 +100,7 @@ async function run() {
         }
     }
 
-    const args = ['build.py', '--ci', '-j', '4', '--7z-path', '/usr/bin/7z']
+    const args = ['build.py', '--ci', '-j', '4', '--7z-path', '/usr/bin/7z', '--out-dir', outDefaultPath]
     if (x86)
         args.push('--x86')
     if (arm)
@@ -127,6 +160,39 @@ async function run() {
         } catch (e) {
             console.log(`Could not check/unmount vs_files: ${e}`);
         }
+
+        console.log('Source out directory:');
+        await exec.exec('du', ['-sh', outDefaultPath]);
+        console.log(`Creating out archive: ${outArchivePath}`);
+        console.log('Out compression started...');
+        await exec.exec('tar', [
+            '-I', 'zstd -10 -T0',
+            '-cf', outArchivePath,
+            '-C', outPath,
+            'Default'
+        ], {ignoreReturnCode: true});
+        console.log('Out compression completed');
+        console.log('Compressed out archive:');
+        await exec.exec('du', ['-sh', outArchivePath]);
+
+        for (let i = 0; i < 5; ++i) {
+            try {
+                await artifact.deleteArtifact(outArtifactName);
+            } catch (e) {
+                // ignored
+            }
+            try {
+                await artifact.uploadArtifact(outArtifactName, [outArchivePath],
+                    GITHUB_WORKSPACE, {retentionDays: 4, compressionLevel: 0});
+                break;
+            } catch (e) {
+                console.error(`Upload out artifact failed: ${e}`);
+                // Wait 10 seconds between the attempts
+                await new Promise(r => setTimeout(r, 10000));
+            }
+        }
+        // Delete out archive to free disk space before creating the next archive
+        await io.rmRF(outArchivePath);
 
         // Show source directory size before compression
         const srcDir = `${BUILD_DIR}/src`;
