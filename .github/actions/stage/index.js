@@ -25,6 +25,7 @@ async function run() {
 
     const artifact = new DefaultArtifactClient();
     const artifactName = x86 ? 'build-artifact-x86' : (arm ? 'build-artifact-arm' : 'build-artifact');
+    const archivePath = `${GITHUB_WORKSPACE}/artifacts.tar.zst`;
 
     if (from_artifact) {
         let downloadSuccess = false;
@@ -55,8 +56,7 @@ async function run() {
         }
 
         // Extract and clean up
-        const archivePath = `${GITHUB_WORKSPACE}/artifacts.7z`;
-        await exec.exec('7z', ['x', archivePath, `-o${BUILD_DIR}`, '-y']);
+        await exec.exec('tar', ['-I', 'zstd -T0', '-xf', archivePath, '-C', BUILD_DIR]);
         await io.rmRF(archivePath);
 
         // Clean up ciopfs mountpoint directory (will be remounted by vs_toolchain.py)
@@ -128,16 +128,24 @@ async function run() {
             console.log(`Could not check/unmount vs_files: ${e}`);
         }
 
-        // Create compressed archive using 7z + zstd
-        const archivePath = `${GITHUB_WORKSPACE}/artifacts.7z`;
+        // Show source directory size before compression
+        const srcDir = `${BUILD_DIR}/src`;
+        console.log('Source directory:');
+        await exec.exec('du', ['-sh', srcDir]);
+        // Create compressed archive using tar + zstd
         console.log(`Creating archive: ${archivePath}`);
         console.log('Compression started...');
-            await exec.exec('7z', ['a', '-m0=zstd', '-mx=11', '-mmt=on',
-            `-xr!src/third_party/depot_tools/win_toolchain/vs_files`, archivePath, 'src'], {
-            cwd: BUILD_DIR,
-            ignoreReturnCode: true
-        });
+        await exec.exec('tar', [
+            '-I', 'zstd -10 -T0',
+            '-cf', archivePath,
+            '-C', BUILD_DIR,
+            '--exclude=src/third_party/depot_tools/win_toolchain/vs_files',
+            'src'
+        ], {ignoreReturnCode: true});
         console.log('Compression completed');
+        // Show compressed file size
+        console.log('Compressed archive:');
+        await exec.exec('du', ['-sh', archivePath]);
 
         for (let i = 0; i < 5; ++i) {
             try {
