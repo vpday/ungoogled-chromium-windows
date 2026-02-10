@@ -72,5 +72,6 @@ runs:
 
         STORAGE_DIR="/mnt/chromium-build"
 
+        sudo mkdir -p "${STORAGE_DIR}"
         echo "Copying workspace from ${GITHUB_WORKSPACE} to ${STORAGE_DIR}"
         cp -r "${GITHUB_WORKSPACE}/"* "${GITHUB_WORKSPACE}/".* "${STORAGE_DIR}/" 2>/dev/null || true
