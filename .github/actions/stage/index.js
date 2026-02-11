@@ -62,6 +62,7 @@ async function run() {
         }
 
         // Extract and clean up
+        await io.mkdirP(BUILD_DIR);
         await exec.exec('tar', ['-I', 'zstd -T0', '-xf', archivePath, '-C', BUILD_DIR]);
         await io.rmRF(archivePath);
 
