@@ -171,15 +171,36 @@ def main():
 
             mark_step_complete(source_tree, '.clone_chromium_sources.stamp')
 
+    # Determine which Windows dependency components to download/unpack based on target architecture.
+    target_arch = get_target_arch_from_args()
+    win_components = [
+        'llvm',
+        'ninja',
+        '7zip-linux',
+        'nodejs',
+        'esbuild',
+        'directx-headers',
+        'webauthn',
+        'rust-x64',
+        'rust-windows-create',
+    ]
+    # Select only the needed Rust toolchain packages.
+    if target_arch == 'x64':
+        win_components.append('rust-std-windows-x64')
+    elif target_arch == 'x86':
+        win_components.append('rust-std-windows-x86')
+    elif target_arch == 'arm64':
+        win_components.append('rust-std-windows-arm')
+
     # Retrieve windows downloads
     if should_skip_step(source_tree, '.download_windows_dependencies.stamp', args.ci):
         get_logger().info('Skipping Windows dependencies download (already completed)')
     else:
         get_logger().info('Downloading required files...')
         download_info_win = downloads.DownloadInfo([_ROOT_DIR / 'downloads.ini'])
-        downloads.retrieve_downloads(download_info_win, downloads_cache, None, True, args.disable_ssl_verification)
+        downloads.retrieve_downloads(download_info_win, downloads_cache, win_components, True, args.disable_ssl_verification)
         try:
-            downloads.check_downloads(download_info_win, downloads_cache, None)
+            downloads.check_downloads(download_info_win, downloads_cache, win_components)
         except downloads.HashMismatchError as exc:
             get_logger().error('File checksum does not match: %s', exc)
             exit(1)
@@ -210,7 +231,7 @@ def main():
             directx.mkdir()
         get_logger().info('Unpacking downloads...')
         download_info_win = downloads.DownloadInfo([_ROOT_DIR / 'downloads.ini'])
-        downloads.unpack_downloads(download_info_win, downloads_cache, None, source_tree, extractors)
+        downloads.unpack_downloads(download_info_win, downloads_cache, win_components, source_tree, extractors)
         mark_step_complete(source_tree, '.unpack_windows_downloads.stamp')
 
     # Setup 7z symlink (7za -> 7zz)
