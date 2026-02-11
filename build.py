@@ -189,8 +189,10 @@ def main():
         win_components.append('rust-std-windows-x64')
     elif target_arch == 'x86':
         win_components.append('rust-std-windows-x86')
+        win_components.append('rust-x86')
     elif target_arch == 'arm64':
         win_components.append('rust-std-windows-arm')
+        win_components.append('rust-arm')
 
     # Retrieve windows downloads
     if should_skip_step(source_tree, '.download_windows_dependencies.stamp', args.ci):
