@@ -240,45 +240,45 @@ grep RUST_REVISION build/src/tools/rust/update_rust.py
 ```
 
 2. Get commit date from `https://github.com/rust-lang/rust/commit/RUST_REVISION`
-   - Example: Revision `abc123...` corresponds to date `2025-11-11`
+   - Example: Revision `abc123...` corresponds to date `2025-12-02`
 
-3. Download all Rust components from `https://static.rust-lang.org/dist/YYYY-MM-DD/`:
+3. Download all Rust components from `https://static.rust-lang.org/dist/2025-12-02/`:
 
 **Host toolchains** (Linux):
 ```bash
 # x64 host
-wget https://static.rust-lang.org/dist/2025-11-11/rust-nightly-x86_64-unknown-linux-gnu.tar.gz
-sha256sum rust-nightly-x86_64-unknown-linux-gnu.tar.gz
+wget https://static.rust-lang.org/dist/2025-12-02/rust-nightly-x86_64-unknown-linux-gnu.tar.xz
+sha256sum rust-nightly-x86_64-unknown-linux-gnu.tar.xz
 
 # x86 host (for 32-bit builds)
-wget https://static.rust-lang.org/dist/2025-11-11/rust-nightly-i686-unknown-linux-gnu.tar.gz
-sha256sum rust-nightly-i686-unknown-linux-gnu.tar.gz
+wget https://static.rust-lang.org/dist/2025-12-02/rust-nightly-i686-unknown-linux-gnu.tar.xz
+sha256sum rust-nightly-i686-unknown-linux-gnu.tar.xz
 
 # ARM host (for ARM builds)
-wget https://static.rust-lang.org/dist/2025-11-11/rust-nightly-aarch64-unknown-linux-gnu.tar.gz
-sha256sum rust-nightly-aarch64-unknown-linux-gnu.tar.gz
+wget https://static.rust-lang.org/dist/2025-12-02/rust-nightly-aarch64-unknown-linux-gnu.tar.xz
+sha256sum rust-nightly-aarch64-unknown-linux-gnu.tar.xz
 ```
 
 **Windows targets** (cross-compilation):
 ```bash
 # x64 target
-wget https://static.rust-lang.org/dist/2025-11-11/rust-std-nightly-x86_64-pc-windows-msvc.tar.gz
-sha256sum rust-std-nightly-x86_64-pc-windows-msvc.tar.gz
+wget https://static.rust-lang.org/dist/2025-12-02/rust-std-nightly-x86_64-pc-windows-msvc.tar.xz
+sha256sum rust-std-nightly-x86_64-pc-windows-msvc.tar.xz
 
 # x86 target
-wget https://static.rust-lang.org/dist/2025-11-11/rust-std-nightly-i686-pc-windows-msvc.tar.gz
-sha256sum rust-std-nightly-i686-pc-windows-msvc.tar.gz
+wget https://static.rust-lang.org/dist/2025-12-02/rust-std-nightly-i686-pc-windows-msvc.tar.xz
+sha256sum rust-std-nightly-i686-pc-windows-msvc.tar.xz
 
 # ARM64 target
-wget https://static.rust-lang.org/dist/2025-11-11/rust-std-nightly-aarch64-pc-windows-msvc.tar.gz
-sha256sum rust-std-nightly-aarch64-pc-windows-msvc.tar.gz
+wget https://static.rust-lang.org/dist/2025-12-02/rust-std-nightly-aarch64-pc-windows-msvc.tar.xz
+sha256sum rust-std-nightly-aarch64-pc-windows-msvc.tar.xz
 ```
 
 4. Extract a host toolchain and verify version:
 ```bash
-tar xzf rust-nightly-x86_64-unknown-linux-gnu.tar.gz
+tar xzf rust-nightly-x86_64-unknown-linux-gnu.tar.xz
 ./rust-nightly-x86_64-unknown-linux-gnu/rustc/bin/rustc -V
-# Output: rustc 1.XX.0-nightly (abc123... 2025-11-11)
+# Output: rustc 1.93.0-nightly (1d60f9e07 2025-12-01)
 ```
 
 5. Update `downloads.ini` sections:
@@ -287,7 +287,7 @@ tar xzf rust-nightly-x86_64-unknown-linux-gnu.tar.gz
 
 6. Update `patches/ungoogled-chromium/windows/windows-fix-building-with-rust.patch`:
    - Replace the Rust version string to match the output from step 4
-   - Example: Change `1.82.0-nightly (abc123... 2025-10-11)` to `1.83.0-nightly (def456... 2025-11-11)`
+   - Example: Change `rustc_version = ""` to `rustc_version = "rustc 1.93.0-nightly (1d60f9e07 2025-12-01)"`
 
 **Windows Rust Crate** (`rust-windows-create`)
 
@@ -317,18 +317,18 @@ The Windows cross-compilation toolchain configuration is in `win_toolchain.json`
 ```json
 {
   "variables": {
-    "chromium_version": "144.0.7559.132",
+    "chromium_version": "145.0.7632.45",
     "sdk_version": "10.0.26100.0",
     "vs_version": "2022",
     "repo": "vpday/chromium-win-toolchain-builder"
   },
   "win-toolchain": {
-    "zip_filename": "dd3991e304",
+    "zip_filename": "ec6812dcab",
     "sha512": "...",
     "files": []
   },
   "win-toolchain-noarm": {
-    "zip_filename": "dc64cbe804",
+    "zip_filename": "1c78b2a976",
     "sha512": "...",
     "files": []
   }
@@ -361,13 +361,13 @@ Visit: `https://github.com/vpday/chromium-win-toolchain-builder/releases/tag/VER
 
 The release page provides:
 - Tar archives: `win_toolchain_chromium-VERSION_vs-YEAR_sdk-SDK.tar.001/002` (with ARM) or `...noarm.tar` (without ARM)
-- Zip filenames: `dd3991e304.zip` (with ARM), `dc64cbe804.zip` (without ARM)
+- Zip filenames: `ec6812dcab.zip` (with ARM), `1c78b2a976.zip` (without ARM)
 - SHA-256 and SHA-512 checksums for both tar and zip files
 
 3. **Get zip information from releases page**
 
 From the release page, copy:
-- Zip filename (e.g., `dd3991e304.zip` for full toolchain, `dc64cbe804.zip` for noarm)
+- Zip filename (e.g., `ec6812dcab.zip` for full toolchain, `1c78b2a976.zip` for noarm)
 - Zip SHA-512 checksum
 
 These will be used for `zip_filename` and `sha512` fields in `win_toolchain.json`.
@@ -385,7 +385,7 @@ These will be used for the `sha256` field in the `files[]` array in `win_toolcha
 Update `variables` section:
 ```json
 "variables": {
-  "chromium_version": "144.0.7559.132",
+  "chromium_version": "145.0.7632.45",
   "sdk_version": "10.0.26100.0",
   "vs_version": "2022"
 }

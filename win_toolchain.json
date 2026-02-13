@@ -1,40 +1,40 @@
 {
   "_comment": "Windows Toolchain Configuration for ungoogled-chromium builds. Update chromium_version to match ungoogled-chromium/chromium_version.txt",
   "variables": {
-    "chromium_version": "144.0.7559.132",
+    "chromium_version": "145.0.7632.45",
     "sdk_version": "10.0.26100.0",
     "vs_version": "2022",
     "repo": "vpday/chromium-win-toolchain-builder"
   },
   "win-toolchain": {
     "_comment": "Full toolchain with ARM support (for arm64 builds)",
-    "zip_filename": "dd3991e304",
-    "sha512": "1C67C19B1993B9C6FA68B56FA951D1C432D2E97C7C8642C5A6F256992D622A6073C8D5AE46E3F6406E4C946704B5574D2C2ACE8C9D13181C5F03E70462E0575B",
+    "zip_filename": "ec6812dcab",
+    "sha512": "87CEA71D7C5B0CAC610835DC7E3DFAA9D0C9ECA8D597CA085B80A100EF0B42FD65D2F6F4B3E97D2218A5E1FC30E52D2B649624BFAA6599454495ACBA6CAF0F27",
     "files": [
       {
         "sequence": 1,
         "url": "https://github.com/{repo}/releases/download/{chromium_version}/win_toolchain_chromium-{chromium_version}_vs-{vs_version}_sdk-{sdk_version}.tar.001",
         "filename": "win_toolchain_chromium-{chromium_version}_vs-{vs_version}_sdk-{sdk_version}.tar.001",
-        "sha256": "854cff617454d6cff932022687baf3fe099efb8d858f1ef36974fca762e65bcb"
+        "sha256": "10a003ac453ff2641086a0c7c5eb01e0ae3702d70503e9f619d34b28b919fb9f"
       },
       {
         "sequence": 2,
         "url": "https://github.com/{repo}/releases/download/{chromium_version}/win_toolchain_chromium-{chromium_version}_vs-{vs_version}_sdk-{sdk_version}.tar.002",
         "filename": "win_toolchain_chromium-{chromium_version}_vs-{vs_version}_sdk-{sdk_version}.tar.002",
-        "sha256": "1bc735458f61e9ce0db13575a0e5a81703f14be248cbdeb60c611ac54e848e85"
+        "sha256": "cfe3d95e98f738f97f830cb53b5e1f497532e60c09f898d1cbd2223c0e8f0026"
       }
     ]
   },
   "win-toolchain-noarm": {
     "_comment": "Lightweight toolchain without ARM support (for x64 and x86 builds)",
-    "zip_filename": "dc64cbe804",
-    "sha512": "3630438900B10FAC64063A8C72A768ECE9525B8B3572409FE837C12BB22622643771E10456684B537029D3C37CF8AF655858385B32C49FFBB32D954C65B17118",
+    "zip_filename": "1c78b2a976",
+    "sha512": "77448D3560DC41DDB32DE443D8931EB184E5E1F708C71AFCD2F014551F98034F7731F2F335CF225D5D0EFFCE7732E1424A5A96A24F7E80457B1A4F60B358C5E0",
     "files": [
       {
         "sequence": 1,
         "url": "https://github.com/{repo}/releases/download/{chromium_version}/win_toolchain_chromium-{chromium_version}_vs-{vs_version}_sdk-{sdk_version}_noarm.tar",
         "filename": "win_toolchain_chromium-{chromium_version}_vs-{vs_version}_sdk-{sdk_version}_noarm.tar",
-        "sha256": "62beb80c08d0f7bcdad6bfc1950a97758eecba1dd5e033ad5351a962a370c445"
+        "sha256": "c60de7ae4fa0a3f57f0fe59fd4011ea58580704f6bd202a4ae05c79f5faec525"
       }
     ]
   }

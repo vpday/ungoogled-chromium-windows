@@ -186,7 +186,7 @@
      if sys.platform == 'win32':
          env['LIBCLANG_PATH'] = os.path.join(llvm_dir, 'bin')
      else:
-@@ -188,7 +188,7 @@ def main():
+@@ -191,7 +191,7 @@ def main():
          RmTree(build_dir)
 
      print(f'Building bindgen in {build_dir} ...')
