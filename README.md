@@ -317,7 +317,7 @@ The Windows cross-compilation toolchain configuration is in `win_toolchain.json`
 ```json
 {
   "variables": {
-    "chromium_version": "145.0.7632.116",
+    "chromium_version": "145.0.7632.159",
     "sdk_version": "10.0.26100.0",
     "vs_version": "2022",
     "repo": "vpday/chromium-win-toolchain-builder"
@@ -385,7 +385,7 @@ These will be used for the `sha256` field in the `files[]` array in `win_toolcha
 Update `variables` section:
 ```json
 "variables": {
-  "chromium_version": "145.0.7632.116",
+  "chromium_version": "145.0.7632.159",
   "sdk_version": "10.0.26100.0",
   "vs_version": "2022"
 }
