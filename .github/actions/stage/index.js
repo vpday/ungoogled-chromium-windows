@@ -7,6 +7,136 @@ import fs from 'fs';
 
 let finishedOutput = false;
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function isMountpoint(path) {
+    const {exitCode} = await exec.getExecOutput('mountpoint', ['-q', path], {ignoreReturnCode: true});
+    return exitCode === 0;
+}
+
+async function ensureUnmounted(path) {
+    const retryCount = 3;
+    const retryDelayMs = 10000;
+
+    console.log('Unmounting ciopfs if mounted...');
+    if (!await isMountpoint(path)) {
+        console.log(`${path} is not a mountpoint, skipping unmount`);
+        return;
+    }
+
+    for (let attempt = 1; attempt <= retryCount; attempt++) {
+        console.log(`Unmount attempt ${attempt}/${retryCount}: ${path}`);
+        const {stdout, stderr} = await exec.getExecOutput('fusermount', ['-u', path], {ignoreReturnCode: true});
+
+        if (stdout.trim()) {
+            console.log(stdout.trim());
+        }
+        if (stderr.trim()) {
+            console.error(stderr.trim());
+        }
+
+        if (!await isMountpoint(path)) {
+            console.log(`Unmount completed on attempt ${attempt}`);
+            return;
+        }
+
+        console.error(`Mountpoint still active after attempt ${attempt}/${retryCount}: ${path}`);
+        if (attempt < retryCount) {
+            console.log(`Waiting ${retryDelayMs / 1000} seconds before retrying unmount`);
+            await sleep(retryDelayMs);
+        }
+    }
+
+    throw new Error(`Failed to unmount ciopfs mountpoint after ${retryCount} attempts: ${path}`);
+}
+
+async function tryDownloadArtifactWithRetry(artifact, artifactName, downloadPath, messages) {
+    const retryCount = 3;
+    const retryDelayMs = 10000;
+
+    for (let attempt = 1; attempt <= retryCount; attempt++) {
+        try {
+            console.log(`${messages.start} (attempt ${attempt}/${retryCount}): ${artifactName}`);
+
+            const artifactInfo = await artifact.getArtifact(artifactName);
+            await artifact.downloadArtifact(artifactInfo.artifact.id, {path: downloadPath});
+
+            console.log(`${messages.success}: ${artifactName}`);
+            return true;
+        } catch (e) {
+            console.error(`${messages.failure} (attempt ${attempt}/${retryCount}): ${e}`);
+            await sleep(retryDelayMs);
+        }
+    }
+
+    console.error(messages.stop);
+    return false;
+}
+
+async function uploadArtifactWithRetry(artifact, name, files, rootDirectory, errorPrefix) {
+    const retryCount = 5;
+    const retryDelayMs = 10000;
+    for (let i = 1; i <= retryCount; ++i) {
+        try {
+            await artifact.deleteArtifact(name);
+        } catch (e) {
+            // ignored
+        }
+        try {
+            await artifact.uploadArtifact(name, files, rootDirectory, {retentionDays: 4, compressionLevel: 0});
+            return;
+        } catch (e) {
+            console.error(`${errorPrefix}: ${e}`);
+            await sleep(retryDelayMs);
+        }
+    }
+
+    throw new Error(`${errorPrefix}: retry limit exceeded`);
+}
+
+async function extractArchiveAndDelete(archivePath, destPath) {
+    await exec.exec('tar', ['-I', 'zstd -T0', '-xf', archivePath, '-C', destPath]);
+    await io.rmRF(archivePath);
+}
+
+async function cleanupVsFilesIfPresent(vsFilesPath) {
+    if (fs.existsSync(vsFilesPath)) {
+        console.log(`Cleaning up ciopfs mountpoint: ${vsFilesPath}`);
+        await io.rmRF(vsFilesPath);
+    }
+}
+
+async function restoreFromArtifacts(artifact, artifactName, archivePath, outArtifactName, outArchivePath,
+                                    buildDir, outPath, downloadPath) {
+    const artifactDownloaded = await tryDownloadArtifactWithRetry(artifact, artifactName, downloadPath, {
+        start: 'Downloading artifact',
+        success: 'Artifact download complete',
+        failure: 'Artifact download failed',
+        stop: 'Failed to download artifact after 3 attempts, stopping stage'
+    });
+    if (!artifactDownloaded) {
+        return false;
+    }
+
+    await extractArchiveAndDelete(archivePath, buildDir);
+
+    const outArtifactDownloaded = await tryDownloadArtifactWithRetry(artifact, outArtifactName, downloadPath, {
+        start: 'Downloading out artifact',
+        success: 'Out artifact download complete',
+        failure: 'Out artifact download failed',
+        stop: 'Failed to download out artifact after 3 attempts, stopping stage'
+    });
+    if (!outArtifactDownloaded) {
+        return false;
+    }
+
+    await extractArchiveAndDelete(outArchivePath, outPath);
+    await cleanupVsFilesIfPresent(`${buildDir}/src/third_party/depot_tools/win_toolchain/vs_files`);
+    return true;
+}
+
 async function run() {
     process.on('SIGTERM', () => {
         console.error('Received SIGTERM, writing finished output and exiting');
@@ -46,68 +176,11 @@ async function run() {
         await io.mkdirP(outDefaultPath);
 
         if (from_artifact) {
-            let downloadSuccess = false;
-
-            // Retry loop: maximum 3 attempts
-            for (let attempt = 1; attempt <= 3; attempt++) {
-                try {
-                    console.log(`Downloading artifact (attempt ${attempt}/3): ${artifactName}`);
-
-                    const artifactInfo = await artifact.getArtifact(artifactName);
-                    await artifact.downloadArtifact(artifactInfo.artifact.id, {path: GITHUB_WORKSPACE});
-
-                    console.log(`Artifact download complete: ${artifactName}`);
-                    downloadSuccess = true;
-                    break;
-                } catch (e) {
-                    console.error(`Artifact download failed (attempt ${attempt}/3): ${e}`);
-                    // Wait 10 seconds between the attempts
-                    await new Promise(r => setTimeout(r, 10000));
-                }
-            }
-
-            // If all retries failed, set output and exit
-            if (!downloadSuccess) {
-                console.error(`Failed to download artifact after 3 attempts, stopping stage`);
-                return;
-            }
-
-            // Extract and clean up
             await io.mkdirP(BUILD_DIR);
-            await exec.exec('tar', ['-I', 'zstd -T0', '-xf', archivePath, '-C', BUILD_DIR]);
-            await io.rmRF(archivePath);
-
-            let outDownloadSuccess = false;
-
-            for (let attempt = 1; attempt <= 3; attempt++) {
-                try {
-                    console.log(`Downloading out artifact (attempt ${attempt}/3): ${outArtifactName}`);
-
-                    const outArtifactInfo = await artifact.getArtifact(outArtifactName);
-                    await artifact.downloadArtifact(outArtifactInfo.artifact.id, {path: GITHUB_WORKSPACE});
-
-                    console.log(`Out artifact download complete: ${outArtifactName}`);
-                    outDownloadSuccess = true;
-                    break;
-                } catch (e) {
-                    console.error(`Out artifact download failed (attempt ${attempt}/3): ${e}`);
-                    await new Promise(r => setTimeout(r, 10000));
-                }
-            }
-
-            if (!outDownloadSuccess) {
-                console.error(`Failed to download out artifact after 3 attempts, stopping stage`);
+            const restored = await restoreFromArtifacts(artifact, artifactName, archivePath, outArtifactName,
+                outArchivePath, BUILD_DIR, outPath, GITHUB_WORKSPACE);
+            if (!restored) {
                 return;
-            }
-
-            await exec.exec('tar', ['-I', 'zstd -T0', '-xf', outArchivePath, '-C', outPath]);
-            await io.rmRF(outArchivePath);
-
-            // Clean up ciopfs mountpoint directory (will be remounted by vs_toolchain.py)
-            const vsFilesPath = `${BUILD_DIR}/src/third_party/depot_tools/win_toolchain/vs_files`;
-            if (fs.existsSync(vsFilesPath)) {
-                console.log(`Cleaning up ciopfs mountpoint: ${vsFilesPath}`);
-                await io.rmRF(vsFilesPath);
             }
         }
 
@@ -130,50 +203,26 @@ async function run() {
             ignoreReturnCode: true
         });
         if (retCode === 0) {
-            finishedOutput = true;
             const globber = await glob.create(`${BUILD_DIR}/ungoogled-chromium*`, {matchDirectories: false});
             let packageList = await globber.glob();
             const finalArtifactName = x86 ? 'chromium-x86' : (arm ? 'chromium-arm' : 'chromium');
-            for (let i = 0; i < 5; ++i) {
-                try {
-                    await artifact.deleteArtifact(finalArtifactName);
-                } catch (e) {
-                    // ignored
-                }
-                try {
-                    await artifact.uploadArtifact(finalArtifactName, packageList,
-                        BUILD_DIR, {retentionDays: 4, compressionLevel: 0});
-                    break;
-                } catch (e) {
-                    console.error(`Upload artifact failed: ${e}`);
-                    // Wait 10 seconds between the attempts
-                    await new Promise(r => setTimeout(r, 10000));
-                }
-            }
+            await uploadArtifactWithRetry(artifact, finalArtifactName, packageList, BUILD_DIR,
+                'Upload artifact failed');
+            finishedOutput = true;
         } else {
-            await new Promise(r => setTimeout(r, 5000));
+            await sleep(5000);
 
             // Unmount ciopfs before archiving to avoid packing the FUSE mountpoint
-            console.log('Unmounting ciopfs if mounted...');
             const vsFilesMount = `${BUILD_DIR}/src/third_party/depot_tools/win_toolchain/vs_files`;
-
-            // Check if vs_files is a mountpoint
             try {
-                const {exitCode} = await exec.getExecOutput('mountpoint', ['-q', vsFilesMount], {ignoreReturnCode: true});
-                if (exitCode === 0) {
-                    console.log(`${vsFilesMount} is mounted, unmounting...`);
-                    await exec.exec('fusermount', ['-u', vsFilesMount], {ignoreReturnCode: true});
-                    await new Promise(r => setTimeout(r, 3000));  // Wait for unmount
-                    console.log('Unmount completed');
-                } else {
-                    console.log(`${vsFilesMount} is not a mountpoint, skipping unmount`);
-                }
+                await ensureUnmounted(vsFilesMount);
             } catch (e) {
-                console.log(`Could not check/unmount vs_files: ${e}`);
+                console.error(`Failed to prepare safe archive state: ${e}`);
+                throw new Error('vs_files is still mounted after retrying; aborting artifact archival');
             }
 
             console.log('Source out directory:');
-            await exec.exec('du', ['-sh', outDefaultPath]);
+            await exec.exec('du', ['-sh', outDefaultPath], {ignoreReturnCode: true});
             console.log(`Creating out archive: ${outArchivePath}`);
             console.log('Out compression started...');
             await exec.exec('tar', [
@@ -184,35 +233,21 @@ async function run() {
             ], {ignoreReturnCode: true});
             console.log('Out compression completed');
             console.log('Compressed out archive:');
-            await exec.exec('du', ['-sh', outArchivePath]);
+            await exec.exec('du', ['-sh', outArchivePath], {ignoreReturnCode: true});
 
-            for (let i = 0; i < 5; ++i) {
-                try {
-                    await artifact.deleteArtifact(outArtifactName);
-                } catch (e) {
-                    // ignored
-                }
-                try {
-                    await artifact.uploadArtifact(outArtifactName, [outArchivePath],
-                        GITHUB_WORKSPACE, {retentionDays: 4, compressionLevel: 0});
-                    break;
-                } catch (e) {
-                    console.error(`Upload out artifact failed: ${e}`);
-                    // Wait 10 seconds between the attempts
-                    await new Promise(r => setTimeout(r, 10000));
-                }
-            }
+            await uploadArtifactWithRetry(artifact, outArtifactName, [outArchivePath], GITHUB_WORKSPACE,
+                'Upload out artifact failed');
             // Delete out archive to free disk space before creating the next archive
             await io.rmRF(outArchivePath);
 
             // Show source directory size before compression
             const srcDir = `${BUILD_DIR}/src`;
             console.log('Source directory:');
-            await exec.exec('du', ['-sh', srcDir]);
+            await exec.exec('du', ['-sh', srcDir], {ignoreReturnCode: true});
             // Create compressed archive using tar + zstd
             console.log(`Creating archive: ${archivePath}`);
             console.log('Compression started...');
-            await exec.exec('tar', [
+            const archiveRetCode = await exec.exec('tar', [
                 '-I', 'zstd -10 -T0',
                 '-cf', archivePath,
                 '-C', BUILD_DIR,
@@ -222,24 +257,10 @@ async function run() {
             console.log('Compression completed');
             // Show compressed file size
             console.log('Compressed archive:');
-            await exec.exec('du', ['-sh', archivePath]);
+            await exec.exec('du', ['-sh', archivePath], {ignoreReturnCode: true});
 
-            for (let i = 0; i < 5; ++i) {
-                try {
-                    await artifact.deleteArtifact(artifactName);
-                } catch (e) {
-                    // ignored
-                }
-                try {
-                    await artifact.uploadArtifact(artifactName, [archivePath],
-                        GITHUB_WORKSPACE, {retentionDays: 4, compressionLevel: 0});
-                    break;
-                } catch (e) {
-                    console.error(`Upload artifact failed: ${e}`);
-                    // Wait 10 seconds between the attempts
-                    await new Promise(r => setTimeout(r, 10000));
-                }
-            }
+            await uploadArtifactWithRetry(artifact, artifactName, [archivePath], GITHUB_WORKSPACE,
+                'Upload artifact failed');
         }
     } finally {
         core.setOutput('finished', finishedOutput);
