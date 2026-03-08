@@ -157,9 +157,20 @@ Each step can be skipped if its stamp file exists, enabling fast recovery from b
 
 ## CI Builds
 
-This project uses GitHub Actions for automated builds. The workflow splits compilation into 16 sequential stages to work around the 6-hour job timeout.
+This project uses GitHub Actions for automated builds.
 
-See `.github/workflows/main.yml` and `.github/actions/prepare/action.yml` for the complete CI setup. The prepare action installs system dependencies and sets up the build environment on `ubuntu-latest` runners.
+The CI pipeline is split into four workflows:
+
+- `.github/workflows/build-x64.yml` - x64 build
+- `.github/workflows/build-x86.yml` - x86 build
+- `.github/workflows/build-arm.yml` - arm64 build
+- `.github/workflows/publish-release.yml` - release aggregation and publishing
+
+Each architecture workflow keeps the existing 8-stage recovery chain to work around the 6-hour GitHub Actions job timeout. A failed or retried x64/x86/arm build only requires rerunning that architecture's workflow, while the release remains gated on all three architectures being available for the same tag.
+
+The publish workflow listens for successful architecture builds, finds the latest successful x64/x86/arm runs for the same tag, downloads their final `chromium`, `chromium-x86`, and `chromium-arm` artifacts, and publishes a single GitHub Release once all three are present. If one architecture is still missing, the publish workflow exits without creating a partial release.
+
+See `.github/workflows/build-x64.yml`, `.github/workflows/build-x86.yml`, `.github/workflows/build-arm.yml`, `.github/workflows/publish-release.yml`, and `.github/actions/prepare/action.yml` for the complete CI setup.
 
 ## Developer Guide
 
