@@ -28,20 +28,106 @@ from _common import ENCODING
 sys.path.pop(0)
 
 
+def _terminate_process_group(proc: subprocess.Popen, *, sigint_grace_seconds: int) -> None:
+    """Best-effort: terminate the whole child process group.
+
+    The build uses start_new_session=True, so the child runs in its own process group.
+    When the parent is interrupted, we need to explicitly reap that group to avoid
+    leaving orphan processes (e.g. ciopfs/lld-link) holding FUSE mountpoints.
+    """
+
+    if proc.poll() is not None:
+        return
+
+    # Preferred path on POSIX: kill the entire process group.
+    pgid = None
+    if hasattr(os, "getpgid"):
+        try:
+            pgid = os.getpgid(proc.pid)
+        except ProcessLookupError:
+            pgid = None
+
+    if pgid is not None and hasattr(os, "killpg"):
+        try:
+            os.killpg(pgid, signal.SIGINT)
+        except ProcessLookupError:
+            return
+
+        try:
+            proc.wait(sigint_grace_seconds)
+            return
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(pgid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            proc.wait()
+            return
+        except KeyboardInterrupt:
+            # If we get interrupted again while waiting, escalate immediately.
+            try:
+                os.killpg(pgid, signal.SIGKILL)
+            except ProcessLookupError:
+                return
+            proc.wait()
+            return
+
+    # Fallback: signal/kill only the direct child.
+    try:
+        proc.send_signal(signal.SIGINT)
+    except Exception:
+        pass
+
+    try:
+        proc.wait(sigint_grace_seconds)
+    except subprocess.TimeoutExpired:
+        try:
+            proc.kill()
+        except Exception:
+            pass
+        proc.wait()
+    except KeyboardInterrupt:
+        # If we get interrupted again while waiting, escalate immediately.
+        try:
+            proc.kill()
+        except Exception:
+            pass
+        proc.wait()
+
+
 def run_build_process(*args, **kwargs):
+    """Run a build subprocess.
+
+    Semantics:
+      - Success: return normally.
+      - Non-zero exit: raise subprocess.CalledProcessError (like subprocess.run(check=True)).
+      - Parent interrupted (SIGINT/KeyboardInterrupt): terminate the child process group,
+        then re-raise KeyboardInterrupt.
     """
-    Runs the subprocess with the correct environment variables for building
-    """
+
     string_args = [str(a) for a in args]
-    subprocess.run(
-        string_args, check=True, encoding=ENCODING, start_new_session=True, **kwargs
-    )
+    with subprocess.Popen(
+        string_args, encoding=ENCODING, start_new_session=True, **kwargs
+    ) as proc:
+        try:
+            proc.wait()
+        except KeyboardInterrupt:
+            _terminate_process_group(proc, sigint_grace_seconds=30)
+            raise
+
+        if proc.returncode != 0:
+            raise subprocess.CalledProcessError(proc.returncode, string_args)
 
 
 def run_build_process_timeout(*args, timeout):
+    """Run a build subprocess with a timeout.
+
+    Semantics (keep existing behavior):
+      - Success: return normally.
+      - Non-zero exit: raise RuntimeError.
+      - Timeout: terminate the child process group, then raise KeyboardInterrupt.
     """
-    Runs the subprocess with the correct environment variables for building
-    """
+
     string_args = [str(a) for a in args]
     with subprocess.Popen(
         string_args, encoding=ENCODING, start_new_session=True
@@ -51,16 +137,11 @@ def run_build_process_timeout(*args, timeout):
             if proc.returncode != 0:
                 raise RuntimeError("Build failed!")
         except subprocess.TimeoutExpired:
-            pgid = os.getpgid(proc.pid)
-            os.killpg(pgid, signal.SIGINT)
-
-            try:
-                proc.wait(10)
-            except subprocess.TimeoutExpired:
-                os.killpg(pgid, signal.SIGKILL)
-                proc.wait()
-
+            _terminate_process_group(proc, sigint_grace_seconds=10)
             raise KeyboardInterrupt
+        except KeyboardInterrupt:
+            _terminate_process_group(proc, sigint_grace_seconds=30)
+            raise
 
 
 def get_host_arch():
