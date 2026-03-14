@@ -251,37 +251,37 @@ grep RUST_REVISION build/src/tools/rust/update_rust.py
 ```
 
 2. Get commit date from `https://github.com/rust-lang/rust/commit/RUST_REVISION`
-   - Example: Revision `abc123...` corresponds to date `2025-12-02`
+   - Example: Revision `abc123...` corresponds to date `2026-01-30`
 
-3. Download all Rust components from `https://static.rust-lang.org/dist/2025-12-02/`:
+3. Download all Rust components from `https://static.rust-lang.org/dist/2026-01-30/`:
 
 **Host toolchains** (Linux):
 ```bash
 # x64 host
-wget https://static.rust-lang.org/dist/2025-12-02/rust-nightly-x86_64-unknown-linux-gnu.tar.xz
+wget https://static.rust-lang.org/dist/2026-01-30/rust-nightly-x86_64-unknown-linux-gnu.tar.xz
 sha256sum rust-nightly-x86_64-unknown-linux-gnu.tar.xz
 
 # x86 host (for 32-bit builds)
-wget https://static.rust-lang.org/dist/2025-12-02/rust-nightly-i686-unknown-linux-gnu.tar.xz
+wget https://static.rust-lang.org/dist/2026-01-30/rust-nightly-i686-unknown-linux-gnu.tar.xz
 sha256sum rust-nightly-i686-unknown-linux-gnu.tar.xz
 
 # ARM host (for ARM builds)
-wget https://static.rust-lang.org/dist/2025-12-02/rust-nightly-aarch64-unknown-linux-gnu.tar.xz
+wget https://static.rust-lang.org/dist/2026-01-30/rust-nightly-aarch64-unknown-linux-gnu.tar.xz
 sha256sum rust-nightly-aarch64-unknown-linux-gnu.tar.xz
 ```
 
 **Windows targets** (cross-compilation):
 ```bash
 # x64 target
-wget https://static.rust-lang.org/dist/2025-12-02/rust-std-nightly-x86_64-pc-windows-msvc.tar.xz
+wget https://static.rust-lang.org/dist/2026-01-30/rust-std-nightly-x86_64-pc-windows-msvc.tar.xz
 sha256sum rust-std-nightly-x86_64-pc-windows-msvc.tar.xz
 
 # x86 target
-wget https://static.rust-lang.org/dist/2025-12-02/rust-std-nightly-i686-pc-windows-msvc.tar.xz
+wget https://static.rust-lang.org/dist/2026-01-30/rust-std-nightly-i686-pc-windows-msvc.tar.xz
 sha256sum rust-std-nightly-i686-pc-windows-msvc.tar.xz
 
 # ARM64 target
-wget https://static.rust-lang.org/dist/2025-12-02/rust-std-nightly-aarch64-pc-windows-msvc.tar.xz
+wget https://static.rust-lang.org/dist/2026-01-30/rust-std-nightly-aarch64-pc-windows-msvc.tar.xz
 sha256sum rust-std-nightly-aarch64-pc-windows-msvc.tar.xz
 ```
 
@@ -289,7 +289,7 @@ sha256sum rust-std-nightly-aarch64-pc-windows-msvc.tar.xz
 ```bash
 tar xzf rust-nightly-x86_64-unknown-linux-gnu.tar.xz
 ./rust-nightly-x86_64-unknown-linux-gnu/rustc/bin/rustc -V
-# Output: rustc 1.93.0-nightly (1d60f9e07 2025-12-01)
+# Output: rustc-1.95.0-nightly
 ```
 
 5. Update `downloads.ini` sections:
@@ -298,7 +298,7 @@ tar xzf rust-nightly-x86_64-unknown-linux-gnu.tar.xz
 
 6. Update `patches/ungoogled-chromium/windows/windows-fix-building-with-rust.patch`:
    - Replace the Rust version string to match the output from step 4
-   - Example: Change `rustc_version = ""` to `rustc_version = "rustc 1.93.0-nightly (1d60f9e07 2025-12-01)"`
+   - Example: Change `rustc_version = ""` to `rustc_version = "rustc-1.95.0-nightly"`
 
 **Windows Rust Crate** (`rust-windows-create`)
 
@@ -328,7 +328,7 @@ The Windows cross-compilation toolchain configuration is in `win_toolchain.json`
 ```json
 {
   "variables": {
-    "chromium_version": "145.0.7632.159",
+    "chromium_version": "146.0.7680.71",
     "sdk_version": "10.0.26100.0",
     "vs_version": "2022",
     "repo": "vpday/chromium-win-toolchain-builder"
@@ -395,10 +395,12 @@ These will be used for the `sha256` field in the `files[]` array in `win_toolcha
 
 Update `variables` section:
 ```json
-"variables": {
-  "chromium_version": "145.0.7632.159",
-  "sdk_version": "10.0.26100.0",
-  "vs_version": "2022"
+{
+  "variables": {
+    "chromium_version": "146.0.7680.71",
+    "sdk_version": "10.0.26100.0",
+    "vs_version": "2022"
+  }
 }
 ```
 
@@ -430,6 +432,8 @@ The build system supports three Windows target architectures:
 - **arm64**: ARM64 Windows
 
 ### AVX2 Optimizations
+
+> https://github.com/RobRich999/Chromium_Clang
 
 For x64 builds, the system automatically applies AVX2 optimizations via `patches/ungoogled-chromium/windows/windows-enable-avx2-optimizations.patch`. This patch is conditionally added to `patches/series` based on the target architecture.
 
