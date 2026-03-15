@@ -255,25 +255,6 @@ def main():
 
         mark_step_complete(source_tree, '.setup_7z_symlink.stamp')
 
-    # Create clang/23 compatibility directory from clang/22
-    if should_skip_step(source_tree, '.setup_clang23_compat_dir.stamp', args.ci):
-        get_logger().info('Skipping clang/23 compatibility directory setup (already completed)')
-    else:
-        clang_lib_dir = source_tree / 'third_party' / 'llvm-build' / 'Release+Asserts' / 'lib' / 'clang'
-        clang22_dir = clang_lib_dir / '22'
-        clang23_dir = clang_lib_dir / '23'
-
-        if not clang22_dir.exists():
-            get_logger().error('Required clang/22 directory not found: %s', clang22_dir)
-            parser.exit(1)
-
-        get_logger().info('Creating clang/23 compatibility directory from %s to %s', clang22_dir, clang23_dir)
-        if clang23_dir.exists():
-            shutil.rmtree(clang23_dir)
-
-        shutil.copytree(clang22_dir, clang23_dir)
-        mark_step_complete(source_tree, '.setup_clang23_compat_dir.stamp')
-
     # Apply patches
     if should_skip_step(source_tree, '.apply_patches.stamp', args.ci):
         get_logger().info('Skipping patch application (already completed)')
