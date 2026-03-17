@@ -1,26 +1,22 @@
 # ungoogled-chromium-windows
 
-Cross-compilation setup for building Windows binaries of [ungoogled-chromium](//github.com/Eloston/ungoogled-chromium) on Linux systems.
+This repository cross-compiles Windows binaries of [ungoogled-chromium](https://github.com/Eloston/ungoogled-chromium) on Linux.
 
 ## Downloads
 
-[Download binaries from the Contributor Binaries website](//ungoogled-software.github.io/ungoogled-chromium-binaries/).
+[Download binaries from the Contributor Binaries website](https://ungoogled-software.github.io/ungoogled-chromium-binaries/).
 
 Or install using `winget install --id=eloston.ungoogled-chromium -e`.
 
-**Source Code**: Use a tag via `git checkout` (see building instructions below). The `master` branch is for development and may be unstable.
+Use a tag when building a release. The `master` branch is for development and may be unstable.
 
 ## Quick Start
 
-This project builds Windows Chromium binaries on Linux through cross-compilation. You need a Linux system (Ubuntu 24.04+ recommended) with at least 80GB free disk space.
+This project builds Windows Chromium binaries on Linux. You need a Linux system
+(Ubuntu 24.04+ recommended) with at least 80GB free disk space. Install the
+packages listed in [System Dependencies](#system-dependencies) first.
 
 ```bash
-# Install system dependencies
-sudo apt-get update
-sudo apt-get install -y p7zip-full pkg-config libglib2.0-dev \
-    libfuse2 libnss3-dev libcups2-dev libpci-dev libdrm-dev \
-    libxkbcommon-dev gperf libkrb5-dev python3 git
-
 # Clone repository
 git clone --recurse-submodules https://github.com/vpday/ungoogled-chromium-windows.git
 cd ungoogled-chromium-windows
@@ -41,8 +37,8 @@ A zip archive and installer will be created under `build/`.
 
 ### Linux Distribution
 
-- **Recommended**: Ubuntu 24.04+, or equivalent
-- **Architecture**: x86_64 build machine (for cross-compiling to Windows x64/x86/arm64)
+- Recommended distro: Ubuntu 24.04+, or equivalent
+- Build machine architecture: x86_64 (for cross-compiling to Windows x64/x86/arm64)
 
 ### Disk Space
 
@@ -55,7 +51,7 @@ Install these packages before building:
 ```bash
 sudo apt-get update
 sudo apt-get install -y \
-    zstd p7zip-full pkg-config libglib2.0-dev libfuse2 \
+    p7zip-full pkg-config libglib2.0-dev libfuse2 libfuse2t64 \
     libnss3-dev libcups2-dev libpci-dev libdrm-dev \
     libxkbcommon-dev gperf libkrb5-dev python3 git
 ```
@@ -102,26 +98,30 @@ python3 build.py --ci
 python3 build.py --tarball
 ```
 
-The `--ci` flag enables caching. It skips steps if artifacts already exist (e.g., won't re-download source if `build/src/BUILD.gn` exists). Useful for resuming interrupted builds.
+The `--ci` flag turns on stamp-based step skipping. Most completed steps are
+skipped when their stamp file already exists, which is useful when resuming an
+interrupted build or continuing a multi-stage CI run.
 
 ### Build Recovery
 
-If the build fails:
-
-**During source download** (git clone phase):
+If the build fails during source download or the git clone phase, run:
 ```bash
 rm -rf build/download_cache
 python3 build.py
 ```
 
-**Any other failure**:
+For most other failures, run:
 ```bash
 # Keep download_cache to avoid re-downloading dependencies
-rm -rf build/src build/.stamps
+rm -rf build/src
 python3 build.py
 ```
 
-**Complete clean**:
+This removes `build/src/.stamps` along with the source tree, which resets most
+build steps. `build/.stamps` is separate and only tracks Windows toolchain
+extraction state.
+
+For a full clean rebuild, run:
 ```bash
 rm -rf build/
 python3 build.py
@@ -129,35 +129,40 @@ python3 build.py
 
 ## Build Process Overview
 
-The `build.py` script executes these steps sequentially. Each step creates a `.stamp` file in `build/src/` to enable incremental builds with `--ci`.
+The `build.py` script runs these steps in order. In `--ci` mode, most step
+state is stored in `build/src/.stamps`. Windows toolchain extraction is the
+exception: it uses `build/.stamps/.vs_toolchain_updated_{target_arch}.stamp`.
+That split exists to support GitHub Actions multi-stage builds, where the VS
+toolchain setup may need to run at the start of each stage while the other
+steps usually only need to run once.
 
-1. **Source Acquisition**: Clone Chromium source or extract tarball
-2. **Dependency Download**: Fetch Windows-specific dependencies from `downloads.ini`
-3. **Binary Pruning**: Remove unnecessary binaries per `pruning.list`
-4. **Dependency Unpacking**: Extract downloaded archives to source tree
-5. **7-Zip Setup**: Create symlink for installer packaging (`7za` → `7zz`)
-6. **Patch Application**:
+1. Clone Chromium source or extract a tarball.
+2. Download Windows-specific dependencies from `downloads.ini`.
+3. Remove unnecessary binaries listed in `pruning.list`.
+4. Extract downloaded archives into the source tree.
+5. Create the installer packaging symlink (`7za` → `7zz`).
+6. Apply patches:
    - Conditionally add/remove AVX2 optimization patch based on target architecture
    - Apply core ungoogled-chromium patches
    - Apply Windows-specific patches
-7. **Domain Substitution**: Replace obfuscated Google domains with real ones
-8. **Rust Toolchain Setup**: Configure Rust for Linux host and Windows target
-9. **GN Args Generation**: Combine `ungoogled-chromium/flags.gn` + `flags.windows.gn`
-10. **Windows Toolchain Setup**: Configure Windows SDK and Visual Studio tools
-11. **Additional Toolchain Setup**:
+7. Replace obfuscated Google domains with real ones.
+8. Configure Rust for the Linux host and the Windows target.
+9. Combine `ungoogled-chromium/flags.gn` and `flags.windows.gn`.
+10. Configure the Windows SDK and Visual Studio tools.
+11. Run the remaining toolchain setup:
     - Fix domain references in tool download scripts
     - Download rc binary for cross-compilation
     - Set up LLVM environment variables
-12. **GN Bootstrap**: Build GN build system
-13. **GN Gen**: Generate Ninja build files
-14. **Ninja Build**: Compile `chrome`, `chromedriver`, `mini_installer`
-15. **Packaging** (CI mode only): Create distribution archives
+12. Build the GN build system.
+13. Generate Ninja build files.
+14. Compile `chrome`, `chromedriver`, and `mini_installer`.
+15. In CI mode, `build.py` calls `package.py` automatically.
+    For local builds, run `python3 package.py` yourself.
 
-Each step can be skipped if its stamp file exists, enabling fast recovery from build failures.
+Most of these steps can be skipped when their stamp file already exists, which
+makes recovery much faster after a failed build.
 
 ## CI Builds
-
-This project uses GitHub Actions for automated builds.
 
 The CI pipeline is split into four workflows:
 
@@ -174,9 +179,7 @@ See `.github/workflows/build-x64.yml`, `.github/workflows/build-x86.yml`, `.gith
 
 ## Developer Guide
 
-For patch development workflow (modifying patches using quilt), see [ungoogled-chromium's developing.md](https://github.com/ungoogled-software/ungoogled-chromium/blob/master/docs/developing.md).
-
-The sections below cover dependency maintenance specific to this Windows cross-compilation build.
+For quilt-based patch development, see [ungoogled-chromium's developing.md](https://github.com/ungoogled-software/ungoogled-chromium/blob/master/docs/developing.md).
 
 ### Updating Dependencies
 
@@ -184,17 +187,17 @@ All dependency versions are defined in `downloads.ini`. Dependencies are organiz
 
 #### Core Build Tools
 
-**LLVM Toolchain** (`llvm`)
+##### LLVM toolchain (`llvm`)
 
-1. Get version from `build/src/DEPS` by searching for `src/third_party/llvm-build/Release+Asserts`
-1. Check [LLVM releases](https://github.com/llvm/llvm-project/releases/) for the version
-2. Download `LLVM-VERSION-Linux-X64.tar.xz`
-3. Get SHA-256 checksum: `sha256sum LLVM-VERSION-Linux-X64.tar.xz`
-4. Update `downloads.ini` section `[llvm]`:
+1. Get the version from `build/src/DEPS` by searching for `src/third_party/llvm-build/Release+Asserts`
+2. Check [LLVM releases](https://github.com/llvm/llvm-project/releases/) for that version
+3. Download `LLVM-VERSION-Linux-X64.tar.xz`
+4. Get the SHA-256 checksum: `sha256sum LLVM-VERSION-Linux-X64.tar.xz`
+5. Update `downloads.ini` section `[llvm]`:
    - `version = VERSION`
    - `sha256 = CHECKSUM`
 
-**Ninja** (`ninja`)
+##### Ninja (`ninja`)
 
 1. Check [Ninja releases](https://github.com/ninja-build/ninja/releases/) for the latest version
 2. Download `ninja-linux.zip`
@@ -202,7 +205,7 @@ All dependency versions are defined in `downloads.ini`. Dependencies are organiz
    - `version = VERSION`
    - `sha256 = CHECKSUM`
 
-**7-Zip for Linux** (`7zip-linux`)
+##### 7-Zip for Linux (`7zip-linux`)
 
 1. Check [7-Zip releases](https://www.7-zip.org/download.html) for Linux x64 builds
 2. Download `7zVERSION-linux-x64.tar.xz`
@@ -210,13 +213,13 @@ All dependency versions are defined in `downloads.ini`. Dependencies are organiz
    - `version = VERSION` (e.g., `2501` for 25.01)
    - `sha256 = CHECKSUM`
 
-**Node.js** (`nodejs`)
+##### Node.js (`nodejs`)
 
 1. Get `NODE_VERSION` from `build/src/third_party/node/update_node_binaries`
 2. Download `node-vVERSION-linux-x64.tar.xz` from [NodeJS website](https://nodejs.org/dist/)
 3. Update `downloads.ini` `[nodejs]` with version and SHA-256 checksum
 
-**esbuild** (`esbuild`)
+##### esbuild (`esbuild`)
 
 1. Get `devtools_frontend_revision` from `build/src/DEPS`
 2. Visit `https://chromium.googlesource.com/devtools/devtools-frontend/+/REVISION/DEPS`
@@ -226,12 +229,12 @@ All dependency versions are defined in `downloads.ini`. Dependencies are organiz
 
 #### Windows Platform Dependencies
 
-**DirectX Headers** (`directx-headers`)
+##### DirectX headers (`directx-headers`)
 
 1. Get commit hash from `build/src/DEPS` by searching for `src/third_party/microsoft_dxheaders/src`
 2. Update `downloads.ini` `[directx-headers]` with `version = COMMIT_HASH`
 
-**WebAuthn Headers** (`webauthn`)
+##### WebAuthn headers (`webauthn`)
 
 1. Get commit hash from `build/src/DEPS` by searching for `src/third_party/microsoft_webauthn/src`
 2. Update `downloads.ini` `[webauthn]` with `version = COMMIT_HASH`
@@ -239,16 +242,16 @@ All dependency versions are defined in `downloads.ini`. Dependencies are organiz
 #### Rust Toolchain
 
 The Rust toolchain consists of:
-- **Linux Rust archives**: `rust-x64`, `rust-x86`, `rust-arm`
-- **Windows targets**: `rust-std-windows-x64`, `rust-std-windows-x86`, `rust-std-windows-arm` (for cross-compilation)
-- **Windows crate**: `rust-windows-create` (system API bindings)
+- Linux Rust archives: `rust-x64`, `rust-x86`, `rust-arm`
+- Windows targets: `rust-std-windows-x64`, `rust-std-windows-x86`, `rust-std-windows-arm` (for cross-compilation)
+- Windows crate: `rust-windows-create` (system API bindings)
 
 The build does not download all of them for every target:
 - Default `x64`: `rust-x64`, `rust-std-windows-x64`, `rust-windows-create`
 - `--x86`: `rust-x64`, `rust-x86`, `rust-std-windows-x86`, `rust-windows-create`
 - `--arm`: `rust-x64`, `rust-arm`, `rust-std-windows-arm`, `rust-windows-create`
 
-**Update process:**
+##### Rust update process
 
 1. Check `RUST_REVISION` in `build/src/tools/rust/update_rust.py`
 ```bash
@@ -260,14 +263,14 @@ grep RUST_REVISION build/src/tools/rust/update_rust.py
 
 3. Download `https://static.rust-lang.org/dist/2026-01-30/channel-rust-nightly.toml`. Use the matching `xz_hash` value from that manifest as the `sha256` you put in `downloads.ini`. That is the SHA-256 for the `.tar.xz` archive, so you do not need to download every Rust archive just to run `sha256sum`.
 
-**Linux Rust archives**:
+Linux Rust archives:
 ```text
 rust-nightly-x86_64-unknown-linux-gnu.tar.xz -> [pkg.rust.target.x86_64-unknown-linux-gnu].xz_hash
 rust-nightly-i686-unknown-linux-gnu.tar.xz -> [pkg.rust.target.i686-unknown-linux-gnu].xz_hash
 rust-nightly-aarch64-unknown-linux-gnu.tar.xz -> [pkg.rust.target.aarch64-unknown-linux-gnu].xz_hash
 ```
 
-**Windows targets** (cross-compilation):
+Windows targets for cross-compilation:
 ```text
 rust-std-nightly-x86_64-pc-windows-msvc.tar.xz -> [pkg.rust-std.target.x86_64-pc-windows-msvc].xz_hash
 rust-std-nightly-i686-pc-windows-msvc.tar.xz -> [pkg.rust-std.target.i686-pc-windows-msvc].xz_hash
@@ -290,7 +293,7 @@ tar xf rust-nightly-x86_64-unknown-linux-gnu.tar.xz
    - Replace the `rustc_version` string with the nightly version string for that toolchain
    - Example: Change `rustc_version = ""` to `rustc_version = "rustc-1.95.0-nightly"`
 
-**Windows Rust Crate** (`rust-windows-create`)
+##### Windows Rust crate (`rust-windows-create`)
 
 1. Check version in `build/src/third_party/rust/windows_x86_64_msvc/`
 2. Download from GitHub: `https://github.com/microsoft/windows-rs/archive/refs/tags/VERSION.zip`
@@ -305,15 +308,13 @@ sha512sum windows-rs-VERSION.zip
 
 ### Updating Windows Toolchain
 
-The Windows cross-compilation toolchain configuration is in `win_toolchain.json`. This file defines the Visual Studio and Windows SDK packages needed for cross-compilation.
+The Windows cross-compilation toolchain configuration lives in `win_toolchain.json`. It defines the Visual Studio and Windows SDK packages used for cross-compilation.
 
-**When to update:**
+Update `win_toolchain.json` when:
 - When Chromium version changes (update `chromium_version`)
 - When Visual Studio or Windows SDK version changes in Chromium upstream
 
-**Configuration structure:**
-
-`win_toolchain.json` contains the following fields:
+`win_toolchain.json` has the following fields:
 
 ```json
 {
@@ -336,7 +337,7 @@ The Windows cross-compilation toolchain configuration is in `win_toolchain.json`
 }
 ```
 
-**Field descriptions:**
+Field descriptions:
 - `variables.chromium_version`: Must match `ungoogled-chromium/chromium_version.txt`
 - `variables.sdk_version`: Windows SDK version
 - `variables.vs_version`: Visual Studio version year
@@ -346,9 +347,9 @@ The Windows cross-compilation toolchain configuration is in `win_toolchain.json`
 - `win-toolchain-noarm`: Lightweight toolchain without ARM support (for x64 and x86 builds)
   - Single .tar file, faster download
 
-**Update process:**
+##### Windows toolchain update process
 
-1. **Check current Chromium version**
+1. Check the current Chromium version.
 
 ```bash
 cat ungoogled-chromium/chromium_version.txt
@@ -356,32 +357,32 @@ cat ungoogled-chromium/chromium_version.txt
 
 Update `variables.chromium_version` in `win_toolchain.json` to match this version.
 
-2. **Check for new toolchain releases**
+2. Check for new toolchain releases.
 
 Visit: `https://github.com/vpday/chromium-win-toolchain-builder/releases/tag/VERSION`
 
-The release page provides:
+From the release page, collect:
 - Tar archives: `win_toolchain_chromium-VERSION_vs-YEAR_sdk-SDK.tar.001/002` (with ARM) or `...noarm.tar` (without ARM)
 - Zip filenames: `a3769f983f.zip` (with ARM), `b958251984.zip` (without ARM)
 - SHA-256 and SHA-512 checksums for both tar and zip files
 
-3. **Get zip information from releases page**
+3. Get zip information from the releases page.
 
 From the release page, copy:
 - Zip filename (e.g., `a3769f983f.zip` for full toolchain, `b958251984.zip` for noarm)
 - Zip SHA-512 checksum
 
-These will be used for `zip_filename` and `sha512` fields in `win_toolchain.json`.
+Use these values for the `zip_filename` and `sha512` fields in `win_toolchain.json`.
 
-4. **Get tar file checksums from releases page**
+4. Get tar file checksums from the releases page.
 
 From the release page, copy SHA-256 checksums for each tar file:
 - Full toolchain: checksums for `.tar.001` and `.tar.002`
 - Noarm toolchain: checksum for `.tar`
 
-These will be used for the `sha256` field in the `files[]` array in `win_toolchain.json`.
+Use these values for the `sha256` field in the `files[]` array in `win_toolchain.json`.
 
-5. **Update win_toolchain.json**
+5. Update `win_toolchain.json`.
 
 Update `variables` section:
 ```json
@@ -405,7 +406,8 @@ Update `win-toolchain` and `win-toolchain-noarm` sections:
 
 ### Cross-Compilation Setup
 
-This project downloads a complete Windows toolchain (LLVM, Windows SDK, Rust) and builds Windows binaries on Linux. The process:
+This project downloads a complete Windows toolchain (LLVM, Windows SDK, Rust)
+and builds Windows binaries on Linux. The build works like this:
 
 1. Downloads Linux-native build tools (LLVM, Ninja, Node.js)
 2. Downloads Windows cross-compilation toolchain via `win_toolchain.json`
@@ -417,15 +419,19 @@ This project downloads a complete Windows toolchain (LLVM, Windows SDK, Rust) an
 
 The build system supports three Windows target architectures:
 
-- **x64** (default): 64-bit Windows, includes AVX2 optimizations
-- **x86**: 32-bit Windows, requires multilib support on build machine
-- **arm64**: ARM64 Windows
+- x64 (default): 64-bit Windows, includes AVX2 optimizations
+- x86: 32-bit Windows, requires multilib support on build machine
+- arm64: ARM64 Windows
 
 ### AVX2 Optimizations
 
-> https://github.com/RobRich999/Chromium_Clang
+The AVX2 optimization patch is based on work from
+[RobRich999/Chromium_Clang](https://github.com/RobRich999/Chromium_Clang).
 
-For x64 builds, the system automatically applies AVX2 optimizations via `patches/ungoogled-chromium/windows/windows-enable-avx2-optimizations.patch`. This patch is conditionally added to `patches/series` based on the target architecture.
+For x64 builds, the system automatically applies AVX2 optimizations via
+`patches/ungoogled-chromium/windows/windows-enable-avx2-optimizations.patch`.
+This patch is conditionally added to `patches/series` based on the target
+architecture.
 
 ## License
 
