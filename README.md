@@ -239,9 +239,14 @@ All dependency versions are defined in `downloads.ini`. Dependencies are organiz
 #### Rust Toolchain
 
 The Rust toolchain consists of:
-- **Host toolchains**: `rust-x64`, `rust-x86`, `rust-arm` (for Linux build machine)
+- **Linux Rust archives**: `rust-x64`, `rust-x86`, `rust-arm`
 - **Windows targets**: `rust-std-windows-x64`, `rust-std-windows-x86`, `rust-std-windows-arm` (for cross-compilation)
 - **Windows crate**: `rust-windows-create` (system API bindings)
+
+The build does not download all of them for every target:
+- Default `x64`: `rust-x64`, `rust-std-windows-x64`, `rust-windows-create`
+- `--x86`: `rust-x64`, `rust-x86`, `rust-std-windows-x86`, `rust-windows-create`
+- `--arm`: `rust-x64`, `rust-arm`, `rust-std-windows-arm`, `rust-windows-create`
 
 **Update process:**
 
@@ -253,41 +258,26 @@ grep RUST_REVISION build/src/tools/rust/update_rust.py
 2. Get commit date from `https://github.com/rust-lang/rust/commit/RUST_REVISION`
    - Example: Revision `abc123...` corresponds to date `2026-01-30`
 
-3. Download all Rust components from `https://static.rust-lang.org/dist/2026-01-30/`:
+3. Download `https://static.rust-lang.org/dist/2026-01-30/channel-rust-nightly.toml`. Use the matching `xz_hash` value from that manifest as the `sha256` you put in `downloads.ini`. That is the SHA-256 for the `.tar.xz` archive, so you do not need to download every Rust archive just to run `sha256sum`.
 
-**Host toolchains** (Linux):
-```bash
-# x64 host
-wget https://static.rust-lang.org/dist/2026-01-30/rust-nightly-x86_64-unknown-linux-gnu.tar.xz
-sha256sum rust-nightly-x86_64-unknown-linux-gnu.tar.xz
-
-# x86 host (for 32-bit builds)
-wget https://static.rust-lang.org/dist/2026-01-30/rust-nightly-i686-unknown-linux-gnu.tar.xz
-sha256sum rust-nightly-i686-unknown-linux-gnu.tar.xz
-
-# ARM host (for ARM builds)
-wget https://static.rust-lang.org/dist/2026-01-30/rust-nightly-aarch64-unknown-linux-gnu.tar.xz
-sha256sum rust-nightly-aarch64-unknown-linux-gnu.tar.xz
+**Linux Rust archives**:
+```text
+rust-nightly-x86_64-unknown-linux-gnu.tar.xz -> [pkg.rust.target.x86_64-unknown-linux-gnu].xz_hash
+rust-nightly-i686-unknown-linux-gnu.tar.xz -> [pkg.rust.target.i686-unknown-linux-gnu].xz_hash
+rust-nightly-aarch64-unknown-linux-gnu.tar.xz -> [pkg.rust.target.aarch64-unknown-linux-gnu].xz_hash
 ```
 
 **Windows targets** (cross-compilation):
-```bash
-# x64 target
-wget https://static.rust-lang.org/dist/2026-01-30/rust-std-nightly-x86_64-pc-windows-msvc.tar.xz
-sha256sum rust-std-nightly-x86_64-pc-windows-msvc.tar.xz
-
-# x86 target
-wget https://static.rust-lang.org/dist/2026-01-30/rust-std-nightly-i686-pc-windows-msvc.tar.xz
-sha256sum rust-std-nightly-i686-pc-windows-msvc.tar.xz
-
-# ARM64 target
-wget https://static.rust-lang.org/dist/2026-01-30/rust-std-nightly-aarch64-pc-windows-msvc.tar.xz
-sha256sum rust-std-nightly-aarch64-pc-windows-msvc.tar.xz
+```text
+rust-std-nightly-x86_64-pc-windows-msvc.tar.xz -> [pkg.rust-std.target.x86_64-pc-windows-msvc].xz_hash
+rust-std-nightly-i686-pc-windows-msvc.tar.xz -> [pkg.rust-std.target.i686-pc-windows-msvc].xz_hash
+rust-std-nightly-aarch64-pc-windows-msvc.tar.xz -> [pkg.rust-std.target.aarch64-pc-windows-msvc].xz_hash
 ```
 
-4. Extract a host toolchain and verify version:
+4. If you want to verify the nightly version string, download one Linux Rust archive and extract it:
 ```bash
-tar xzf rust-nightly-x86_64-unknown-linux-gnu.tar.xz
+wget https://static.rust-lang.org/dist/2026-01-30/rust-nightly-x86_64-unknown-linux-gnu.tar.xz
+tar xf rust-nightly-x86_64-unknown-linux-gnu.tar.xz
 ./rust-nightly-x86_64-unknown-linux-gnu/rustc/bin/rustc -V
 # Output: rustc-1.95.0-nightly
 ```
@@ -297,7 +287,7 @@ tar xzf rust-nightly-x86_64-unknown-linux-gnu.tar.xz
    - `[rust-std-windows-x64]`, `[rust-std-windows-x86]`, `[rust-std-windows-arm]`: Update `version` and `sha256`
 
 6. Update `patches/ungoogled-chromium/windows/windows-fix-building-with-rust.patch`:
-   - Replace the Rust version string to match the output from step 4
+   - Replace the `rustc_version` string with the nightly version string for that toolchain
    - Example: Change `rustc_version = ""` to `rustc_version = "rustc-1.95.0-nightly"`
 
 **Windows Rust Crate** (`rust-windows-create`)
@@ -328,7 +318,7 @@ The Windows cross-compilation toolchain configuration is in `win_toolchain.json`
 ```json
 {
   "variables": {
-    "chromium_version": "146.0.7680.71",
+    "chromium_version": "146.0.7680.80",
     "sdk_version": "10.0.26100.0",
     "vs_version": "2022",
     "repo": "vpday/chromium-win-toolchain-builder"
@@ -397,7 +387,7 @@ Update `variables` section:
 ```json
 {
   "variables": {
-    "chromium_version": "146.0.7680.71",
+    "chromium_version": "146.0.7680.80",
     "sdk_version": "10.0.26100.0",
     "vs_version": "2022"
   }
