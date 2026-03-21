@@ -319,7 +319,7 @@ Update `win_toolchain.json` when:
 ```json
 {
   "variables": {
-    "chromium_version": "146.0.7680.80",
+    "chromium_version": "146.0.7680.153",
     "sdk_version": "10.0.26100.0",
     "vs_version": "2022",
     "repo": "vpday/chromium-win-toolchain-builder"
@@ -388,7 +388,7 @@ Update `variables` section:
 ```json
 {
   "variables": {
-    "chromium_version": "146.0.7680.80",
+    "chromium_version": "146.0.7680.153",
     "sdk_version": "10.0.26100.0",
     "vs_version": "2022"
   }
