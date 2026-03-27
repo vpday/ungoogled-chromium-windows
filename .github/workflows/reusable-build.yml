@@ -23,6 +23,9 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: ${{ inputs.x86 }}
+          arm: ${{ inputs.arm }}
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -42,6 +45,9 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: ${{ inputs.x86 }}
+          arm: ${{ inputs.arm }}
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -61,6 +67,9 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: ${{ inputs.x86 }}
+          arm: ${{ inputs.arm }}
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -80,6 +89,9 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: ${{ inputs.x86 }}
+          arm: ${{ inputs.arm }}
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -99,6 +111,9 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: ${{ inputs.x86 }}
+          arm: ${{ inputs.arm }}
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -118,6 +133,9 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: ${{ inputs.x86 }}
+          arm: ${{ inputs.arm }}
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -137,6 +155,9 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: ${{ inputs.x86 }}
+          arm: ${{ inputs.arm }}
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -156,6 +177,9 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
+        with:
+          x86: ${{ inputs.x86 }}
+          arm: ${{ inputs.arm }}
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
