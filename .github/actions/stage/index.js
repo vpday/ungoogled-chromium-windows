@@ -160,9 +160,9 @@ async function run() {
             return;
         }
 
-        const WORK_DIR = '/mnt/chromium-build';
-        const BUILD_DIR = `${WORK_DIR}/build`;
         const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE || process.cwd();
+        const WORK_DIR = GITHUB_WORKSPACE;
+        const BUILD_DIR = `${WORK_DIR}/build`;
         console.log(`Working Directory: ${WORK_DIR}`);
 
         const artifact = new DefaultArtifactClient();
@@ -184,7 +184,7 @@ async function run() {
             }
         }
 
-        const args = ['build.py', '--ci', '-j', '4', '--7z-path', '/usr/bin/7z', '--out-dir', outDefaultPath]
+        const args = ['build.py', '--ci', '-j', '4', '--7z-path', '/usr/bin/7z']
         if (x86)
             args.push('--x86')
         if (arm)
