@@ -171,7 +171,7 @@ async function run() {
 
         const outArtifactName = x86 ? 'out-artifact-x86' : (arm ? 'out-artifact-arm' : 'out-artifact');
         const outArchivePath = `${GITHUB_WORKSPACE}/out-archive.tar.zst`;
-        const outPath = `${GITHUB_WORKSPACE}/build/out`;
+        const outPath = `${GITHUB_WORKSPACE}/build/src/out`;
         const outDefaultPath = `${outPath}/Default`;
         await io.mkdirP(outDefaultPath);
 
@@ -194,8 +194,8 @@ async function run() {
             ignoreReturnCode: true
         });
 
-        // Use timeout command to enforce 5 hour build limit (18000 seconds)
-        const BUILD_TIMEOUT_SECONDS = 18000;
+        // Use timeout command to enforce 5 hour 10 minute build limit (18600 seconds)
+        const BUILD_TIMEOUT_SECONDS = 18600;
         const timeoutArgs = ['-v', '-k', '5m', '-s', 'INT', BUILD_TIMEOUT_SECONDS.toString(), 'python3', ...args];
 
         const retCode = await exec.exec('timeout', timeoutArgs, {
