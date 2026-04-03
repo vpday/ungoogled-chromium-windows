@@ -173,10 +173,10 @@ async function run() {
         const outArchivePath = `${GITHUB_WORKSPACE}/out-archive.tar.zst`;
         const outPath = `${GITHUB_WORKSPACE}/build/src/out`;
         const outDefaultPath = `${outPath}/Default`;
-        await io.mkdirP(outDefaultPath);
 
         if (from_artifact) {
             await io.mkdirP(BUILD_DIR);
+            await io.mkdirP(outDefaultPath);
             const restored = await restoreFromArtifacts(artifact, artifactName, archivePath, outArtifactName,
                 outArchivePath, BUILD_DIR, outPath, GITHUB_WORKSPACE);
             if (!restored) {
