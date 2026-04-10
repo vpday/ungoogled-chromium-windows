@@ -1,5 +1,13 @@
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
+@@ -617,7 +617,6 @@ config("compiler") {
+     # https://crbug.com/484082200 for background and https://crrev.com/c/7593035
+     # for discussion.
+     if (!is_wasm) {
+-      cflags += [ "-fno-lifetime-dse" ]
+     }
+ 
+     # TODO(hans): Remove this once Clang generates better optimized debug info
 @@ -1879,18 +1879,6 @@ config("sanitize_c_array_bounds") {
      cflags = [
        "-fsanitize=array-bounds",
