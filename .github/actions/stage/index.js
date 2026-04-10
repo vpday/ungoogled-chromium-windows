@@ -12,7 +12,7 @@ function sleep(ms) {
 }
 
 async function isMountpoint(path) {
-    const {exitCode} = await exec.getExecOutput('mountpoint', ['-q', path], {ignoreReturnCode: true});
+    const { exitCode } = await exec.getExecOutput('mountpoint', ['-q', path], { ignoreReturnCode: true });
     return exitCode === 0;
 }
 
@@ -28,7 +28,7 @@ async function ensureUnmounted(path) {
 
     for (let attempt = 1; attempt <= retryCount; attempt++) {
         console.log(`Unmount attempt ${attempt}/${retryCount}: ${path}`);
-        const {stdout, stderr} = await exec.getExecOutput('fusermount', ['-u', path], {ignoreReturnCode: true});
+        const { stdout, stderr } = await exec.getExecOutput('fusermount', ['-u', path], { ignoreReturnCode: true });
 
         if (stdout.trim()) {
             console.log(stdout.trim());
@@ -61,7 +61,7 @@ async function tryDownloadArtifactWithRetry(artifact, artifactName, downloadPath
             console.log(`${messages.start} (attempt ${attempt}/${retryCount}): ${artifactName}`);
 
             const artifactInfo = await artifact.getArtifact(artifactName);
-            await artifact.downloadArtifact(artifactInfo.artifact.id, {path: downloadPath});
+            await artifact.downloadArtifact(artifactInfo.artifact.id, { path: downloadPath });
 
             console.log(`${messages.success}: ${artifactName}`);
             return true;
@@ -85,7 +85,7 @@ async function uploadArtifactWithRetry(artifact, name, files, rootDirectory, err
             // ignored
         }
         try {
-            await artifact.uploadArtifact(name, files, rootDirectory, {retentionDays: 4, compressionLevel: 0});
+            await artifact.uploadArtifact(name, files, rootDirectory, { retentionDays: 4, compressionLevel: 0 });
             return;
         } catch (e) {
             console.error(`${errorPrefix}: ${e}`);
@@ -108,8 +108,7 @@ async function cleanupVsFilesIfPresent(vsFilesPath) {
     }
 }
 
-async function restoreFromArtifacts(artifact, artifactName, archivePath, outArtifactName, outArchivePath,
-                                    buildDir, outPath, downloadPath) {
+async function restoreFromArtifacts(artifact, artifactName, archivePath, buildDir, downloadPath) {
     const artifactDownloaded = await tryDownloadArtifactWithRetry(artifact, artifactName, downloadPath, {
         start: 'Downloading artifact',
         success: 'Artifact download complete',
@@ -121,18 +120,6 @@ async function restoreFromArtifacts(artifact, artifactName, archivePath, outArti
     }
 
     await extractArchiveAndDelete(archivePath, buildDir);
-
-    const outArtifactDownloaded = await tryDownloadArtifactWithRetry(artifact, outArtifactName, downloadPath, {
-        start: 'Downloading out artifact',
-        success: 'Out artifact download complete',
-        failure: 'Out artifact download failed',
-        stop: 'Failed to download out artifact after 3 attempts, stopping stage'
-    });
-    if (!outArtifactDownloaded) {
-        return false;
-    }
-
-    await extractArchiveAndDelete(outArchivePath, outPath);
     await cleanupVsFilesIfPresent(`${buildDir}/src/third_party/depot_tools/win_toolchain/vs_files`);
     return true;
 }
@@ -150,10 +137,10 @@ async function run() {
     });
 
     try {
-        const finished = core.getBooleanInput('finished', {required: true});
-        const from_artifact = core.getBooleanInput('from_artifact', {required: true});
-        const x86 = core.getBooleanInput('x86', {required: false})
-        const arm = core.getBooleanInput('arm', {required: false})
+        const finished = core.getBooleanInput('finished', { required: true });
+        const from_artifact = core.getBooleanInput('from_artifact', { required: true });
+        const x86 = core.getBooleanInput('x86', { required: false })
+        const arm = core.getBooleanInput('arm', { required: false })
         console.log(`finished: ${finished}, artifact: ${from_artifact}`);
         if (finished) {
             finishedOutput = true;
@@ -161,24 +148,15 @@ async function run() {
         }
 
         const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE || process.cwd();
-        const WORK_DIR = GITHUB_WORKSPACE;
-        const BUILD_DIR = `${WORK_DIR}/build`;
-        console.log(`Working Directory: ${WORK_DIR}`);
+        const BUILD_DIR = `${GITHUB_WORKSPACE}/build`;
 
         const artifact = new DefaultArtifactClient();
         const artifactName = x86 ? 'build-artifact-x86' : (arm ? 'build-artifact-arm' : 'build-artifact');
         const archivePath = `${GITHUB_WORKSPACE}/artifacts.tar.zst`;
 
-        const outArtifactName = x86 ? 'out-artifact-x86' : (arm ? 'out-artifact-arm' : 'out-artifact');
-        const outArchivePath = `${GITHUB_WORKSPACE}/out-archive.tar.zst`;
-        const outPath = `${GITHUB_WORKSPACE}/build/src/out`;
-        const outDefaultPath = `${outPath}/Default`;
-
         if (from_artifact) {
             await io.mkdirP(BUILD_DIR);
-            await io.mkdirP(outDefaultPath);
-            const restored = await restoreFromArtifacts(artifact, artifactName, archivePath, outArtifactName,
-                outArchivePath, BUILD_DIR, outPath, GITHUB_WORKSPACE);
+            const restored = await restoreFromArtifacts(artifact, artifactName, archivePath, BUILD_DIR, GITHUB_WORKSPACE);
             if (!restored) {
                 return;
             }
@@ -190,7 +168,7 @@ async function run() {
         if (arm)
             args.push('--arm')
         await exec.exec('python3', ['-m', 'pip', 'install', 'httplib2==0.22.0'], {
-            cwd: WORK_DIR,
+            cwd: GITHUB_WORKSPACE,
             ignoreReturnCode: true
         });
 
@@ -199,11 +177,12 @@ async function run() {
         const timeoutArgs = ['-v', '-k', '5m', '-s', 'INT', BUILD_TIMEOUT_SECONDS.toString(), 'python3', ...args];
 
         const retCode = await exec.exec('timeout', timeoutArgs, {
-            cwd: WORK_DIR,
+            cwd: GITHUB_WORKSPACE,
             ignoreReturnCode: true
         });
+        console.log(`retCode: ${retCode}`)
         if (retCode === 0) {
-            const globber = await glob.create(`${BUILD_DIR}/ungoogled-chromium*`, {matchDirectories: false});
+            const globber = await glob.create(`${BUILD_DIR}/ungoogled-chromium*`, { matchDirectories: false });
             let packageList = await globber.glob();
             const finalArtifactName = x86 ? 'chromium-x86' : (arm ? 'chromium-arm' : 'chromium');
             await uploadArtifactWithRetry(artifact, finalArtifactName, packageList, BUILD_DIR,
@@ -221,43 +200,24 @@ async function run() {
                 throw new Error('vs_files is still mounted after retrying; aborting artifact archival');
             }
 
-            console.log('Source out directory:');
-            await exec.exec('du', ['-sh', outDefaultPath], {ignoreReturnCode: true});
-            console.log(`Creating out archive: ${outArchivePath}`);
-            console.log('Out compression started...');
-            await exec.exec('tar', [
-                '-I', 'zstd -10 -T0',
-                '-cf', outArchivePath,
-                '-C', outPath,
-                'Default'
-            ], {ignoreReturnCode: true});
-            console.log('Out compression completed');
-            console.log('Compressed out archive:');
-            await exec.exec('du', ['-sh', outArchivePath], {ignoreReturnCode: true});
-
-            await uploadArtifactWithRetry(artifact, outArtifactName, [outArchivePath], GITHUB_WORKSPACE,
-                'Upload out artifact failed');
-            // Delete out archive to free disk space before creating the next archive
-            await io.rmRF(outArchivePath);
-
             // Show source directory size before compression
             const srcDir = `${BUILD_DIR}/src`;
             console.log('Source directory:');
-            await exec.exec('du', ['-sh', srcDir], {ignoreReturnCode: true});
+            await exec.exec('du', ['-sh', srcDir], { ignoreReturnCode: true });
             // Create compressed archive using tar + zstd
             console.log(`Creating archive: ${archivePath}`);
             console.log('Compression started...');
-            const archiveRetCode = await exec.exec('tar', [
+            await exec.exec('tar', [
                 '-I', 'zstd -10 -T0',
                 '-cf', archivePath,
                 '-C', BUILD_DIR,
                 '--exclude=src/third_party/depot_tools/win_toolchain/vs_files',
                 'src'
-            ], {ignoreReturnCode: true});
+            ], { ignoreReturnCode: true });
             console.log('Compression completed');
             // Show compressed file size
             console.log('Compressed archive:');
-            await exec.exec('du', ['-sh', archivePath], {ignoreReturnCode: true});
+            await exec.exec('du', ['-sh', archivePath], { ignoreReturnCode: true });
 
             await uploadArtifactWithRetry(artifact, artifactName, [archivePath], GITHUB_WORKSPACE,
                 'Upload artifact failed');
