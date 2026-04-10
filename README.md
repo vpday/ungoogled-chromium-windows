@@ -259,9 +259,9 @@ grep RUST_REVISION build/src/tools/rust/update_rust.py
 ```
 
 2. Get commit date from `https://github.com/rust-lang/rust/commit/RUST_REVISION`
-   - Example: Revision `abc123...` corresponds to date `2026-01-30`
+   - Example: Revision `abc123...` corresponds to date `2026-02-28`
 
-3. Download `https://static.rust-lang.org/dist/2026-01-30/channel-rust-nightly.toml`. Use the matching `xz_hash` value from that manifest as the `sha256` you put in `downloads.ini`. That is the SHA-256 for the `.tar.xz` archive, so you do not need to download every Rust archive just to run `sha256sum`.
+3. Download `https://static.rust-lang.org/dist/2026-02-28/channel-rust-nightly.toml`. Use the matching `xz_hash` value from that manifest as the `sha256` you put in `downloads.ini`. That is the SHA-256 for the `.tar.xz` archive, so you do not need to download every Rust archive just to run `sha256sum`.
 
 Linux Rust archives:
 ```text
@@ -279,7 +279,7 @@ rust-std-nightly-aarch64-pc-windows-msvc.tar.xz -> [pkg.rust-std.target.aarch64-
 
 4. If you want to verify the nightly version string, download one Linux Rust archive and extract it:
 ```bash
-wget https://static.rust-lang.org/dist/2026-01-30/rust-nightly-x86_64-unknown-linux-gnu.tar.xz
+wget https://static.rust-lang.org/dist/2026-02-28/rust-nightly-x86_64-unknown-linux-gnu.tar.xz
 tar xf rust-nightly-x86_64-unknown-linux-gnu.tar.xz
 ./rust-nightly-x86_64-unknown-linux-gnu/rustc/bin/rustc -V
 # Output: rustc-1.95.0-nightly
@@ -319,18 +319,18 @@ Update `win_toolchain.json` when:
 ```json
 {
   "variables": {
-    "chromium_version": "146.0.7680.177",
+    "chromium_version": "147.0.7727.55",
     "sdk_version": "10.0.26100.0",
-    "vs_version": "2022",
+    "vs_version": "2026",
     "repo": "vpday/chromium-win-toolchain-builder"
   },
   "win-toolchain": {
-    "zip_filename": "e4902d4043",
+    "zip_filename": "dec826221d",
     "sha512": "...",
     "files": []
   },
   "win-toolchain-noarm": {
-    "zip_filename": "4db657bcfe",
+    "zip_filename": "89dbc21abe",
     "sha512": "...",
     "files": []
   }
@@ -363,13 +363,13 @@ Visit: `https://github.com/vpday/chromium-win-toolchain-builder/releases/tag/VER
 
 From the release page, collect:
 - Tar archives: `win_toolchain_chromium-VERSION_vs-YEAR_sdk-SDK.tar.001/002` (with ARM) or `...noarm.tar` (without ARM)
-- Zip filenames: `e4902d4043.zip` (with ARM), `4db657bcfe.zip` (without ARM)
+- Zip filenames: `dec826221d.zip` (with ARM), `89dbc21abe.zip` (without ARM)
 - SHA-256 and SHA-512 checksums for both tar and zip files
 
 3. Get zip information from the releases page.
 
 From the release page, copy:
-- Zip filename (e.g., `e4902d4043.zip` for full toolchain, `4db657bcfe.zip` for noarm)
+- Zip filename (e.g., `dec826221d.zip` for full toolchain, `89dbc21abe.zip` for noarm)
 - Zip SHA-512 checksum
 
 Use these values for the `zip_filename` and `sha512` fields in `win_toolchain.json`.
@@ -388,9 +388,9 @@ Update `variables` section:
 ```json
 {
   "variables": {
-    "chromium_version": "146.0.7680.177",
+    "chromium_version": "147.0.7727.55",
     "sdk_version": "10.0.26100.0",
-    "vs_version": "2022"
+    "vs_version": "2026"
   }
 }
 ```
