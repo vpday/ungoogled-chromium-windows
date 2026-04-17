@@ -178,7 +178,7 @@ jobs:
           run-id: ${{ needs.resolve-release-context.outputs.arm_run_id }}
 
       - name: Publish release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.resolve-release-context.outputs.target_tag }}
           fail_on_unmatched_files: true
