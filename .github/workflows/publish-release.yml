@@ -151,7 +151,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download x64 package
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: chromium
           path: artifacts/x64
@@ -160,7 +160,7 @@ jobs:
           run-id: ${{ needs.resolve-release-context.outputs.x64_run_id }}
 
       - name: Download x86 package
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: chromium-x86
           path: artifacts/x86
@@ -169,7 +169,7 @@ jobs:
           run-id: ${{ needs.resolve-release-context.outputs.x86_run_id }}
 
       - name: Download arm package
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: chromium-arm
           path: artifacts/arm
