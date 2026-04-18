@@ -70,3 +70,15 @@ runs:
       shell: bash
       run: npm install
       working-directory: ./.github/actions/stage
+
+    - name: Apply PR #3744 Patch
+      shell: bash
+      working-directory: ./ungoogled-chromium
+      run: |
+        echo "Downloading patch for PR #3744..."
+        curl -L https://github.com/ungoogled-software/ungoogled-chromium/pull/3744.patch -o pr3744.patch
+
+        echo "Applying patch..."
+        git apply pr3744.patch
+
+        echo "Patch applied successfully!"
