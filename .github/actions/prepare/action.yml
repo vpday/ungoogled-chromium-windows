@@ -71,14 +71,10 @@ runs:
       run: npm install
       working-directory: ./.github/actions/stage
 
-    - name: Apply PR #3744 Patch
+    - name: Apply patch to pin depot_tools version
       shell: bash
       working-directory: ./ungoogled-chromium
       run: |
-        echo "Downloading patch for PR #3744..."
-        curl -L https://github.com/ungoogled-software/ungoogled-chromium/pull/3744.patch -o pr3744.patch
-
-        echo "Applying patch..."
-        git apply pr3744.patch
-
+        echo "Applying depot_tools commit patch..."
+        git apply ../patches/pin-depot-tools-version.patch
         echo "Patch applied successfully!"
