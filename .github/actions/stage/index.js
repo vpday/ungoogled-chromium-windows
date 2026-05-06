@@ -172,9 +172,10 @@ async function run() {
             ignoreReturnCode: true
         });
 
-        // Use timeout command to enforce 5 hour 10 minute build limit (18600 seconds)
-        const BUILD_TIMEOUT_SECONDS = 18600;
-        const timeoutArgs = ['-v', '-k', '5m', '-s', 'INT', BUILD_TIMEOUT_SECONDS.toString(), 'python3', ...args];
+        // Use timeout command to enforce architecture-specific build limits:
+        // x86: 5h 5m (18300s), arm: 5h (18000s), x64: 5h 15m (18900s)
+        const buildTimeoutSeconds = x86 ? 18300 : (arm ? 18000 : 18900);
+        const timeoutArgs = ['-v', '-k', '5m', '-s', 'INT', buildTimeoutSeconds.toString(), 'python3', ...args];
 
         const retCode = await exec.exec('timeout', timeoutArgs, {
             cwd: GITHUB_WORKSPACE,
