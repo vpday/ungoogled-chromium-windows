@@ -181,7 +181,6 @@ async function run() {
             cwd: GITHUB_WORKSPACE,
             ignoreReturnCode: true
         });
-        console.log(`retCode: ${retCode}`)
         if (retCode === 0) {
             const globber = await glob.create(`${BUILD_DIR}/ungoogled-chromium*`, { matchDirectories: false });
             let packageList = await globber.glob();
@@ -189,7 +188,8 @@ async function run() {
             await uploadArtifactWithRetry(artifact, finalArtifactName, packageList, BUILD_DIR,
                 'Upload artifact failed');
             finishedOutput = true;
-        } else {
+        } else if (retCode === 124) {
+            console.log('Build safely timed out (124). Preparing cache artifact for the next runner...');
             await sleep(5000);
 
             // Unmount ciopfs before archiving to avoid packing the FUSE mountpoint
@@ -222,6 +222,8 @@ async function run() {
 
             await uploadArtifactWithRetry(artifact, artifactName, [archivePath], GITHUB_WORKSPACE,
                 'Upload artifact failed');
+        } else {
+            throw new Error(`Build failed with critical error code: ${retCode}`);
         }
     } finally {
         core.setOutput('finished', finishedOutput);
