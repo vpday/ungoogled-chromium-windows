@@ -6,9 +6,9 @@
      if (!is_wasm) {
 -      cflags += [ "-fno-lifetime-dse" ]
      }
- 
+
      # TODO(hans): Remove this once Clang generates better optimized debug info
-@@ -1879,18 +1879,6 @@ config("sanitize_c_array_bounds") {
+@@ -1904,18 +1904,6 @@ config("sanitize_c_array_bounds") {
      cflags = [
        "-fsanitize=array-bounds",
        "-fsanitize-trap=array-bounds",
