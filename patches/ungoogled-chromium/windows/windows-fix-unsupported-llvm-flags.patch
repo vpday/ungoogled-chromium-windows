@@ -27,3 +27,11 @@
      ]
    }
  }
+@@ -1933,7 +1927,6 @@ config("sanitize_return") {
+       # sanitizer) is enabled, they then do expensive debug like operations. We
+       # want to suppress this behaviour since we want to keep performance costs
+       # as low as possible while having these checks.
+-      "-fsanitize-ignore-for-ubsan-feature=return",
+     ]
+   }
+ }
