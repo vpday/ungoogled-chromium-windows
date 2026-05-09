@@ -70,11 +70,3 @@ runs:
       shell: bash
       run: npm install
       working-directory: ./.github/actions/stage
-
-    - name: Apply patch to pin depot_tools version
-      shell: bash
-      working-directory: ./ungoogled-chromium
-      run: |
-        echo "Applying depot_tools commit patch..."
-        git apply ../patches/pin-depot-tools-version.patch
-        echo "Patch applied successfully!"
