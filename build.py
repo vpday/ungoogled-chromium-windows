@@ -255,6 +255,31 @@ def main():
 
         mark_step_complete(source_tree, '.setup_7z_symlink.stamp')
 
+    # Setup gperf symlink (system gperf -> third_party/gperf/cipd/bin/gperf)
+    if should_skip_step(source_tree, '.setup_gperf_symlink.stamp', args.ci):
+        get_logger().info('Skipping gperf symlink setup (already completed)')
+    else:
+        get_logger().info('Setting up gperf symlink to bypass pruned binaries...')
+        system_gperf_path = shutil.which('gperf')
+
+        if system_gperf_path:
+            system_gperf = Path(system_gperf_path)
+
+            gperf_bin_dir = source_tree / 'third_party' / 'gperf' / 'cipd' / 'bin'
+            symlink_gperf = gperf_bin_dir / 'gperf'
+
+            gperf_bin_dir.mkdir(parents=True, exist_ok=True)
+            if symlink_gperf.exists() or symlink_gperf.is_symlink():
+                symlink_gperf.unlink()
+
+            symlink_gperf.symlink_to(system_gperf)
+            get_logger().info('Created symlink: %s -> %s', symlink_gperf, system_gperf)
+
+            mark_step_complete(source_tree, '.setup_gperf_symlink.stamp')
+        else:
+            get_logger().error('System gperf not found.')
+            sys.exit(1)
+
     # Apply patches
     if should_skip_step(source_tree, '.apply_patches.stamp', args.ci):
         get_logger().info('Skipping patch application (already completed)')
