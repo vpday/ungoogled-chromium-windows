@@ -485,12 +485,35 @@ def main():
         ninja_commandline.append(args.thread_count)
     ninja_commandline.append('-C')
     ninja_commandline.append(str(out_dir))
-    ninja_commandline.append('chrome')
-    ninja_commandline.append('chromedriver')
-    ninja_commandline.append('mini_installer')
+    ninja_commandline.append('tools/v8_context_snapshot:generate_v8_context_snapshot')
 
-    # Run ninja
-    run_build_process(*ninja_commandline)
+    try:
+        # Run ninja
+        run_build_process(*ninja_commandline)
+    except subprocess.CalledProcessError as exc:
+        get_logger().error('Ninja build failed. Attempting to run the snapshot generator manually to extract the crash log...')
+
+        generator_bin = out_dir / 'clang_x64' / 'v8_context_snapshot_generator'
+        snapshot_blob = out_dir / 'snapshot_blob.bin'
+        test_out = out_dir / 'test.bin'
+
+        if generator_bin.exists():
+            debug_cmd = [
+                'gdb', '-batch',
+                '-ex', 'run',
+                '-ex', 'bt',
+                '-ex', 'quit',
+                '--args',
+                str(generator_bin),
+                f'--snapshot_blob={snapshot_blob}',
+                f'--output_file={test_out}'
+            ]
+            get_logger().info('Executing: %s', ' '.join(debug_cmd))
+            subprocess.run(debug_cmd)
+        else:
+            get_logger().error('Generator binary not found at %s', generator_bin)
+
+        raise exc
 
     # Package (CI mode only)
     if args.ci:
