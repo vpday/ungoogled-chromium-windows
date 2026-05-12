@@ -1,0 +1,14 @@
+--- a/gni/snapshot_toolchain.gni
++++ b/gni/snapshot_toolchain.gni
+@@ -83,9 +83,8 @@ if (v8_snapshot_toolchain == "") {
+       _cpus = v8_current_cpu
+     } else if (v8_current_cpu == "arm64" || v8_current_cpu == "mips64el" ||
+                v8_current_cpu == "riscv64" || v8_current_cpu == "loong64") {
+-      if (is_win && v8_current_cpu == "arm64") {
+-        # set _cpus to blank for Windows ARM64 so host_toolchain could be
+-        # selected as snapshot toolchain later.
++      if (is_win && v8_current_cpu == "arm64" && host_os == "win") {
++        # See: https://groups.google.com/g/v8-dev/c/H8SaUV6MYp0
+         _cpus = ""
+       } else {
+         _cpus = "x64_v8_${v8_current_cpu}"
