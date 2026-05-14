@@ -20,3 +20,4 @@ ungoogled-chromium/windows/windows-fix-missing-includes.patch
 ungoogled-chromium/windows/windows-fix-unsupported-llvm-flags.patch
 ungoogled-chromium/windows/windows-fix-files-cfg-case.patch
 ungoogled-chromium/windows/windows-fix-v8-sandbox-asan.patch
+ungoogled-chromium/windows/windows-fix-v8-snapshot-toolchain-linux-win-arm64.patch
