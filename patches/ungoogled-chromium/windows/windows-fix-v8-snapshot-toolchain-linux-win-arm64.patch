@@ -1,5 +1,5 @@
---- a/gni/snapshot_toolchain.gni
-+++ b/gni/snapshot_toolchain.gni
+--- a/v8/src/gni/snapshot_toolchain.gni
++++ b/v8/src/gni/snapshot_toolchain.gni
 @@ -83,9 +83,8 @@ if (v8_snapshot_toolchain == "") {
        _cpus = v8_current_cpu
      } else if (v8_current_cpu == "arm64" || v8_current_cpu == "mips64el" ||
