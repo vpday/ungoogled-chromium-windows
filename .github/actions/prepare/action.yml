@@ -33,8 +33,8 @@ runs:
         sudo rm -rf /opt/hostedtoolcache/go
         sudo rm -rf /opt/hostedtoolcache/Ruby
         sudo rm -rf /opt/hostedtoolcache/CodeQL
-        sudo apt-get remove -y --purge google-cloud-cli google-cloud-cli-anthoscli 'google-cloud-*' 'gcloud-*'
-        sudo dpkg --list | grep '^.H' | awk '{print $2}' | xargs -r sudo dpkg --remove --force-remove-reinstreq
+        sudo apt-get remove -y --purge google-cloud-cli google-cloud-cli-anthoscli 'google-cloud-*' 'gcloud-*' || true
+        sudo dpkg --list | grep '^.H' | awk '{print $2}' | xargs -r sudo dpkg --remove --force-remove-reinstreq || true
         sudo rm -rf /usr/lib/google-cloud-sdk
 
     - name: Free Disk Space
