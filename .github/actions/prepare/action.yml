@@ -33,8 +33,9 @@ runs:
         sudo rm -rf /opt/hostedtoolcache/go
         sudo rm -rf /opt/hostedtoolcache/Ruby
         sudo rm -rf /opt/hostedtoolcache/CodeQL
-        sudo apt-get remove -y --autoremove google-cloud-cli google-cloud-cli-anthoscli 'google-cloud-*' 'gcloud-*' 2>/dev/null || true
-        sudo rm -rf /usr/lib/google-cloud-sdk || true
+        sudo apt-get remove -y --purge google-cloud-cli google-cloud-cli-anthoscli 'google-cloud-*' 'gcloud-*'
+        sudo dpkg --list | grep '^.H' | awk '{print $2}' | xargs -r sudo dpkg --remove --force-remove-reinstreq
+        sudo rm -rf /usr/lib/google-cloud-sdk
 
     - name: Free Disk Space
       uses: BRAINSia/free-disk-space@v2
