@@ -496,7 +496,7 @@ def main():
     # Package (CI mode only)
     if args.ci:
         os.chdir(_ROOT_DIR)
-        subprocess.run([sys.executable, 'package.py', '--out-dir', str(out_dir)])
+        subprocess.run([sys.executable, 'package.py', '--cpu-arch', '32bit' if args.x86 else 'arm' if args.arm else '64bit', '--out-dir', str(out_dir)])
 
 
 if __name__ == '__main__':
