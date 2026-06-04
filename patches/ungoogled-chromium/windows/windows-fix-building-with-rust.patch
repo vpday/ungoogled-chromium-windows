@@ -177,15 +177,6 @@
      if sys.platform == 'win32':
          env['LIBCLANG_PATH'] = os.path.join(llvm_dir, 'bin')
      else:
-@@ -198,7 +198,7 @@ def main():
-     RunCargo([
-         'clean',
-     ] + cargo_shared_args)
--    static_feature = ",static" if ('windows' not in RustTargetTriple()) else ""
-+    static_feature = ""
-     cargo_args = [
-         'build',
-         f'--target={RustTargetTriple()}',
 @@ -220,7 +211,7 @@ def main():
      install_dir = os.path.join(RUST_TOOLCHAIN_OUT_DIR)
      print(f'Installing bindgen to {install_dir} ...')
