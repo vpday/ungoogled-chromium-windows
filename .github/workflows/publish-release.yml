@@ -30,7 +30,8 @@ jobs:
       x86_run_id: ${{ steps.runs.outputs.x86_run_id }}
       arm_run_id: ${{ steps.runs.outputs.arm_run_id }}
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
