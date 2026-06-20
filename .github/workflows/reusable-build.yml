@@ -19,7 +19,7 @@ jobs:
   build-1:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
@@ -41,7 +41,7 @@ jobs:
     needs: build-1
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
@@ -63,7 +63,7 @@ jobs:
     needs: build-2
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
@@ -85,7 +85,7 @@ jobs:
     needs: build-3
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
@@ -107,7 +107,7 @@ jobs:
     needs: build-4
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
@@ -129,7 +129,7 @@ jobs:
     needs: build-5
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
@@ -151,7 +151,7 @@ jobs:
     needs: build-6
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
@@ -173,7 +173,7 @@ jobs:
     needs: build-7
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
