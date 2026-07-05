@@ -319,18 +319,18 @@ Update `win_toolchain.json` when:
 ```json
 {
   "variables": {
-    "chromium_version": "149.0.7827.53",
+    "chromium_version": "150.0.7871.46",
     "sdk_version": "10.0.26100.0",
     "vs_version": "2026",
     "repo": "vpday/chromium-win-toolchain-builder"
   },
   "win-toolchain": {
-    "zip_filename": "f94280c5b4",
+    "zip_filename": "eb288e4797",
     "sha512": "...",
     "files": []
   },
   "win-toolchain-noarm": {
-    "zip_filename": "c0e27a78bc",
+    "zip_filename": "fc67f57171",
     "sha512": "...",
     "files": []
   }
@@ -363,13 +363,13 @@ Visit: `https://github.com/vpday/chromium-win-toolchain-builder/releases/tag/VER
 
 From the release page, collect:
 - Tar archives: `win_toolchain_chromium-VERSION_vs-YEAR_sdk-SDK.tar.001/002` (with ARM) or `...noarm.tar` (without ARM)
-- Zip filenames: `f94280c5b4.zip` (with ARM), `c0e27a78bc.zip` (without ARM)
+- Zip filenames: `eb288e4797.zip` (with ARM), `fc67f57171.zip` (without ARM)
 - SHA-256 and SHA-512 checksums for both tar and zip files
 
 3. Get zip information from the releases page.
 
 From the release page, copy:
-- Zip filename (e.g., `f94280c5b4.zip` for full toolchain, `c0e27a78bc.zip` for noarm)
+- Zip filename (e.g., `eb288e4797.zip` for full toolchain, `fc67f57171.zip` for noarm)
 - Zip SHA-512 checksum
 
 Use these values for the `zip_filename` and `sha512` fields in `win_toolchain.json`.
@@ -388,7 +388,7 @@ Update `variables` section:
 ```json
 {
   "variables": {
-    "chromium_version": "149.0.7827.53",
+    "chromium_version": "150.0.7871.46",
     "sdk_version": "10.0.26100.0",
     "vs_version": "2026"
   }
