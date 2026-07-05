@@ -1,6 +1,6 @@
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
-@@ -549,10 +549,10 @@ config("compiler") {
+@@ -529,10 +529,10 @@ config("compiler") {
    # Linux/Android/Fuchsia common flags setup.
    # ---------------------------------
    if (is_linux || is_chromeos || is_android || is_fuchsia) {
@@ -15,7 +15,7 @@
  
      if (!is_clang) {
        # Use pipes for communicating between sub-processes. Faster.
-@@ -665,9 +665,9 @@ config("compiler") {
+@@ -651,9 +651,9 @@ config("compiler") {
  
      # TODO(crbug.com/40192287): Investigate why/if this should be needed.
      if (is_win) {
@@ -27,18 +27,19 @@
      }
  
      # Enable ELF CREL (see crbug.com/357878242) for all platforms that use ELF.
-@@ -994,6 +994,10 @@ config("compiler") {
+@@ -980,6 +980,11 @@ config("compiler") {
  
      # We use clang-rt sanitizer runtimes.
      "-Zexternal-clangrt",
 +
-+     "-Ctarget-cpu=x86-64-v3",
-+     "-Cllvm-args=-fp-contract=fast",
-+     "-Ztune-cpu=skylake",
++    "-Ctarget-cpu=x86-64-v3",
++    "-Cllvm-args=-fp-contract=fast",
++    "-Ztune-cpu=skylake",
++    "-Ctarget-feature=-fast-gather,+prefer-no-gather,+prefer-no-scatter",
    ]
  
    if (!is_win || force_rustc_color_output) {
-@@ -1266,13 +1270,24 @@ config("disallow_unstable_features") {
+@@ -1260,12 +1265,29 @@ config("disallow_unstable_features") {
  # building with ThinLTO, no optimization is performed in the link step.
  config("thinlto_optimize_default") {
    if (!is_debug && use_thin_lto && is_a_target_toolchain) {
@@ -59,13 +60,17 @@
 +    ]
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
--    }
 +      ldflags += [ "-Wl,--lto-CGO3" ]
-+      }
++      ldflags += [
++        "-Wl,-mllvm,-adce-remove-loops=true",
++        "-Wl,-mllvm,-x86-align-branch-boundary=32",
++        "-Wl,-mllvm,-x86-align-branch=jcc+jmp+indirect",
++        "-Wl,-z,pack-relative-relocs",
++      ]
+     }
  
      if (toolchain_supports_rust_thin_lto) {
-       # We always point Rust to a linker that performs LTO, so we don't want Rust
-@@ -1304,8 +1319,26 @@ config("thinlto_optimize_max") {
+@@ -1299,8 +1321,37 @@ config("thinlto_optimize_max") {
  
      if (is_win) {
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
@@ -82,73 +87,102 @@
 +        "-mllvm:-x86-align-branch-boundary=32",
 +        "-mllvm:-x86-align-branch=jcc+jmp+indirect",
 +        "-mllvm:-x86-cmov-converter",
-+    ]
++      ]
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
 +      ldflags += [ "-Wl,--lto-CGO3" ]
 +      ldflags += [
 +        "-Wl,-mllvm,-import-hot-multiplier=15",
++        "-Wl,-mllvm,-adce-remove-loops=true",
++        "-Wl,-mllvm,-enable-gvn-hoist",
++        "-Wl,-mllvm,-enable-gvn-sink",
++        "-Wl,-mllvm,-machine-sink-split",
++        "-Wl,-mllvm,-phi-node-folding-threshold=4",
++        "-Wl,-mllvm,-sink-insts-to-avoid-spills",
++        "-Wl,-mllvm,-spec-exec-max-speculation-cost=15",
++        "-Wl,-mllvm,-x86-align-branch-boundary=32",
++        "-Wl,-mllvm,-x86-align-branch=jcc+jmp+indirect",
++        "-Wl,-mllvm,-x86-cmov-converter",
++        "-Wl,-z,pack-relative-relocs",
 +      ]
      }
  
      if (toolchain_supports_rust_thin_lto) {
-@@ -1346,7 +1379,7 @@ config("compiler_cpu_abi") {
-         cflags += [ "-m64" ]
-         ldflags += [ "-m64" ]
-       }
--      cflags += [ "-msse3" ]
-+      cflags += [ "-march=x86-64-v3", "-mtune=skylake", ]
-       if (target_os == "chromeos" && cros_target_cpu_arch != "" &&
-           is_a_target_toolchain) {
-         cflags += [ "-march=$cros_target_cpu_arch" ]
-@@ -2875,10 +2908,7 @@ config("optimize") {
-   if (is_win) {
-     # clang-cl's /O2 corresponds to clang's -O3, and really want -O2 for
-     # consistency with the other platforms.
--    cflags = [
--               "/O2",
--               "/clang:-O2",
--             ] + common_optimize_on_cflags
-+    cflags = [ "-O2" ] + common_optimize_on_cflags
+@@ -1723,7 +1774,7 @@ config("runtime_library") {
+   }
  
-     # The `-O3` for clang turns on extra optimizations compared to the standard
-     # `-O2`. But for rust, `-Copt-level=3` is the default and is thus reliable
-@@ -2961,6 +2991,9 @@ config("optimize_max") {
+   if (use_safe_libcxx) {
+-    defines += [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE" ]
++    defines += [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST" ]
+   } else {
+     defines += [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE" ]
+   }
+@@ -2642,10 +2693,13 @@ config("optimize_max") {
      # Favor speed over size, /O2 must be before the common flags.
      # /O2 implies /Ot, /Oi, and /GF.
      cflags = [ "/O2" ] + common_optimize_on_cflags
 +    if (is_clang) {
 +      cflags += [ "/clang:-O3" ]
-+  }
++    }
    } else if (optimize_for_fuzzing) {
      cflags = [ "-O1" ] + common_optimize_on_cflags
    } else {
+-    cflags = [ "-O2" ] + common_optimize_on_cflags
++    cflags = [ "-O3" ] + common_optimize_on_cflags
+   }
+   rustflags = [ "-Copt-level=3" ]
+ }
+--- a/build/config/compiler_cpu_abi.gn
++++ b/build/config/compiler_cpu_abi.gn
+@@ -55,7 +55,13 @@ if ((is_posix && !is_apple) || is_fuchsia) {
+       cpu_abi_cflags += [ "-m64" ]
+       cpu_abi_ldflags += [ "-m64" ]
+     }
+-    cpu_abi_cflags += [ "-msse3" ]
++    cpu_abi_cflags += [
++      "-march=x86-64-v3",
++      "-mtune=skylake",
++      "-mno-gather",
++      "-mno-scatter",
++      "-mno-bmi2",
++    ]
+     if (target_os == "chromeos" && cros_target_cpu_arch != "" &&
+         is_a_target_toolchain) {
+       cpu_abi_cflags += [ "-march=$cros_target_cpu_arch" ]
 --- a/build/config/win/BUILD.gn
 +++ b/build/config/win/BUILD.gn
-@@ -120,7 +120,13 @@ config("compiler") {
+@@ -120,7 +120,30 @@ config("compiler") {
      # microarchitecture. MSVC only supports a subset of architectures, and the
      # next step after SSE2 will be AVX.
      if (current_cpu == "x86" || current_cpu == "x64") {
 -      cflags += [ "-msse3" ]
 +      cflags += [
 +        "-mtune=skylake",
-+        "-msse3", "-mssse3", "-msse4.1", "-msse4.2",
-+        "-mavx", "-mavx2", "-mfma", "-mf16c",
-+        "-mlzcnt", "-mbmi", "-mbmi2", "-mpopcnt",
-+        "-mmovbe", "/clang:-w",
++        "-msse3",
++        "-mssse3",
++        "-msse4.1",
++        "-msse4.2",
++        "-mavx",
++        "-mavx2",
++        "-mfma",
++        "-mf16c",
++        "-mlzcnt",
++        "-mbmi",
++        "-mbmi2",
++        "-mpopcnt",
++        "-mmovbe",
++        "-mcx16",
++        "-msahf",
++        "-mpclmul",
++        "-mxsave",
++        "-mxsaveopt",
++        "-mno-gather",
++        "-mno-scatter",
++        "/clang:-w",
 +      ]
      }
  
      # Enable ANSI escape codes if something emulating them is around (cmd.exe
-@@ -190,7 +196,7 @@ config("compiler") {
-     if (use_lld) {
-       # String tail merging leads to smaller binaries, but they don't compress
-       # as well, leading to increased mini_installer size (crbug.com/838449).
--      ldflags += [ "/OPT:NOLLDTAILMERGE" ]
-+      ldflags += [ "/OPT:LLDTAILMERGE" ]
-     }
- 
-     # TODO(siggi): Is this of any use anymore?
 --- a/chrome/installer/mini_installer/mini_installer_exe_main.cc
 +++ b/chrome/installer/mini_installer/mini_installer_exe_main.cc
 @@ -59,7 +59,7 @@ void* memset(void* dest, int c, size_t count) {
