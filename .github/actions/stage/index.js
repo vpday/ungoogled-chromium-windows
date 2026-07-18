@@ -139,6 +139,7 @@ async function run() {
     try {
         const finished = core.getBooleanInput('finished', { required: true });
         const from_artifact = core.getBooleanInput('from_artifact', { required: true });
+        const jobStartedAtInput = core.getInput('job_started_at', { required: true });
         const x86 = core.getBooleanInput('x86', { required: false })
         const arm = core.getBooleanInput('arm', { required: false })
         console.log(`finished: ${finished}, artifact: ${from_artifact}`);
@@ -149,6 +150,12 @@ async function run() {
 
         const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE || process.cwd();
         const BUILD_DIR = `${GITHUB_WORKSPACE}/build`;
+        const jobStartedAt = Number(jobStartedAtInput);
+        // Date.now() returns milliseconds, so divide by 1000 to compare Unix seconds.
+        const currentTimeSeconds = Math.floor(Date.now() / 1000);
+        if (!/^\d+$/.test(jobStartedAtInput) || !Number.isSafeInteger(jobStartedAt) ||jobStartedAt <= 0 || jobStartedAt > currentTimeSeconds) {
+            throw new Error(`Invalid job_started_at Unix timestamp: ${jobStartedAtInput}`);
+        }
 
         const artifact = new DefaultArtifactClient();
         const artifactName = x86 ? 'build-artifact-x86' : (arm ? 'build-artifact-arm' : 'build-artifact');
@@ -172,9 +179,28 @@ async function run() {
             ignoreReturnCode: true
         });
 
-        // Use timeout command to enforce architecture-specific build limits:
-        // x86: 5h 10m (18600s), arm: 5h (18000s), x64: 5h 15m (18900s)
-        const buildTimeoutSeconds = x86 ? 18600 : (arm ? 18000 : 18900);
+        // x86: 18,600s (5h 10m), arm: 18,000s (5h), x64: 18,900s (5h 15m).
+        const maximumBuildSeconds = x86 ? 18600 : (arm ? 18000 : 18900);
+        // x86: 1,800s (30m), arm: 2,400s (40m), x64: 2,100s (35m).
+        // This covers the timeout grace period, unmounting, compression, and artifact upload.
+        const reserveSeconds = x86 ? 1800 : (arm ? 2400 : 2100);
+        // Date.now() returns milliseconds, so divide by 1000 to include setup in Unix seconds.
+        const elapsedSeconds = Math.floor(Date.now() / 1000) - jobStartedAt;
+        // 21,600s is GitHub-hosted runners' six-hour job limit.
+        const remainingBuildSeconds = 21600 - elapsedSeconds - reserveSeconds;
+        // Stop at whichever limit is reached first.
+        const buildTimeoutSeconds = Math.min(maximumBuildSeconds, remainingBuildSeconds);
+        console.log(`Build time budget: maximum=${maximumBuildSeconds}s, reserve=${reserveSeconds}s, elapsed=${elapsedSeconds}s, remaining=${remainingBuildSeconds}s, timeout=${buildTimeoutSeconds}s`);
+
+        if (buildTimeoutSeconds < 60) {
+            if (from_artifact) {
+                console.log(`Only ${buildTimeoutSeconds}s remain before the reserved job time. Retaining the restored cache artifact for the next runner...`);
+                return;
+            }
+
+            throw new Error(`Only ${buildTimeoutSeconds}s remain before the reserved job time, and no cache artifact is available for the next runner`);
+        }
+
         const timeoutArgs = ['-v', '-k', '5m', '-s', 'INT', buildTimeoutSeconds.toString(), 'python3', ...args];
 
         const retCode = await exec.exec('timeout', timeoutArgs, {

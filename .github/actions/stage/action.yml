@@ -7,6 +7,9 @@ inputs:
   from_artifact:
     description: If a previous stage already uploaded build artifacts, the stage will resume building
     required: true
+  job_started_at:
+    description: Unix timestamp in seconds when the job started
+    required: true
   x86:
     description: Build x86 binary
     required: false
