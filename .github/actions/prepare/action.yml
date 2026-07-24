@@ -75,3 +75,16 @@ runs:
       shell: bash
       run: npm install
       working-directory: ./.github/actions/stage
+
+    - name: Apply depot_tools commit-pinning workaround
+      shell: bash
+      run: |
+        set -e
+        cd ungoogled-chromium
+        if git apply --check ../.github/patches/pin-depot_tools-commit.patch 2>/dev/null; then
+          git apply ../.github/patches/pin-depot_tools-commit.patch
+          echo "Applied depot_tools commit-pinning patch to clone.py"
+        else
+          echo "Patch failed to apply and fix not detected upstream — clone.py context has drifted, needs manual re-check"
+          exit 1
+        fi
