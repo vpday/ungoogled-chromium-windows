@@ -179,11 +179,11 @@ async function run() {
             ignoreReturnCode: true
         });
 
-        // x86: 18,600s (5h 10m), arm: 18,000s (5h), x64: 18,900s (5h 15m).
-        const maximumBuildSeconds = x86 ? 18600 : (arm ? 18000 : 18900);
-        // x86: 1,800s (30m), arm: 2,400s (40m), x64: 2,100s (35m).
+        // x86: 18,600s (5h 10m), arm: 18,600s (5h 10m), x64: 18,900s (5h 15m).
+        const maximumBuildSeconds = x86 ? 18600 : (arm ? 18600 : 18900);
+        // x86: 1,800s (30m), arm: 2,100s (35m), x64: 1,800s (30m).
         // This covers the timeout grace period, unmounting, compression, and artifact upload.
-        const reserveSeconds = x86 ? 1800 : (arm ? 2400 : 2100);
+        const reserveSeconds = x86 ? 1800 : (arm ? 2100 : 1800);
         // Date.now() returns milliseconds, so divide by 1000 to include setup in Unix seconds.
         const elapsedSeconds = Math.floor(Date.now() / 1000) - jobStartedAt;
         // 21,600s is GitHub-hosted runners' six-hour job limit.
