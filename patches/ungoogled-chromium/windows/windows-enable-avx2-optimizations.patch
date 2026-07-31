@@ -39,7 +39,7 @@
    ]
  
    if (!is_win || force_rustc_color_output) {
-@@ -1260,12 +1265,29 @@ config("disallow_unstable_features") {
+@@ -1260,12 +1265,31 @@ config("disallow_unstable_features") {
  # building with ThinLTO, no optimization is performed in the link step.
  config("thinlto_optimize_default") {
    if (!is_debug && use_thin_lto && is_a_target_toolchain) {
@@ -57,6 +57,7 @@
 +        "-mllvm:-adce-remove-loops=true",
 +        "-mllvm:-x86-align-branch-boundary=32",
 +        "-mllvm:-x86-align-branch=jcc+jmp+indirect",
++        "-mllvm:-polly",
 +    ]
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
@@ -66,11 +67,12 @@
 +        "-Wl,-mllvm,-x86-align-branch-boundary=32",
 +        "-Wl,-mllvm,-x86-align-branch=jcc+jmp+indirect",
 +        "-Wl,-z,pack-relative-relocs",
++        "-Wl,-mllvm,-polly",
 +      ]
      }
  
      if (toolchain_supports_rust_thin_lto) {
-@@ -1299,8 +1321,37 @@ config("thinlto_optimize_max") {
+@@ -1299,8 +1323,39 @@ config("thinlto_optimize_max") {
  
      if (is_win) {
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
@@ -87,6 +89,7 @@
 +        "-mllvm:-x86-align-branch-boundary=32",
 +        "-mllvm:-x86-align-branch=jcc+jmp+indirect",
 +        "-mllvm:-x86-cmov-converter",
++        "-mllvm:-polly",
 +      ]
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
@@ -104,11 +107,12 @@
 +        "-Wl,-mllvm,-x86-align-branch=jcc+jmp+indirect",
 +        "-Wl,-mllvm,-x86-cmov-converter",
 +        "-Wl,-z,pack-relative-relocs",
++        "-Wl,-mllvm,-polly",
 +      ]
      }
  
      if (toolchain_supports_rust_thin_lto) {
-@@ -1723,7 +1774,7 @@ config("runtime_library") {
+@@ -1723,7 +1778,7 @@ config("runtime_library") {
    }
  
    if (use_safe_libcxx) {
@@ -117,7 +121,7 @@
    } else {
      defines += [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE" ]
    }
-@@ -2642,10 +2693,13 @@ config("optimize_max") {
+@@ -2642,10 +2697,13 @@ config("optimize_max") {
      # Favor speed over size, /O2 must be before the common flags.
      # /O2 implies /Ot, /Oi, and /GF.
      cflags = [ "/O2" ] + common_optimize_on_cflags
