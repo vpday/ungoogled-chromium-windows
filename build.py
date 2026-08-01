@@ -178,6 +178,7 @@ def main():
         'ninja',
         '7zip-linux',
         'nodejs',
+        'go-x64',
         'esbuild',
         'directx-headers',
         'webauthn',
@@ -193,6 +194,7 @@ def main():
     elif target_arch == 'arm64':
         win_components.append('rust-std-windows-arm')
         win_components.append('rust-arm')
+        win_components.append('go-arm64')
 
     # Retrieve windows downloads
     if should_skip_step(source_tree, '.download_windows_dependencies.stamp', args.ci):
