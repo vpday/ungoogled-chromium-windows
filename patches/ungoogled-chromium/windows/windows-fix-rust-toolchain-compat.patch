@@ -1,0 +1,22 @@
+--- a/build/config/rust.gni
++++ b/build/config/rust.gni
+@@ -140,7 +140,7 @@ use_chromium_rust_toolchain = rust_sysroot_absolute == ""
+ # `rustc_nightly_capability = false` will make the build avoid the use of
+ # Rust nightly features. There are no bots that test this and there is no
+ # guarantee it will work, but we accept patches for this configuration.
+-rustc_nightly_capability = use_chromium_rust_toolchain || build_with_chromium
++rustc_nightly_capability = true
+ 
+ # Platform support for the Rust toolchain.
+ chromium_toolchain_supports_platform = !is_wasm
+--- a/tools/rust/build_bindgen.py
++++ b/tools/rust/build_bindgen.py
+@@ -205,7 +205,7 @@ def main():
+     RunCargo([
+         'clean',
+     ] + cargo_shared_args)
+-    static_feature = ",static" if ('windows' not in RustTargetTriple()) else ""
++    static_feature = ""
+     cargo_args = [
+         'build',
+         f'--target={RustTargetTriple()}',
