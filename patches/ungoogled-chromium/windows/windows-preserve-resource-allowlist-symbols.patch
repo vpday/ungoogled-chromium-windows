@@ -1,0 +1,27 @@
+# Preserve resource allowlist symbols in the chrome.dll PDB.
+#
+# Clang 23/lld-link can ICF-fold identical AllowlistedResource functions
+# before they are recorded in the PDB. The allowlist generator consumes that
+# PDB, so keep ICF disabled for this target when the allowlist is enabled.
+# https://issues.chromium.org/issues/40420657#comment78
+
+--- a/chrome/BUILD.gn
++++ b/chrome/BUILD.gn
+@@ -355,9 +355,17 @@ if (!is_android && !is_mac) {
+ }  # !is_android && !is_mac
+ 
+ if (is_win) {
++  config("resource_allowlist_linking") {
++    visibility = [ ":*" ]
++    ldflags = [ "/OPT:NOICF" ]
++  }
++
+   shared_library("chrome_dll") {
+     configs += [ "//build/config/compiler:wexit_time_destructors" ]
+     configs -= [ "//build/config/compiler:thinlto_optimize_default" ]
+     configs += [ "//build/config/compiler:thinlto_optimize_max" ]
++    if (enable_resource_allowlist_generation) {
++      configs += [ ":resource_allowlist_linking" ]
++    }
+ 
+     defines = []

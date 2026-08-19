@@ -20,4 +20,4 @@ ungoogled-chromium/windows/windows-fix-missing-includes.patch
 ungoogled-chromium/windows/windows-fix-files-cfg-case.patch
 ungoogled-chromium/windows/windows-fix-v8-snapshot-toolchain-linux-win-arm64.patch
 ungoogled-chromium/windows/windows-fix-rust-toolchain-compat.patch
-ungoogled-chromium/windows/windows-fix-generate-resource-allowlist-clang23.patch
+ungoogled-chromium/windows/windows-preserve-resource-allowlist-symbols.patch
