@@ -1,19 +1,23 @@
-# Preserve resource allowlist symbols in the chrome.dll PDB.
+# Preserve resource allowlist symbols across ThinLTO.
 #
-# Clang 23/lld-link can ICF-fold identical AllowlistedResource functions
-# before they are recorded in the PDB. The allowlist generator consumes that
-# PDB, so keep ICF disabled for this target when the allowlist is enabled.
-# https://issues.chromium.org/issues/40420657#comment78
+# Clang 23 can emit ui::AllowlistedResource instantiations into a renamed
+# llvm.used list that ThinLTO does not treat as a live reference. LLD still
+# records these symbols in its pre-dead-strip resolution output, while the PDB
+# publics stream contains only the surviving symbols. Generate that resolution
+# output and merge it with the PDB when building the resource allowlist.
 
 --- a/chrome/BUILD.gn
 +++ b/chrome/BUILD.gn
-@@ -355,9 +355,17 @@ if (!is_android && !is_mac) {
+@@ -355,9 +355,20 @@ if (!is_android && !is_mac) {
  }  # !is_android && !is_mac
  
  if (is_win) {
 +  config("resource_allowlist_linking") {
 +    visibility = [ ":*" ]
-+    ldflags = [ "/OPT:NOICF" ]
++
++    # Keep ThinLTO's pre-dead-strip symbol resolutions available to the
++    # resource allowlist generator. Some used symbols do not reach the PDB.
++    ldflags = [ "/lldsavetemps:resolution" ]
 +  }
 +
    shared_library("chrome_dll") {
@@ -25,3 +29,32 @@
 +    }
  
      defines = []
+
+--- a/tools/resources/generate_resource_allowlist.py
++++ b/tools/resources/generate_resource_allowlist.py
+@@ -80,6 +80,24 @@ def GetResourceAllowlistPDB(path):
+   if exit_code != 0:
+     raise Exception('llvm-pdbutil exited with exit code %d' % exit_code)
+-
++
++  # With ThinLTO, some __attribute__((used)) symbols can be visible to LLD but
++  # removed before the PDB publics stream is written. LLD writes those
++  # pre-dead-strip symbols next to the linked binary when requested by the link.
++  resolution_path = path.removesuffix('.pdb') + '.resolution.txt'
++  if not os.path.exists(resolution_path):
++    raise Exception('LLD resolution file required for PDB input: %s' %
++                    resolution_path)
++  with open(resolution_path, encoding='utf8') as resolution_file:
++    for line in resolution_file:
++      if not line.startswith('-r='):
++        continue
++      fields = line.rstrip('\n').rsplit(',', 2)
++      if len(fields) != 3:
++        continue
++      sym_name = fields[1]
++      if 'AllowlistedResource' in sym_name and sym_name.startswith('?'):
++        names += sym_name + '\n'
++
+   undname = subprocess.Popen([os.path.join(llvm_bindir, 'llvm-undname')],
+                              stdin=subprocess.PIPE,
+                              stdout=subprocess.PIPE)
