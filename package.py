@@ -9,6 +9,7 @@ ungoogled-chromium packaging script for Linux
 """
 
 import sys
+
 if sys.version_info.major < 3:
     raise RuntimeError('Python 3 is required for this script.')
 
@@ -22,6 +23,7 @@ _ROOT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'ungoogled-chromium' / 'utils'))
 import filescfg
 from _common import ENCODING, get_chromium_version
+
 sys.path.pop(0)
 
 from windows_target import WindowsTarget, resolve_windows_target
@@ -30,6 +32,7 @@ from windows_target import WindowsTarget, resolve_windows_target
 def _get_release_revision():
     revision_path = Path(__file__).resolve().parent / 'ungoogled-chromium' / 'revision.txt'
     return revision_path.read_text(encoding=ENCODING).strip()
+
 
 def _get_packaging_revision():
     revision_path = Path(__file__).resolve().parent / 'revision.txt'
@@ -72,6 +75,7 @@ def validate_package_filter(
         )
     return target.package_filter
 
+
 def main():
     """Entrypoint"""
 
@@ -98,9 +102,9 @@ def main():
     package_filter = validate_package_filter(target, args.cpu_arch)
 
     shutil.copyfile(str(build_outputs / 'mini_installer.exe'),
-        'build/ungoogled-chromium_{}-{}.{}_installer_{}.exe'.format(
-            get_chromium_version(), _get_release_revision(),
-            _get_packaging_revision(), target.id))
+                    'build/ungoogled-chromium_{}-{}.{}_installer_{}.exe'.format(
+                        get_chromium_version(), _get_release_revision(),
+                        _get_packaging_revision(), target.id))
 
     timestamp = None
     try:
@@ -124,6 +128,7 @@ def main():
         build_outputs, package_filter, excluded_files)
     filescfg.create_archive(
         files_generator, tuple(), build_outputs, output, timestamp)
+
 
 if __name__ == '__main__':
     main()

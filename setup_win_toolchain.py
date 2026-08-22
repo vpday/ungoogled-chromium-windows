@@ -238,7 +238,7 @@ def _download_with_retry(url, output_path, max_retries=3):
                 "Download failed (attempt %d/%d): %s", attempt + 1, max_retries, e
             )
             if attempt < max_retries - 1:
-                sleep_time = 2**attempt  # Exponential backoff: 1s, 2s, 4s
+                sleep_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
                 get_logger().info("Retrying in %d seconds...", sleep_time)
                 time.sleep(sleep_time)
             else:
@@ -401,7 +401,7 @@ def _merge_tar_files(tar_files, dest_dir):
 
 
 def _download_github_toolchain(
-    chromium_version, sdk_version, dest_dir, zip_filename, sha512, files
+        chromium_version, sdk_version, dest_dir, zip_filename, sha512, files
 ):
     """
     Download Windows toolchain from configuration

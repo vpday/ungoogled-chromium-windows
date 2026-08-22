@@ -177,9 +177,7 @@ def _fix_top_level_libs(lib_dir: Path, host_arch: str):
                     # Architecture detection patterns for the 'file' command
                     arch_matches = {
                         "x86_64": "x86-64" in file_output or "x86_64" in file_output,
-                        "i686": "intel 80386" in file_output
-                        or "i386" in file_output
-                        or "i686" in file_output,
+                        "i686": "intel 80386" in file_output or "i386" in file_output or "i686" in file_output,
                         "aarch64": "aarch64" in file_output or "arm64" in file_output,
                     }
 

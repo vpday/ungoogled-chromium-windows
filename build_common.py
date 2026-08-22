@@ -107,7 +107,7 @@ def run_build_process(*args, **kwargs):
 
     string_args = [str(a) for a in args]
     with subprocess.Popen(
-        string_args, encoding=ENCODING, start_new_session=True, **kwargs
+            string_args, encoding=ENCODING, start_new_session=True, **kwargs
     ) as proc:
         try:
             proc.wait()
@@ -130,7 +130,7 @@ def run_build_process_timeout(*args, timeout):
 
     string_args = [str(a) for a in args]
     with subprocess.Popen(
-        string_args, encoding=ENCODING, start_new_session=True
+            string_args, encoding=ENCODING, start_new_session=True
     ) as proc:
         try:
             proc.wait(timeout)

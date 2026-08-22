@@ -39,6 +39,7 @@ import domain_substitution
 import prune_binaries
 import patches
 from _common import ENCODING, USE_REGISTRY, ExtractorEnum, get_logger
+
 sys.path.pop(0)
 
 _ROOT_DIR = Path(__file__).resolve().parent

@@ -182,7 +182,7 @@ async function run() {
         const jobStartedAt = Number(jobStartedAtInput);
         // Date.now() returns milliseconds, so divide by 1000 to compare Unix seconds.
         const currentTimeSeconds = Math.floor(Date.now() / 1000);
-        if (!/^\d+$/.test(jobStartedAtInput) || !Number.isSafeInteger(jobStartedAt) ||jobStartedAt <= 0 || jobStartedAt > currentTimeSeconds) {
+        if (!/^\d+$/.test(jobStartedAtInput) || !Number.isSafeInteger(jobStartedAt) || jobStartedAt <= 0 || jobStartedAt > currentTimeSeconds) {
             throw new Error(`Invalid job_started_at Unix timestamp: ${jobStartedAtInput}`);
         }
 
