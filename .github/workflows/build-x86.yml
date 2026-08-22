@@ -16,4 +16,4 @@ jobs:
   build:
     uses: ./.github/workflows/reusable-build.yml
     with:
-      x86: true
+      target: x86

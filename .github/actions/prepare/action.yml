@@ -4,16 +4,9 @@ inputs:
   python-version:
     description: 'Python version'
     default: '3.12'
-  x86:
-    description: 'Building for x86 architecture'
-    type: boolean
-    required: false
-    default: false
-  arm:
-    description: 'Building for arm architecture'
-    type: boolean
-    required: false
-    default: false
+  target:
+    description: 'Canonical Windows target (x64, x86, or arm64)'
+    required: true
 runs:
   using: "composite"
   steps:
@@ -58,7 +51,7 @@ runs:
         sudo apt-get install -y p7zip-full pkg-config libglib2.0-dev libfuse2 libfuse2t64 libnss3-dev libcups2-dev libpci-dev libdrm-dev libxkbcommon-dev gperf libkrb5-dev
 
     - name: Install 32-bit Development Libraries
-      if: ${{ inputs.x86 }}
+      if: ${{ inputs.target == 'x86' }}
       shell: bash
       run: |
         echo "Installing 32-bit development libraries for x86 cross-compilation..."

@@ -24,8 +24,8 @@ cd ungoogled-chromium-windows
 # Checkout a release tag
 git checkout --recurse-submodules TAG_OR_BRANCH_HERE
 
-# Build (this will take several hours)
-python3 build.py
+# Build x64 (this will take several hours)
+python3 build.py --target x64
 
 # Create distribution packages
 python3 package.py
@@ -72,20 +72,27 @@ sudo apt-get install -y libc6-dev-i386 linux-libc-dev:i386 \
 ### Standard x64 Build
 
 ```bash
-python3 build.py
+python3 build.py --target x64
 python3 package.py
 ```
+
+Packaging reads the authoritative target from `build/src/out/Default/args.gn`
+and derives both its file filter and output filename suffix from that value. Its optional `--cpu-arch` argument is only
+a compatibility assertion and must match the generated target.
 
 ### Architecture-Specific Builds
 
 ```bash
 # 32-bit Windows build
-python3 build.py --x86
+python3 build.py --target x86
 # ARM64 Windows build
-python3 build.py --arm
+python3 build.py --target arm64
 # Default: 64-bit Windows build
 python3 build.py
 ```
+
+The canonical targets are `x64`, `x86`, and `arm64`. The existing `--x86` and
+`--arm` selectors remain supported as compatibility aliases.
 
 ### Build Options
 
@@ -171,7 +178,10 @@ The CI pipeline is split into four workflows:
 - `.github/workflows/build-arm.yml` - arm64 build
 - `.github/workflows/publish-release.yml` - release aggregation and publishing
 
-Each architecture workflow keeps the existing 8-stage recovery chain to work around the 6-hour GitHub Actions job timeout. A failed or retried x64/x86/arm build only requires rerunning that architecture's workflow, while the release remains gated on all three architectures being available for the same tag.
+Each architecture workflow passes its canonical `x64`, `x86`, or `arm64` target through the reusable workflow and keeps
+the existing 8-stage recovery chain to work around the 6-hour GitHub Actions job timeout. A failed or retried target
+build only requires rerunning that target's workflow, while the release remains gated on all three targets being
+available for the same tag.
 
 The publish workflow listens for successful architecture builds, finds the latest successful x64/x86/arm runs for the same tag, downloads their final `chromium`, `chromium-x86`, and `chromium-arm` artifacts, and publishes a single GitHub Release once all three are present. If one architecture is still missing, the publish workflow exits without creating a partial release.
 
@@ -247,9 +257,10 @@ The Rust toolchain consists of:
 - Windows crate: `rust-windows-create` (system API bindings)
 
 The build does not download all of them for every target:
-- Default `x64`: `rust-x64`, `rust-std-windows-x64`, `rust-windows-create`
-- `--x86`: `rust-x64`, `rust-x86`, `rust-std-windows-x86`, `rust-windows-create`
-- `--arm`: `rust-x64`, `rust-arm`, `rust-std-windows-arm`, `rust-windows-create`
+
+- Target `x64`: `rust-x64`, `rust-std-windows-x64`, `rust-windows-create`
+- Target `x86`: `rust-x64`, `rust-x86`, `rust-std-windows-x86`, `rust-windows-create`
+- Target `arm64`: `rust-x64`, `rust-arm`, `rust-std-windows-arm`, `rust-windows-create`
 
 ##### Rust update process
 

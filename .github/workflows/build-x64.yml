@@ -15,3 +15,5 @@ concurrency:
 jobs:
   build:
     uses: ./.github/workflows/reusable-build.yml
+    with:
+      target: x64

@@ -9,7 +9,7 @@ Common build utilities for ungoogled-chromium Windows build.
 
 This module provides foundational build utilities including:
 - Process execution with timeout support
-- Host and target architecture detection
+- Host architecture detection
 """
 
 import os
@@ -154,20 +154,6 @@ def get_host_arch():
     elif machine == "aarch64":
         return "arm64"
     return machine
-
-
-def get_target_arch_from_args():
-    """
-    Get target architecture from command line arguments.
-
-    Returns:
-        str: Target architecture ('x64', 'x86', or 'arm64')
-    """
-    if "--x86" in sys.argv:
-        return "x86"
-    elif "--arm" in sys.argv:
-        return "arm64"
-    return "x64"
 
 
 def get_stamp_path(source_tree, stamp_name):

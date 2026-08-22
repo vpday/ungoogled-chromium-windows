@@ -10,14 +10,15 @@ ungoogled-chromium build script for Linux
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
+
 from pathlib import Path
 
 from build_common import (
     run_build_process,
-    get_target_arch_from_args,
     get_host_arch,
     should_skip_step,
     mark_step_complete,
@@ -30,6 +31,7 @@ from setup_utils import (
     download_v8_builtins_pgo_profiles
 )
 from setup_win_toolchain import setup_windows_toolchain
+from windows_target import SUPPORTED_TARGET_IDS, WindowsTarget, resolve_windows_target
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'ungoogled-chromium' / 'utils'))
 import downloads
@@ -43,8 +45,7 @@ _ROOT_DIR = Path(__file__).resolve().parent
 _PATCH_BIN_RELPATH = Path('/usr/bin/patch')
 
 
-def main():
-    """CLI Entrypoint"""
+def _create_argument_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         '--disable-ssl-verification',
@@ -65,11 +66,16 @@ def main():
         '--ci',
         action='store_true'
     )
-    parser.add_argument(
+    target_group = parser.add_mutually_exclusive_group()
+    target_group.add_argument(
+        '--target',
+        choices=SUPPORTED_TARGET_IDS
+    )
+    target_group.add_argument(
         '--x86',
         action='store_true'
     )
-    parser.add_argument(
+    target_group.add_argument(
         '--arm',
         action='store_true'
     )
@@ -84,7 +90,57 @@ def main():
         metavar='DIR',
         help='GN output directory. Default: build/src/out/Default'
     )
+    return parser
+
+
+def _resolve_cli_target(args) -> WindowsTarget:
+    target_id = args.target or ('x86' if args.x86 else 'arm64' if args.arm else 'x64')
+    return resolve_windows_target(target_id)
+
+
+def _get_windows_components(target: WindowsTarget):
+    components = [
+        'llvm',
+        'ninja',
+        '7zip-linux',
+        'nodejs',
+        'go-x64',
+        'esbuild',
+        'directx-headers',
+        'webauthn',
+        'rust-x64',
+        'rust-windows-create',
+        target.windows_rust_std_selector,
+    ]
+    if target.id != 'x64':
+        components.append(target.rust_download_selector)
+    if target.id == 'arm64':
+        components.append('go-arm64')
+    return components
+
+
+def _set_gn_target_cpu(windows_flags: str, target: WindowsTarget):
+    pattern = r'(?m)^(target_cpu\s*=\s*")[^"]*("\s*)$'
+    updated_flags, replacement_count = re.subn(
+        pattern,
+        rf'\g<1>{target.gn_target_cpu}\g<2>',
+        windows_flags,
+    )
+    if replacement_count != 1:
+        raise RuntimeError(
+            f"Expected exactly one target_cpu assignment in flags.windows.gn; found {replacement_count}"
+        )
+    return updated_flags
+
+
+def main():
+    """CLI Entrypoint"""
+    parser = _create_argument_parser()
     args = parser.parse_args()
+    target = _resolve_cli_target(args)
+    host_arch = get_host_arch()
+    if host_arch != 'x64':
+        raise RuntimeError(f'Unsupported build host architecture: {host_arch}')
 
     # Set common variables
     source_tree = _ROOT_DIR / 'build' / 'src'
@@ -133,19 +189,12 @@ def main():
             get_logger().info('Clone sources...')
 
             # Determine sysroot and platform architecture for cross-compilation
-            host_arch = get_host_arch()  # Linux build machine architecture
-            target_arch = get_target_arch_from_args()  # Windows target architecture
-            arch_mapping = {'x64': 'amd64', 'x86': 'i386', 'arm64': 'arm64'}
-            platform_mapping = {'x64': 'win64', 'x86': 'win32', 'arm64': 'win-arm64'}
-            sysroot_arch = arch_mapping[host_arch]  # Linux sysroot for build tools
-            platform_str = platform_mapping[target_arch]  # Windows platform target
-
             run_build_process(
                 sys.executable,
                 str(Path('ungoogled-chromium', 'utils', 'clone.py')),
                 '-o', 'build/src',
-                '-p', platform_str,
-                '-s', sysroot_arch
+                '-p', target.clone_platform,
+                '-s', 'amd64'
             )
 
             # Initialize V8 git submodule
@@ -172,29 +221,7 @@ def main():
             mark_step_complete(source_tree, '.clone_chromium_sources.stamp')
 
     # Determine which Windows dependency components to download/unpack based on target architecture.
-    target_arch = get_target_arch_from_args()
-    win_components = [
-        'llvm',
-        'ninja',
-        '7zip-linux',
-        'nodejs',
-        'go-x64',
-        'esbuild',
-        'directx-headers',
-        'webauthn',
-        'rust-x64',
-        'rust-windows-create',
-    ]
-    # Select only the needed Rust toolchain packages.
-    if target_arch == 'x64':
-        win_components.append('rust-std-windows-x64')
-    elif target_arch == 'x86':
-        win_components.append('rust-std-windows-x86')
-        win_components.append('rust-x86')
-    elif target_arch == 'arm64':
-        win_components.append('rust-std-windows-arm')
-        win_components.append('rust-arm')
-        win_components.append('go-arm64')
+    win_components = _get_windows_components(target)
 
     # Retrieve windows downloads
     if should_skip_step(source_tree, '.download_windows_dependencies.stamp', args.ci):
@@ -291,7 +318,7 @@ def main():
         avx2_patch_line = 'ungoogled-chromium/windows/windows-enable-avx2-optimizations.patch'
 
         # Determine if current build is x64
-        is_x64 = not args.x86 and not args.arm
+        is_x64 = target.id == 'x64'
 
         # Read current series content
         series_content = series_file.read_text(encoding=ENCODING)
@@ -352,7 +379,7 @@ def main():
         mark_step_complete(source_tree, '.apply_domain_substitution.stamp')
 
     # Set up Rust toolchain
-    rust_dir_dst = setup_rust_toolchain(source_tree, ci_mode=args.ci)
+    rust_dir_dst = setup_rust_toolchain(source_tree, target, ci_mode=args.ci)
     rust_lib_path = str(rust_dir_dst / 'lib')
 
     current_ld_path = os.environ.get('LD_LIBRARY_PATH', '')
@@ -366,10 +393,7 @@ def main():
         gn_flags = (_ROOT_DIR / 'ungoogled-chromium' / 'flags.gn').read_text(encoding=ENCODING)
         gn_flags += '\n'
         windows_flags = (_ROOT_DIR / 'flags.windows.gn').read_text(encoding=ENCODING)
-        if args.x86:
-            windows_flags = windows_flags.replace('x64', 'x86')
-        elif args.arm:
-            windows_flags = windows_flags.replace('x64', 'arm64')
+        windows_flags = _set_gn_target_cpu(windows_flags, target)
         if args.tarball:
             windows_flags += '\nchrome_pgo_phase=0\n'
         gn_flags += windows_flags
@@ -377,7 +401,7 @@ def main():
         mark_step_complete(source_tree, '.write_gn_args.stamp')
 
     # Configure Windows Toolchain environment
-    setup_windows_toolchain(source_tree, ci_mode=args.ci)
+    setup_windows_toolchain(source_tree, target, ci_mode=args.ci)
 
     clang_bin = source_tree / 'third_party' / 'llvm-build' / 'Release+Asserts' / 'bin'
     clang_bin_str = str(clang_bin)
@@ -416,7 +440,7 @@ def main():
         get_logger().info('Skipping toolchain setup (already completed)')
     else:
         fix_tool_downloading(source_tree)
-        setup_toolchain(source_tree, ci_mode=args.ci)
+        setup_toolchain(source_tree, target, ci_mode=args.ci)
 
         # Download rc binary for cross-compilation
         rc_sha1_file = source_tree / 'build/toolchain/win/rc/linux64/rc.sha1'
@@ -497,7 +521,7 @@ def main():
     # Package (CI mode only)
     if args.ci:
         os.chdir(_ROOT_DIR)
-        subprocess.run([sys.executable, 'package.py', '--cpu-arch', '32bit' if args.x86 else 'arm' if args.arm else '64bit', '--out-dir', str(out_dir)])
+        subprocess.run([sys.executable, 'package.py', '--out-dir', str(out_dir)], check=True)
 
 
 if __name__ == '__main__':

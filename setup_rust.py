@@ -20,8 +20,9 @@ import os
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 from typing import List
+
+from pathlib import Path
 
 sys.path.insert(
     0, str(Path(__file__).resolve().parent / "ungoogled-chromium" / "utils")
@@ -29,6 +30,8 @@ sys.path.insert(
 from _common import ENCODING, get_logger
 
 sys.path.pop(0)
+
+from windows_target import WindowsTarget
 
 # Configuration for Rust toolchain components to install
 COMPONENTS_CONFIG = [
@@ -44,6 +47,34 @@ COMPONENTS_CONFIG = [
     {"name": "clippy-preview", "has_bin": True, "has_lib": True, "required": False},
     {"name": "rustfmt-preview", "has_bin": True, "has_lib": True, "required": False},
 ]
+
+
+def _get_rust_arch_configs(third_party: Path, target: WindowsTarget):
+    """Return the x86_64 host distribution and selected target distribution."""
+    configs = {
+        "x86_64": {
+            "source": third_party / "rust-toolchain-x64",
+            "target_subdir": "x86_64",
+            "is_host": True,
+            "rust_target": "x86_64-unknown-linux-gnu",
+        },
+    }
+    if target.linux_rust_arch != "x86_64":
+        toolchain_dir = target.rust_download_selector.replace(
+            "rust-", "rust-toolchain-", 1
+        )
+        configs[target.linux_rust_arch] = {
+            "source": third_party / toolchain_dir,
+            "target_subdir": target.linux_rust_arch,
+            "is_host": False,
+            "rust_target": target.linux_rust_target,
+        }
+    return configs
+
+
+def _get_windows_std_config(third_party: Path, target: WindowsTarget):
+    """Return the selected Windows Rust triple and extracted source directory."""
+    return target.windows_rust_target, third_party / target.windows_rust_std_selector
 
 
 def _smart_copy(src: Path, dst: Path):
@@ -236,7 +267,11 @@ def _generate_version_file(rust_dir: Path, flag_file: Path, archs: List[str]):
     get_logger().info("Rust version: %s", version_info.strip())
 
 
-def setup_rust_toolchain(source_tree: Path, ci_mode: bool = False) -> Path:
+def setup_rust_toolchain(
+        source_tree: Path,
+        target: WindowsTarget,
+        ci_mode: bool = False,
+) -> Path:
     """
     Set up Rust toolchain with multi-architecture cross-compilation support.
 
@@ -247,6 +282,7 @@ def setup_rust_toolchain(source_tree: Path, ci_mode: bool = False) -> Path:
     Args:
         source_tree: Path to the Chromium source tree root
                      (expects third_party/rust-toolchain-{x64,x86,arm}/)
+        target: Windows target whose Rust tools and standard library are installed
         ci_mode: If True, skip setup if INSTALLED_VERSION file exists
                  (optimization for CI/caching systems)
 
@@ -256,9 +292,6 @@ def setup_rust_toolchain(source_tree: Path, ci_mode: bool = False) -> Path:
     Raises:
         SystemExit: If no architectures can be processed successfully
     """
-    # Detect host architecture: Python's sys.maxsize reveals pointer size
-    host_cpu_is_64_bit = sys.maxsize > 2**32
-
     third_party = source_tree / "third_party"
     rust_dir_dst = third_party / "rust-toolchain"
     rust_flag_file = rust_dir_dst / "INSTALLED_VERSION"
@@ -270,30 +303,8 @@ def setup_rust_toolchain(source_tree: Path, ci_mode: bool = False) -> Path:
 
     get_logger().info("Setting up Rust toolchain with multi-architecture support...")
 
-    # Architecture configuration: Maps architecture names to their source directories
-    # and target characteristics. The host architecture gets special treatment (top-level
-    # installation + symlinks), while target architectures get full copies in subdirs.
-    arch_configs = {
-        "x86_64": {
-            "source": third_party
-            / "rust-toolchain-x64",  # Downloaded from downloads.ini
-            "target_subdir": "x86_64",  # Subdirectory name in consolidated layout
-            "is_host": host_cpu_is_64_bit,  # True if this is the build machine's arch
-            "rust_target": "x86_64-unknown-linux-gnu",  # Rust target triple
-        },
-        "i686": {
-            "source": third_party / "rust-toolchain-x86",
-            "target_subdir": "i686",
-            "is_host": not host_cpu_is_64_bit,
-            "rust_target": "i686-unknown-linux-gnu",
-        },
-        "aarch64": {
-            "source": third_party / "rust-toolchain-arm",
-            "target_subdir": "aarch64",
-            "is_host": False,  # ARM64 is never the host for this build setup
-            "rust_target": "aarch64-unknown-linux-gnu",
-        },
-    }
+    # The build host is x86_64 Linux. Only the selected non-host distribution is added.
+    arch_configs = _get_rust_arch_configs(third_party, target)
 
     # Determine which architecture is the host (only one should have is_host=True)
     host_arch = next(
@@ -433,41 +444,33 @@ def setup_rust_toolchain(source_tree: Path, ci_mode: bool = False) -> Path:
 
     # Install Windows target standard libraries for cross-compilation
     get_logger().info("Installing Windows target standard libraries...")
-    windows_std_configs = {
-        "x86_64-pc-windows-msvc": third_party / "rust-std-windows-x64",
-        "i686-pc-windows-msvc": third_party / "rust-std-windows-x86",
-        "aarch64-pc-windows-msvc": third_party / "rust-std-windows-arm",
-    }
-
-    for target_triple, src_dir in windows_std_configs.items():
-        if not src_dir.exists():
-            get_logger().warning(
-                "Windows std source not found: %s (skipping %s)",
-                src_dir,
-                target_triple,
-            )
-            continue
-
+    target_triple, src_dir = _get_windows_std_config(third_party, target)
+    if not src_dir.exists():
+        get_logger().warning(
+            "Windows std source not found: %s (skipping %s)",
+            src_dir,
+            target_triple,
+        )
+    else:
         # The std component directory structure is: rust-std-{target}/lib/
         std_comp_dir = src_dir / f"rust-std-{target_triple}"
         if not std_comp_dir.exists():
             get_logger().warning(
                 "Expected component directory not found: %s", std_comp_dir
             )
-            continue
-
-        std_lib_src = std_comp_dir / "lib"
-        if std_lib_src.exists():
-            std_lib_dst = rust_dir_dst / "lib"
-            get_logger().info(
-                "Merging Windows std for %s: %s -> %s",
-                target_triple,
-                std_lib_src,
-                std_lib_dst,
-            )
-            _merge_tree(std_lib_src, std_lib_dst)
         else:
-            get_logger().warning("lib directory not found in %s", std_comp_dir)
+            std_lib_src = std_comp_dir / "lib"
+            if std_lib_src.exists():
+                std_lib_dst = rust_dir_dst / "lib"
+                get_logger().info(
+                    "Merging Windows std for %s: %s -> %s",
+                    target_triple,
+                    std_lib_src,
+                    std_lib_dst,
+                )
+                _merge_tree(std_lib_src, std_lib_dst)
+            else:
+                get_logger().warning("lib directory not found in %s", std_comp_dir)
 
     # Generate version file for CI caching and diagnostics
     _generate_version_file(rust_dir_dst, rust_flag_file, successful_archs)

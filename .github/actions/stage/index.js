@@ -5,7 +5,36 @@ import { DefaultArtifactClient } from '@actions/artifact';
 import * as glob from '@actions/glob';
 import fs from 'fs';
 
+const TARGET_POLICIES = Object.freeze({
+    x64: Object.freeze({
+        cacheArtifact: 'build-artifact',
+        finalArtifact: 'chromium',
+        maximumBuildSeconds: 18900,
+        reserveSeconds: 1800,
+    }),
+    x86: Object.freeze({
+        cacheArtifact: 'build-artifact-x86',
+        finalArtifact: 'chromium-x86',
+        maximumBuildSeconds: 18600,
+        reserveSeconds: 1800,
+    }),
+    arm64: Object.freeze({
+        cacheArtifact: 'build-artifact-arm',
+        finalArtifact: 'chromium-arm',
+        maximumBuildSeconds: 18600,
+        reserveSeconds: 2100,
+    }),
+});
+
 let finishedOutput = false;
+
+function getTargetPolicy(target) {
+    if (!Object.hasOwn(TARGET_POLICIES, target)) {
+        throw new Error(`Unsupported Windows target ${JSON.stringify(target)}; expected one of: x64, x86, arm64`);
+    }
+
+    return TARGET_POLICIES[target];
+}
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -140,8 +169,8 @@ async function run() {
         const finished = core.getBooleanInput('finished', { required: true });
         const from_artifact = core.getBooleanInput('from_artifact', { required: true });
         const jobStartedAtInput = core.getInput('job_started_at', { required: true });
-        const x86 = core.getBooleanInput('x86', { required: false })
-        const arm = core.getBooleanInput('arm', { required: false })
+        const target = core.getInput('target', {required: true});
+        const targetPolicy = getTargetPolicy(target);
         console.log(`finished: ${finished}, artifact: ${from_artifact}`);
         if (finished) {
             finishedOutput = true;
@@ -158,7 +187,7 @@ async function run() {
         }
 
         const artifact = new DefaultArtifactClient();
-        const artifactName = x86 ? 'build-artifact-x86' : (arm ? 'build-artifact-arm' : 'build-artifact');
+        const artifactName = targetPolicy.cacheArtifact;
         const archivePath = `${GITHUB_WORKSPACE}/artifacts.tar.zst`;
 
         if (from_artifact) {
@@ -169,21 +198,17 @@ async function run() {
             }
         }
 
-        const args = ['build.py', '--ci', '-j', '4', '--7z-path', '/usr/bin/7z']
-        if (x86)
-            args.push('--x86')
-        if (arm)
-            args.push('--arm')
+        const args = ['build.py', '--ci', '-j', '4', '--7z-path', '/usr/bin/7z', '--target', target];
         await exec.exec('python3', ['-m', 'pip', 'install', 'httplib2==0.22.0'], {
             cwd: GITHUB_WORKSPACE,
             ignoreReturnCode: true
         });
 
-        // x86: 18,600s (5h 10m), arm: 18,600s (5h 10m), x64: 18,900s (5h 15m).
-        const maximumBuildSeconds = x86 ? 18600 : (arm ? 18600 : 18900);
-        // x86: 1,800s (30m), arm: 2,100s (35m), x64: 1,800s (30m).
+        // x86: 18,600s (5h 10m), arm64: 18,600s (5h 10m), x64: 18,900s (5h 15m).
+        const maximumBuildSeconds = targetPolicy.maximumBuildSeconds;
+        // x86: 1,800s (30m), arm64: 2,100s (35m), x64: 1,800s (30m).
         // This covers the timeout grace period, unmounting, compression, and artifact upload.
-        const reserveSeconds = x86 ? 1800 : (arm ? 2100 : 1800);
+        const reserveSeconds = targetPolicy.reserveSeconds;
         // Date.now() returns milliseconds, so divide by 1000 to include setup in Unix seconds.
         const elapsedSeconds = Math.floor(Date.now() / 1000) - jobStartedAt;
         // 21,600s is GitHub-hosted runners' six-hour job limit.
@@ -210,7 +235,7 @@ async function run() {
         if (retCode === 0) {
             const globber = await glob.create(`${BUILD_DIR}/ungoogled-chromium*`, { matchDirectories: false });
             let packageList = await globber.glob();
-            const finalArtifactName = x86 ? 'chromium-x86' : (arm ? 'chromium-arm' : 'chromium');
+            const finalArtifactName = targetPolicy.finalArtifact;
             await uploadArtifactWithRetry(artifact, finalArtifactName, packageList, BUILD_DIR,
                 'Upload artifact failed');
             finishedOutput = true;

@@ -6,14 +6,9 @@ on:
         type: string
         required: false
         default: '3.12'
-      x86:
-        type: boolean
-        required: false
-        default: false
-      arm:
-        type: boolean
-        required: false
-        default: false
+      target:
+        type: string
+        required: true
 
 jobs:
   build-1:
@@ -27,8 +22,7 @@ jobs:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
         with:
-          x86: ${{ inputs.x86 }}
-          arm: ${{ inputs.arm }}
+          target: ${{ inputs.target }}
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -36,8 +30,7 @@ jobs:
           finished: false
           from_artifact: false
           job_started_at: ${{ steps.job-start.outputs.job_started_at }}
-          x86: ${{ inputs.x86 }}
-          arm: ${{ inputs.arm }}
+          target: ${{ inputs.target }}
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
 
@@ -53,8 +46,7 @@ jobs:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
         with:
-          x86: ${{ inputs.x86 }}
-          arm: ${{ inputs.arm }}
+          target: ${{ inputs.target }}
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -62,8 +54,7 @@ jobs:
           finished: ${{ join(needs.*.outputs.finished) }}
           from_artifact: true
           job_started_at: ${{ steps.job-start.outputs.job_started_at }}
-          x86: ${{ inputs.x86 }}
-          arm: ${{ inputs.arm }}
+          target: ${{ inputs.target }}
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
 
@@ -79,8 +70,7 @@ jobs:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
         with:
-          x86: ${{ inputs.x86 }}
-          arm: ${{ inputs.arm }}
+          target: ${{ inputs.target }}
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -88,8 +78,7 @@ jobs:
           finished: ${{ join(needs.*.outputs.finished) }}
           from_artifact: true
           job_started_at: ${{ steps.job-start.outputs.job_started_at }}
-          x86: ${{ inputs.x86 }}
-          arm: ${{ inputs.arm }}
+          target: ${{ inputs.target }}
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
 
@@ -105,8 +94,7 @@ jobs:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
         with:
-          x86: ${{ inputs.x86 }}
-          arm: ${{ inputs.arm }}
+          target: ${{ inputs.target }}
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -114,8 +102,7 @@ jobs:
           finished: ${{ join(needs.*.outputs.finished) }}
           from_artifact: true
           job_started_at: ${{ steps.job-start.outputs.job_started_at }}
-          x86: ${{ inputs.x86 }}
-          arm: ${{ inputs.arm }}
+          target: ${{ inputs.target }}
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
 
@@ -131,8 +118,7 @@ jobs:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
         with:
-          x86: ${{ inputs.x86 }}
-          arm: ${{ inputs.arm }}
+          target: ${{ inputs.target }}
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -140,8 +126,7 @@ jobs:
           finished: ${{ join(needs.*.outputs.finished) }}
           from_artifact: true
           job_started_at: ${{ steps.job-start.outputs.job_started_at }}
-          x86: ${{ inputs.x86 }}
-          arm: ${{ inputs.arm }}
+          target: ${{ inputs.target }}
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
 
@@ -157,8 +142,7 @@ jobs:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
         with:
-          x86: ${{ inputs.x86 }}
-          arm: ${{ inputs.arm }}
+          target: ${{ inputs.target }}
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -166,8 +150,7 @@ jobs:
           finished: ${{ join(needs.*.outputs.finished) }}
           from_artifact: true
           job_started_at: ${{ steps.job-start.outputs.job_started_at }}
-          x86: ${{ inputs.x86 }}
-          arm: ${{ inputs.arm }}
+          target: ${{ inputs.target }}
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
 
@@ -183,8 +166,7 @@ jobs:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
         with:
-          x86: ${{ inputs.x86 }}
-          arm: ${{ inputs.arm }}
+          target: ${{ inputs.target }}
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -192,8 +174,7 @@ jobs:
           finished: ${{ join(needs.*.outputs.finished) }}
           from_artifact: true
           job_started_at: ${{ steps.job-start.outputs.job_started_at }}
-          x86: ${{ inputs.x86 }}
-          arm: ${{ inputs.arm }}
+          target: ${{ inputs.target }}
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
 
@@ -209,8 +190,7 @@ jobs:
           submodules: 'recursive'
       - uses: ./.github/actions/prepare
         with:
-          x86: ${{ inputs.x86 }}
-          arm: ${{ inputs.arm }}
+          target: ${{ inputs.target }}
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -218,8 +198,7 @@ jobs:
           finished: ${{ join(needs.*.outputs.finished) }}
           from_artifact: true
           job_started_at: ${{ steps.job-start.outputs.job_started_at }}
-          x86: ${{ inputs.x86 }}
-          arm: ${{ inputs.arm }}
+          target: ${{ inputs.target }}
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
 

@@ -20,16 +20,17 @@ import subprocess
 import sys
 import time
 import urllib.request
-from pathlib import Path
 from typing import Dict, TypedDict
+
+from pathlib import Path
 
 from build_common import (
     run_build_process,
     should_skip_step,
     mark_step_complete,
-    get_target_arch_from_args,
 )
 from setup_utils import download_from_sha1
+from windows_target import WindowsTarget
 
 sys.path.insert(
     0, str(Path(__file__).resolve().parent / "ungoogled-chromium" / "utils")
@@ -485,12 +486,16 @@ def _download_github_toolchain(
     get_logger().info("Toolchain download complete")
 
 
-def _read_toolchain_config(target_arch="x64"):
+def _get_toolchain_config_section(target: WindowsTarget):
+    return "win-toolchain" if target.requires_arm_toolchain else "win-toolchain-noarm"
+
+
+def _read_toolchain_config(target: WindowsTarget):
     """
     Read Windows toolchain configuration from win_toolchain.json
 
     Args:
-        target_arch: Target architecture ('x64', 'x86', or 'arm64')
+        target: Resolved Windows build target
 
     Returns:
         dict: Dictionary with keys: 'chromium_version', 'zip_filename', 'sha512', 'files'
@@ -524,12 +529,7 @@ def _read_toolchain_config(target_arch="x64"):
             f"Invalid config: 'variables' must be a non-empty dictionary"
         )
 
-    # Select section based on architecture
-    if target_arch in ("x64", "x86"):
-        section = "win-toolchain-noarm"
-    else:
-        # arm64
-        section = "win-toolchain"
+    section = _get_toolchain_config_section(target)
 
     # Validate section
     _validate_toolchain_config(config_data, section)
@@ -570,7 +570,7 @@ def _read_toolchain_config(target_arch="x64"):
     get_logger().info(
         "Loaded toolchain config from [%s] for %s: version=%s, zip=%s.zip, files=%d",
         section,
-        target_arch,
+        target.id,
         result["chromium_version"],
         result["zip_filename"],
         len(result["files"]),
@@ -623,7 +623,7 @@ def _extract_vs_toolchain_info(vs_toolchain_path):
     return result
 
 
-def setup_windows_toolchain(source_tree, ci_mode=False):
+def setup_windows_toolchain(source_tree, target: WindowsTarget, ci_mode=False):
     """
     Configure Windows Toolchain environment.
 
@@ -633,11 +633,10 @@ def setup_windows_toolchain(source_tree, ci_mode=False):
 
     Args:
         source_tree: Path object of the source directory (build/src)
+        target: Resolved Windows build target
         ci_mode: Boolean indicating if running in CI mode (enables stamp-based skipping)
     """
-    # Detect target architecture from command-line arguments
-    target_arch = get_target_arch_from_args()
-    get_logger().info("Setting up Windows Toolchain for architecture: %s", target_arch)
+    get_logger().info("Setting up Windows Toolchain for architecture: %s", target.id)
 
     # Extract toolchain hash and SDK version from vs_toolchain.py
     # These are needed to identify the correct toolchain version to download
@@ -648,13 +647,13 @@ def setup_windows_toolchain(source_tree, ci_mode=False):
 
     # Read toolchain configuration (Chromium version, zip filename, SHA512)
     # from win_toolchain.json based on target architecture
-    toolchain_config = _read_toolchain_config(target_arch)
+    toolchain_config = _read_toolchain_config(target)
 
     # Toolchain will be downloaded to build/src/third_party/win_toolchain/
     toolchain_dir = _ROOT_DIR / "build/src/third_party/win_toolchain"
 
     # Download VS toolchain from GitHub
-    download_stamp = f".download_vs_toolchain_{target_arch}.stamp"
+    download_stamp = f".download_vs_toolchain_{target.id}.stamp"
     if should_skip_step(source_tree, download_stamp, ci_mode):
         get_logger().info("Skipping VS toolchain download (already completed)")
     else:
@@ -683,7 +682,7 @@ def setup_windows_toolchain(source_tree, ci_mode=False):
         get_logger().info("VS toolchain download completed")
 
     # Extract and configure the toolchain using vs_toolchain.py
-    extraction_stamp = f".vs_toolchain_updated_{target_arch}.stamp"
+    extraction_stamp = f".vs_toolchain_updated_{target.id}.stamp"
     extraction_stamp_path = source_tree.parent
     if should_skip_step(extraction_stamp_path, extraction_stamp, ci_mode):
         get_logger().info("Skipping VS toolchain extraction (already completed)")

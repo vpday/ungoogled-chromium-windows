@@ -20,6 +20,7 @@ import json
 import re
 import sys
 import urllib.request
+
 from collections import defaultdict
 from pathlib import Path
 
@@ -30,7 +31,8 @@ from _common import ENCODING, get_logger
 
 sys.path.pop(0)
 
-from build_common import run_build_process, get_host_arch, get_target_arch_from_args
+from build_common import run_build_process, get_host_arch
+from windows_target import WindowsTarget
 
 _ROOT_DIR = Path(__file__).resolve().parent
 
@@ -279,7 +281,7 @@ def fix_tool_downloading(source_tree):
             raise
 
 
-def setup_sysroot(source_tree, ci_mode=False):
+def setup_sysroot(source_tree, target: WindowsTarget, ci_mode=False):
     """
     Install Linux sysroot for cross-compilation.
 
@@ -288,8 +290,15 @@ def setup_sysroot(source_tree, ci_mode=False):
 
     Args:
         source_tree: Path object of the source directory
+        target: Resolved Windows build target
         ci_mode: Boolean indicating if running in CI mode (enables stamp-based skipping)
     """
+    host_arch = get_host_arch()
+
+    # The supported build host remains x86_64 Linux.
+    if host_arch != "x64":
+        raise RuntimeError(f"Unsupported build host architecture: {host_arch}")
+
     # CI mode optimization: skip if already installed
     stamp_file = source_tree / ".sysroot_installed.stamp"
 
@@ -297,20 +306,14 @@ def setup_sysroot(source_tree, ci_mode=False):
         get_logger().info("Sysroot already installed (stamp file exists), skipping")
         return
 
-    host_arch = get_host_arch()
-    target_arch = get_target_arch_from_args()
-
-    # Architecture name mapping for sysroot script
-    arch_mapping = {"x64": "amd64", "x86": "i386", "arm64": "arm64"}
-
     get_logger().info(
         "Installing sysroot for host architecture: %s, target architecture: %s",
         host_arch,
-        target_arch,
+        target.id,
     )
 
     # Install host architecture sysroot
-    host_sysroot_arch = arch_mapping.get(host_arch, host_arch)
+    host_sysroot_arch = "amd64"
     get_logger().info("Installing host sysroot: %s", host_sysroot_arch)
     run_build_process(
         sys.executable,
@@ -319,9 +322,8 @@ def setup_sysroot(source_tree, ci_mode=False):
     )
 
     # Install target architecture sysroot if different from host
-    if target_arch != host_arch:
-        target_sysroot_arch = arch_mapping.get(target_arch, target_arch)
-        get_logger().info("Installing target sysroot: %s", target_sysroot_arch)
+    if target.id != host_arch:
+        get_logger().info("Installing target sysroot: %s", target.sysroot_arch)
         run_build_process(
             sys.executable,
             str(
@@ -331,7 +333,7 @@ def setup_sysroot(source_tree, ci_mode=False):
                 / "sysroot_scripts"
                 / "install-sysroot.py"
             ),
-            f"--arch={target_sysroot_arch}",
+            f"--arch={target.sysroot_arch}",
         )
 
     # Create stamp file to mark successful installation
@@ -339,12 +341,13 @@ def setup_sysroot(source_tree, ci_mode=False):
     get_logger().info("Sysroot installation completed successfully")
 
 
-def setup_toolchain(source_tree, ci_mode=False):
+def setup_toolchain(source_tree, target: WindowsTarget, ci_mode=False):
     """
     Sets up the toolchain components required for cross-compiling Windows Chromium.
 
     Args:
         source_tree: Path object of the source directory
+        target: Resolved Windows build target
         ci_mode: Boolean indicating if running in CI mode (passed to setup_sysroot for stamp-based skipping)
 
     Note:
@@ -363,6 +366,6 @@ def setup_toolchain(source_tree, ci_mode=False):
     # Install Linux sysroot packages for cross-compilation
     # ci_mode is passed through to enable stamp-based skipping in setup_sysroot
     get_logger().info("Installing sysroot packages...")
-    setup_sysroot(source_tree, ci_mode)
+    setup_sysroot(source_tree, target, ci_mode)
 
     get_logger().info("Toolchain setup completed successfully")

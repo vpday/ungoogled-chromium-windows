@@ -10,14 +10,9 @@ inputs:
   job_started_at:
     description: Unix timestamp in seconds when the job started
     required: true
-  x86:
-    description: Build x86 binary
-    required: false
-    default: false
-  arm:
-    description: Build arm binary
-    required: false
-    default: false
+  target:
+    description: Canonical Windows target (x64, x86, or arm64)
+    required: true
 outputs:
   finished:
     description: If a previous stage already finished the build, the stage will set all output variables to the input ones and exit
