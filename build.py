@@ -44,6 +44,26 @@ sys.path.pop(0)
 
 _ROOT_DIR = Path(__file__).resolve().parent
 _PATCH_BIN_RELPATH = Path('/usr/bin/patch')
+_X86_OPTIMIZATION_PATCH = 'ungoogled-chromium/windows/windows-x86-optimizations.patch'
+_X64_OPTIMIZATION_PATCH = 'ungoogled-chromium/windows/windows-x64-optimizations.patch'
+
+
+def _get_target_optimization_patches(target: WindowsTarget):
+    if target.id == 'x64':
+        return (_X86_OPTIMIZATION_PATCH, _X64_OPTIMIZATION_PATCH)
+    if target.id == 'x86':
+        return (_X86_OPTIMIZATION_PATCH,)
+    return ()
+
+
+def _select_optimization_patch_series(series_lines, target: WindowsTarget):
+    managed_patch_lines = {_X86_OPTIMIZATION_PATCH, _X64_OPTIMIZATION_PATCH}
+    selected_patch_lines = _get_target_optimization_patches(target)
+    updated_series_lines = [
+        line for line in series_lines if line not in managed_patch_lines
+    ]
+    updated_series_lines.extend(selected_patch_lines)
+    return updated_series_lines
 
 
 def _create_argument_parser():
@@ -314,39 +334,31 @@ def main():
     if should_skip_step(source_tree, '.apply_patches.stamp', args.ci):
         get_logger().info('Skipping patch application (already completed)')
     else:
-        # Prepare patches/series for x64 AVX2 optimizations
+        # Select layered optimization patches for the current Windows target.
         series_file = _ROOT_DIR / 'patches' / 'series'
-        avx2_patch_line = 'ungoogled-chromium/windows/windows-enable-avx2-optimizations.patch'
-
-        # Determine if current build is x64
-        is_x64 = target.id == 'x64'
-
-        # Read current series content
         series_content = series_file.read_text(encoding=ENCODING)
         series_lines = series_content.splitlines()
-
-        # Check if AVX2 optimization patch is already in series
-        has_avx2_patch = avx2_patch_line in series_lines
-
-        # Verify patch file exists before modifying series
-        avx2_patch_file = _ROOT_DIR / 'patches' / avx2_patch_line
-        if not avx2_patch_file.exists():
-            get_logger().warning('AVX2 optimization patch file not found: %s', avx2_patch_file)
-        else:
-            if is_x64 and not has_avx2_patch:
-                # x64 build: add AVX2 optimizations patch
-                series_lines.append(avx2_patch_line)
-                new_content = '\n'.join(series_lines) + '\n'
-                with series_file.open('w', encoding=ENCODING, newline='\n') as f:
-                    f.write(new_content)
-                get_logger().info('Added AVX2 optimization patch for x64 build')
-            elif not is_x64 and has_avx2_patch:
-                # Non-x64 build: remove AVX2 optimizations patch if present
-                series_lines = [line for line in series_lines if line != avx2_patch_line]
-                new_content = '\n'.join(series_lines) + '\n'
-                with series_file.open('w', encoding=ENCODING, newline='\n') as f:
-                    f.write(new_content)
-                get_logger().info('Removed AVX2 optimization patch for non-x64 build')
+        selected_patch_lines = _get_target_optimization_patches(target)
+        missing_patch_files = [
+            _ROOT_DIR / 'patches' / patch_line
+            for patch_line in selected_patch_lines
+            if not (_ROOT_DIR / 'patches' / patch_line).exists()
+        ]
+        if missing_patch_files:
+            raise RuntimeError(
+                'Optimization patch files not found: '
+                + ', '.join(map(str, missing_patch_files))
+            )
+        updated_series_lines = _select_optimization_patch_series(series_lines, target)
+        if updated_series_lines != series_lines:
+            new_content = '\n'.join(updated_series_lines) + '\n'
+            with series_file.open('w', encoding=ENCODING, newline='\n') as f:
+                f.write(new_content)
+            get_logger().info(
+                'Selected optimization patches for %s: %s',
+                target.id,
+                ', '.join(selected_patch_lines) if selected_patch_lines else 'common only',
+            )
 
         # First, ungoogled-chromium-patches
         get_logger().info('Applying ungoogled-chromium patches...')

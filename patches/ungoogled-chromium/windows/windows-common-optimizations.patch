@@ -27,19 +27,16 @@
      }
  
      # Enable ELF CREL (see crbug.com/357878242) for all platforms that use ELF.
-@@ -980,6 +980,11 @@ config("compiler") {
+@@ -980,6 +980,8 @@ config("compiler") {
  
      # We use clang-rt sanitizer runtimes.
      "-Zexternal-clangrt",
 +
-+    "-Ctarget-cpu=x86-64-v3",
 +    "-Cllvm-args=-fp-contract=fast",
-+    "-Ztune-cpu=skylake",
-+    "-Ctarget-feature=-fast-gather,+prefer-no-gather,+prefer-no-scatter",
    ]
  
    if (!is_win || force_rustc_color_output) {
-@@ -1260,12 +1265,31 @@ config("disallow_unstable_features") {
+@@ -1260,12 +1262,27 @@ config("disallow_unstable_features") {
  # building with ThinLTO, no optimization is performed in the link step.
  config("thinlto_optimize_default") {
    if (!is_debug && use_thin_lto && is_a_target_toolchain) {
@@ -55,24 +52,20 @@
 +      ldflags += [ "-opt:lldltocgo=3" ]
 +      ldflags += [
 +        "-mllvm:-adce-remove-loops=true",
-+        "-mllvm:-x86-align-branch-boundary=32",
-+        "-mllvm:-x86-align-branch=jcc+jmp+indirect",
 +        "-mllvm:-polly",
-+    ]
++      ]
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
 +      ldflags += [ "-Wl,--lto-CGO3" ]
 +      ldflags += [
 +        "-Wl,-mllvm,-adce-remove-loops=true",
-+        "-Wl,-mllvm,-x86-align-branch-boundary=32",
-+        "-Wl,-mllvm,-x86-align-branch=jcc+jmp+indirect",
 +        "-Wl,-z,pack-relative-relocs",
 +        "-Wl,-mllvm,-polly",
 +      ]
      }
  
      if (toolchain_supports_rust_thin_lto) {
-@@ -1299,8 +1323,39 @@ config("thinlto_optimize_max") {
+@@ -1299,8 +1316,33 @@ config("thinlto_optimize_max") {
  
      if (is_win) {
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
@@ -86,9 +79,6 @@
 +        "-mllvm:-phi-node-folding-threshold=4",
 +        "-mllvm:-sink-insts-to-avoid-spills",
 +        "-mllvm:-spec-exec-max-speculation-cost=15",
-+        "-mllvm:-x86-align-branch-boundary=32",
-+        "-mllvm:-x86-align-branch=jcc+jmp+indirect",
-+        "-mllvm:-x86-cmov-converter",
 +        "-mllvm:-polly",
 +      ]
      } else {
@@ -103,16 +93,13 @@
 +        "-Wl,-mllvm,-phi-node-folding-threshold=4",
 +        "-Wl,-mllvm,-sink-insts-to-avoid-spills",
 +        "-Wl,-mllvm,-spec-exec-max-speculation-cost=15",
-+        "-Wl,-mllvm,-x86-align-branch-boundary=32",
-+        "-Wl,-mllvm,-x86-align-branch=jcc+jmp+indirect",
-+        "-Wl,-mllvm,-x86-cmov-converter",
 +        "-Wl,-z,pack-relative-relocs",
 +        "-Wl,-mllvm,-polly",
 +      ]
      }
  
      if (toolchain_supports_rust_thin_lto) {
-@@ -1723,7 +1778,7 @@ config("runtime_library") {
+@@ -1723,7 +1765,7 @@ config("runtime_library") {
    }
  
    if (use_safe_libcxx) {
@@ -121,7 +108,19 @@
    } else {
      defines += [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE" ]
    }
-@@ -2642,10 +2697,13 @@ config("optimize_max") {
+@@ -1958,7 +2000,10 @@ config("default_warnings") {
+     if (is_win) {
+       # TODO(thakis): https://crbug.com/617318
+       # Currently RBE can not handle case sensitiveness for windows well.
+-      cflags += [ "-Wno-nonportable-include-path" ]
++      cflags += [
++        "-Wno-deprecated-attributes",
++        "-Wno-nonportable-include-path",
++      ]
+     }
+ 
+     if (is_fuchsia) {
+@@ -2642,10 +2687,13 @@ config("optimize_max") {
      # Favor speed over size, /O2 must be before the common flags.
      # /O2 implies /Ot, /Oi, and /GF.
      cflags = [ "/O2" ] + common_optimize_on_cflags
@@ -153,40 +152,6 @@
      if (target_os == "chromeos" && cros_target_cpu_arch != "" &&
          is_a_target_toolchain) {
        cpu_abi_cflags += [ "-march=$cros_target_cpu_arch" ]
---- a/build/config/win/BUILD.gn
-+++ b/build/config/win/BUILD.gn
-@@ -120,7 +120,30 @@ config("compiler") {
-     # microarchitecture. MSVC only supports a subset of architectures, and the
-     # next step after SSE2 will be AVX.
-     if (current_cpu == "x86" || current_cpu == "x64") {
--      cflags += [ "-msse3" ]
-+      cflags += [
-+        "-mtune=skylake",
-+        "-msse3",
-+        "-mssse3",
-+        "-msse4.1",
-+        "-msse4.2",
-+        "-mavx",
-+        "-mavx2",
-+        "-mfma",
-+        "-mf16c",
-+        "-mlzcnt",
-+        "-mbmi",
-+        "-mbmi2",
-+        "-mpopcnt",
-+        "-mmovbe",
-+        "-mcx16",
-+        "-msahf",
-+        "-mpclmul",
-+        "-mxsave",
-+        "-mxsaveopt",
-+        "-mno-gather",
-+        "-mno-scatter",
-+        "/clang:-w",
-+      ]
-     }
- 
-     # Enable ANSI escape codes if something emulating them is around (cmd.exe
 --- a/chrome/installer/mini_installer/mini_installer_exe_main.cc
 +++ b/chrome/installer/mini_installer/mini_installer_exe_main.cc
 @@ -59,7 +59,7 @@ void* memset(void* dest, int c, size_t count) {
@@ -205,3 +170,28 @@
 -#endif
 +// #endif
  }  // extern "C"
+--- a/chrome/tools/build/win/create_installer_archive.py
++++ b/chrome/tools/build/win/create_installer_archive.py
+@@ -83,21 +83,7 @@ def CompressUsingLZMA(build_dir,
+         cmd.append('-mx1')
+     else:
+         cmd.extend([
+-            # Flags equivalent to -mx9 (ultra) but with the bcj2 turned on (exe
+-            # pre-filter). This results in a ~2.3MB decrease in installer size
+-            # on a 24MB installer.
+-            # Additionally, these settings reflect a 7zip 4.42 and up change in
+-            # the definition of -mx9, increasting the dictionary size moving to
+-            # 26bit = 64MB. This results in an additional ~3.5MB decrease.
+-            # Older 7zip versions can support these settings, as these changes
+-            # rely on existing functionality in the lzma format.
+-            '-m0=BCJ2',
+-            '-m1=LZMA:d27:fb128',
+-            '-m2=LZMA:d22:fb128:mf=bt2',
+-            '-m3=LZMA:d22:fb128:mf=bt2',
+-            '-mb0:1',
+-            '-mb0s1:2',
+-            '-mb0s2:3',
++            '-m0=LZMA2:d24:fb64',
+         ])
+     cmd.extend([
+         os.path.abspath(compressed_file),

@@ -1,0 +1,74 @@
+--- a/build/config/compiler/BUILD.gn
++++ b/build/config/compiler/BUILD.gn
+@@ -1277,6 +1277,8 @@ config("thinlto_optimize_default") {
+       ldflags += [ "-opt:lldltocgo=3" ]
+       ldflags += [
+         "-mllvm:-adce-remove-loops=true",
++        "-mllvm:-x86-align-branch-boundary=32",
++        "-mllvm:-x86-align-branch=jcc+jmp+indirect",
+         "-mllvm:-polly",
+       ]
+     } else {
+@@ -1285,6 +1287,8 @@ config("thinlto_optimize_default") {
+       ldflags += [ "-Wl,--lto-CGO3" ]
+       ldflags += [
+         "-Wl,-mllvm,-adce-remove-loops=true",
++        "-Wl,-mllvm,-x86-align-branch-boundary=32",
++        "-Wl,-mllvm,-x86-align-branch=jcc+jmp+indirect",
+         "-Wl,-z,pack-relative-relocs",
+         "-Wl,-mllvm,-polly",
+       ]
+@@ -1324,6 +1328,9 @@ config("thinlto_optimize_max") {
+         "-mllvm:-phi-node-folding-threshold=4",
+         "-mllvm:-sink-insts-to-avoid-spills",
+         "-mllvm:-spec-exec-max-speculation-cost=15",
++        "-mllvm:-x86-align-branch-boundary=32",
++        "-mllvm:-x86-align-branch=jcc+jmp+indirect",
++        "-mllvm:-x86-cmov-converter",
+         "-mllvm:-polly",
+       ]
+     } else {
+@@ -1340,6 +1347,9 @@ config("thinlto_optimize_max") {
+         "-Wl,-mllvm,-phi-node-folding-threshold=4",
+         "-Wl,-mllvm,-sink-insts-to-avoid-spills",
+         "-Wl,-mllvm,-spec-exec-max-speculation-cost=15",
++        "-Wl,-mllvm,-x86-align-branch-boundary=32",
++        "-Wl,-mllvm,-x86-align-branch=jcc+jmp+indirect",
++        "-Wl,-mllvm,-x86-cmov-converter",
+         "-Wl,-z,pack-relative-relocs",
+         "-Wl,-mllvm,-polly",
+       ]
+--- a/build/config/win/BUILD.gn
++++ b/build/config/win/BUILD.gn
+@@ -120,7 +120,30 @@ config("compiler") {
+     # microarchitecture. MSVC only supports a subset of architectures, and the
+     # next step after SSE2 will be AVX.
+     if (current_cpu == "x86" || current_cpu == "x64") {
+-      cflags += [ "-msse3" ]
++      cflags += [
++        "-mtune=skylake",
++        "-msse3",
++        "-mssse3",
++        "-msse4.1",
++        "-msse4.2",
++        "-mavx",
++        "-mavx2",
++        "-mfma",
++        "-mf16c",
++        "-mlzcnt",
++        "-mbmi",
++        "-mbmi2",
++        "-mpopcnt",
++        "-mmovbe",
++        "-mcx16",
++        "-msahf",
++        "-mpclmul",
++        "-mxsave",
++        "-mxsaveopt",
++        "-mno-gather",
++        "-mno-scatter",
++        "/clang:-w",
++      ]
+     }
+ 
+     # Enable ANSI escape codes if something emulating them is around (cmd.exe
