@@ -1,6 +1,6 @@
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
-@@ -529,10 +529,10 @@ config("compiler") {
+@@ -533,10 +533,10 @@ config("compiler") {
    # Linux/Android/Fuchsia common flags setup.
    # ---------------------------------
    if (is_linux || is_chromeos || is_android || is_fuchsia) {
@@ -15,7 +15,7 @@
  
      if (!is_clang) {
        # Use pipes for communicating between sub-processes. Faster.
-@@ -651,9 +651,9 @@ config("compiler") {
+@@ -659,9 +659,9 @@ config("compiler") {
  
      # TODO(crbug.com/40192287): Investigate why/if this should be needed.
      if (is_win) {
@@ -27,7 +27,7 @@
      }
  
      # Enable ELF CREL (see crbug.com/357878242) for all platforms that use ELF.
-@@ -980,6 +980,8 @@ config("compiler") {
+@@ -988,6 +988,8 @@ config("compiler") {
  
      # We use clang-rt sanitizer runtimes.
      "-Zexternal-clangrt",
@@ -36,7 +36,7 @@
    ]
  
    if (!is_win || force_rustc_color_output) {
-@@ -1260,12 +1262,27 @@ config("disallow_unstable_features") {
+@@ -1272,12 +1277,27 @@ config("disallow_unstable_features") {
  # building with ThinLTO, no optimization is performed in the link step.
  config("thinlto_optimize_default") {
    if (!is_debug && use_thin_lto && is_a_target_toolchain) {
@@ -65,7 +65,7 @@
      }
  
      if (toolchain_supports_rust_thin_lto) {
-@@ -1299,8 +1316,33 @@ config("thinlto_optimize_max") {
+@@ -1311,8 +1331,33 @@ config("thinlto_optimize_max") {
  
      if (is_win) {
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
@@ -99,7 +99,7 @@
      }
  
      if (toolchain_supports_rust_thin_lto) {
-@@ -1723,7 +1765,7 @@ config("runtime_library") {
+@@ -1736,7 +1781,7 @@ config("runtime_library") {
    }
  
    if (use_safe_libcxx) {
@@ -108,7 +108,7 @@
    } else {
      defines += [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE" ]
    }
-@@ -1958,7 +2000,10 @@ config("default_warnings") {
+@@ -1971,7 +2013,10 @@ config("default_warnings") {
      if (is_win) {
        # TODO(thakis): https://crbug.com/617318
        # Currently RBE can not handle case sensitiveness for windows well.
@@ -120,7 +120,7 @@
      }
  
      if (is_fuchsia) {
-@@ -2642,10 +2687,13 @@ config("optimize_max") {
+@@ -2681,10 +2736,13 @@ config("optimize_max") {
      # Favor speed over size, /O2 must be before the common flags.
      # /O2 implies /Ot, /Oi, and /GF.
      cflags = [ "/O2" ] + common_optimize_on_cflags
@@ -154,7 +154,7 @@
        cpu_abi_cflags += [ "-march=$cros_target_cpu_arch" ]
 --- a/chrome/installer/mini_installer/mini_installer_exe_main.cc
 +++ b/chrome/installer/mini_installer/mini_installer_exe_main.cc
-@@ -59,7 +59,7 @@ void* memset(void* dest, int c, size_t count) {
+@@ -55,7 +55,7 @@ void* memset(void* dest, int c, size_t count) {
    return dest;
  }
  
@@ -163,8 +163,8 @@
  // The compiler generates calls to memcpy for ARM64 debug builds so we need to
  // supply a memcpy implementation in that configuration.
  // See comments above for why we do this incantation.
-@@ -71,5 +71,5 @@ void* memcpy(void* destination, const void* source, size_t count) {
-     *dst++ = *src++;
+@@ -67,5 +67,5 @@ void* memcpy(void* destination, const void* source, size_t count) {
+     *UNSAFE_TODO(dst++) = *UNSAFE_TODO(src++);
    return destination;
  }
 -#endif
