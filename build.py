@@ -46,18 +46,19 @@ _ROOT_DIR = Path(__file__).resolve().parent
 _PATCH_BIN_RELPATH = Path('/usr/bin/patch')
 _X86_OPTIMIZATION_PATCH = 'ungoogled-chromium/windows/windows-x86-optimizations.patch'
 _X64_OPTIMIZATION_PATCH = 'ungoogled-chromium/windows/windows-x64-optimizations.patch'
+_X64_ENABLE_DTLTO_PATCH = 'ungoogled-chromium/windows/windows-enable-dtlto.patch'
 
 
 def _get_target_optimization_patches(target: WindowsTarget):
     if target.id == 'x64':
-        return (_X86_OPTIMIZATION_PATCH, _X64_OPTIMIZATION_PATCH)
+        return (_X86_OPTIMIZATION_PATCH, _X64_OPTIMIZATION_PATCH, _X64_ENABLE_DTLTO_PATCH)
     if target.id == 'x86':
         return (_X86_OPTIMIZATION_PATCH,)
     return ()
 
 
 def _select_optimization_patch_series(series_lines, target: WindowsTarget):
-    managed_patch_lines = {_X86_OPTIMIZATION_PATCH, _X64_OPTIMIZATION_PATCH}
+    managed_patch_lines = {_X86_OPTIMIZATION_PATCH, _X64_OPTIMIZATION_PATCH, _X64_ENABLE_DTLTO_PATCH}
     selected_patch_lines = _get_target_optimization_patches(target)
     updated_series_lines = [
         line for line in series_lines if line not in managed_patch_lines
@@ -140,7 +141,7 @@ def _get_windows_components(target: WindowsTarget):
     return components
 
 
-def _set_gn_target_cpu(windows_flags: str, target: WindowsTarget):
+def _set_gn_target_args(windows_flags: str, target: WindowsTarget):
     pattern = r'(?m)^(target_cpu\s*=\s*")[^"]*("\s*)$'
     updated_flags, replacement_count = re.subn(
         pattern,
@@ -151,6 +152,8 @@ def _set_gn_target_cpu(windows_flags: str, target: WindowsTarget):
         raise RuntimeError(
             f"Expected exactly one target_cpu assignment in flags.windows.gn; found {replacement_count}"
         )
+    if target.id == 'x64':
+        updated_flags += '\nenable_dtlto=true'
     return updated_flags
 
 
@@ -406,7 +409,7 @@ def main():
         gn_flags = (_ROOT_DIR / 'ungoogled-chromium' / 'flags.gn').read_text(encoding=ENCODING)
         gn_flags += '\n'
         windows_flags = (_ROOT_DIR / 'flags.windows.gn').read_text(encoding=ENCODING)
-        windows_flags = _set_gn_target_cpu(windows_flags, target)
+        windows_flags = _set_gn_target_args(windows_flags, target)
         if args.tarball:
             windows_flags += '\nchrome_pgo_phase=0\n'
         gn_flags += windows_flags

@@ -1,0 +1,118 @@
+--- a/build/config/compiler/BUILD.gn
++++ b/build/config/compiler/BUILD.gn
+@@ -1277,2 +1277,6 @@
+ # building with ThinLTO, no optimization is performed in the link step.
++declare_args() {
++  enable_dtlto = false
++}
++
+ config("thinlto_optimize_default") {
+@@ -1301,3 +1305,21 @@
+     }
+ 
++    if (enable_dtlto && is_win && target_cpu == "x64") {
++      ldflags += [
++        "/thinlto-distributor:/usr/bin/python3",
++        "/thinlto-distributor-arg:" +
++          rebase_path("//tools/dtlto/local_parallel.py", root_build_dir),
++        "/thinlto-remote-compiler:" +
++          rebase_path("$clang_base_path/bin/clang", root_build_dir),
++        "/thinlto-remote-compiler-arg:-mllvm",
++        "/thinlto-remote-compiler-arg:-adce-remove-loops=true",
++        "/thinlto-remote-compiler-arg:-mllvm",
++        "/thinlto-remote-compiler-arg:-x86-align-branch-boundary=32",
++        "/thinlto-remote-compiler-arg:-mllvm",
++        "/thinlto-remote-compiler-arg:-x86-align-branch=jcc+jmp+indirect",
++        "/thinlto-remote-compiler-arg:-mllvm",
++        "/thinlto-remote-compiler-arg:-polly",
++      ]
++    }
++
+     if (toolchain_supports_rust_thin_lto) {
+@@ -1361,3 +1383,37 @@
+     }
+ 
++    if (enable_dtlto && is_win && target_cpu == "x64") {
++      ldflags += [
++        "/thinlto-distributor:/usr/bin/python3",
++        "/thinlto-distributor-arg:" +
++          rebase_path("//tools/dtlto/local_parallel.py", root_build_dir),
++        "/thinlto-remote-compiler:" +
++          rebase_path("$clang_base_path/bin/clang", root_build_dir),
++        "/thinlto-remote-compiler-arg:-mllvm",
++        "/thinlto-remote-compiler-arg:-import-hot-multiplier=15",
++        "/thinlto-remote-compiler-arg:-mllvm",
++        "/thinlto-remote-compiler-arg:-adce-remove-loops=true",
++        "/thinlto-remote-compiler-arg:-mllvm",
++        "/thinlto-remote-compiler-arg:-enable-gvn-hoist",
++        "/thinlto-remote-compiler-arg:-mllvm",
++        "/thinlto-remote-compiler-arg:-enable-gvn-sink",
++        "/thinlto-remote-compiler-arg:-mllvm",
++        "/thinlto-remote-compiler-arg:-machine-sink-split",
++        "/thinlto-remote-compiler-arg:-mllvm",
++        "/thinlto-remote-compiler-arg:-phi-node-folding-threshold=4",
++        "/thinlto-remote-compiler-arg:-mllvm",
++        "/thinlto-remote-compiler-arg:-sink-insts-to-avoid-spills",
++        "/thinlto-remote-compiler-arg:-mllvm",
++        "/thinlto-remote-compiler-arg:-spec-exec-max-speculation-cost=15",
++        "/thinlto-remote-compiler-arg:-mllvm",
++        "/thinlto-remote-compiler-arg:-x86-align-branch-boundary=32",
++        "/thinlto-remote-compiler-arg:-mllvm",
++        "/thinlto-remote-compiler-arg:-x86-align-branch=jcc+jmp+indirect",
++        "/thinlto-remote-compiler-arg:-mllvm",
++        "/thinlto-remote-compiler-arg:-x86-cmov-converter",
++        "/thinlto-remote-compiler-arg:-mllvm",
++        "/thinlto-remote-compiler-arg:-polly",
++      ]
++    }
++
+     if (toolchain_supports_rust_thin_lto) {
+--- /dev/null
++++ b/tools/dtlto/local_parallel.py
+@@ -0,0 +1,46 @@
++# Copyright (c) 2026 The ungoogled-chromium Authors. All rights reserved.
++# Use of this source code is governed by a BSD-style license that can be
++# found in the LICENSE file.
++
++"""Run DTLTO backend jobs concurrently on the local build host."""
++
++import concurrent.futures
++import json
++import subprocess
++import sys
++from pathlib import Path
++
++
++_MAX_WORKERS = 4
++
++
++def _run_job(common_args, job):
++    subprocess.run(common_args + job["args"], check=True)
++
++
++if __name__ == "__main__":
++    json_path = Path(sys.argv[-1])
++    with json_path.open(encoding="utf-8") as json_file:
++        data = json.load(json_file)
++
++    jobs = data["jobs"]
++    if not jobs:
++        raise SystemExit(0)
++
++    worker_count = min(len(jobs), _MAX_WORKERS)
++    print(
++        f"DTLTO: running {len(jobs)} backend jobs with "
++        f"{worker_count} local workers",
++        flush=True,
++    )
++
++    common_args = data["common"]["args"]
++    with concurrent.futures.ThreadPoolExecutor(
++        max_workers=worker_count
++    ) as executor:
++        futures = [
++            executor.submit(_run_job, common_args, job)
++            for job in jobs
++        ]
++        for future in concurrent.futures.as_completed(futures):
++            future.result()
