@@ -18,12 +18,14 @@ import signal
 import subprocess
 import sys
 
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Iterator
 
 sys.path.insert(
     0, str(Path(__file__).resolve().parent / "ungoogled-chromium" / "utils")
 )
-from _common import ENCODING
+from _common import ENCODING, get_logger
 
 sys.path.pop(0)
 
@@ -200,3 +202,27 @@ def mark_step_complete(source_tree, stamp_name):
     stamp_path = get_stamp_path(source_tree, stamp_name)
     stamp_path.parent.mkdir(parents=True, exist_ok=True)
     stamp_path.touch()
+
+
+@contextmanager
+def build_step(source_tree: Path, stamp_name: str, step_description: str, ci_mode: bool) -> Iterator[bool]:
+    """
+    Context manager for a build step that handles skipping, logging, and stamp marking.
+
+    Args:
+        source_tree: Path object of the source directory
+        stamp_name: Name of the stamp file
+        step_description: Human-readable description of the step (e.g. 'downloading Windows dependencies')
+        ci_mode: Boolean indicating if running in CI mode
+
+    Yields:
+        bool: True if the step should execute, False if it was skipped
+    """
+    if should_skip_step(source_tree, stamp_name, ci_mode):
+        get_logger().info('Skipping %s (already completed)', step_description)
+        yield False
+    else:
+        get_logger().info('%s...', step_description)
+        yield True
+        mark_step_complete(source_tree, stamp_name)
+        get_logger().info('%s completed', step_description)
