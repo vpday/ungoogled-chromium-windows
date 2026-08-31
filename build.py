@@ -48,7 +48,6 @@ _OPTIMIZATION_PATCHES_BY_TARGET: dict[str, tuple[str, ...]] = {
     'x64': (
         'ungoogled-chromium/windows/windows-x86-optimizations.patch',
         'ungoogled-chromium/windows/windows-x64-optimizations.patch',
-        'ungoogled-chromium/windows/windows-enable-dtlto.patch',
     ),
     'x86': (
         'ungoogled-chromium/windows/windows-x86-optimizations.patch',
@@ -166,8 +165,6 @@ def _set_gn_target_args(windows_flags: str, target: WindowsTarget):
         raise RuntimeError(
             f"Expected exactly one target_cpu assignment in flags.windows.gn; found {replacement_count}"
         )
-    if target.id == 'x64':
-        updated_flags += '\nenable_dtlto=true'
     return updated_flags
 
 
