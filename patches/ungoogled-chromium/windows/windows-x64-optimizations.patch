@@ -1,13 +1,47 @@
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
-@@ -988,7 +988,10 @@ config("compiler") {
+@@ -988,7 +988,9 @@ config("compiler") {
      # We use clang-rt sanitizer runtimes.
      "-Zexternal-clangrt",
  
 +    "-Ctarget-cpu=x86-64-v3",
      "-Cllvm-args=-fp-contract=fast",
-+    "-Ztune-cpu=skylake",
 +    "-Ctarget-feature=-fast-gather,+prefer-no-gather,+prefer-no-scatter",
    ]
  
    if (!is_win || force_rustc_color_output) {
+@@ -1339,5 +1343,6 @@ config("thinlto_optimize_max") {
+         "-mllvm:-phi-node-folding-threshold=4",
+         "-mllvm:-sink-insts-to-avoid-spills",
+         "-mllvm:-spec-exec-max-speculation-cost=15",
++        "-mllvm:-x86-cmov-converter",
+       ]
+     } else {
+@@ -1355,5 +1360,6 @@ config("thinlto_optimize_max") {
+         "-Wl,-mllvm,-phi-node-folding-threshold=4",
+         "-Wl,-mllvm,-sink-insts-to-avoid-spills",
+         "-Wl,-mllvm,-spec-exec-max-speculation-cost=15",
++        "-Wl,-mllvm,-x86-cmov-converter",
+         "-Wl,-z,pack-relative-relocs",
+       ]
+--- a/build/config/win/BUILD.gn
++++ b/build/config/win/BUILD.gn
+@@ -120,7 +120,17 @@ config("compiler") {
+     # microarchitecture. MSVC only supports a subset of architectures, and the
+     # next step after SSE2 will be AVX.
+     if (current_cpu == "x86" || current_cpu == "x64") {
+-      cflags += [ "-msse3" ]
++      cflags += [
++        "-march=x86-64-v3",
++        "-mpopcnt",
++        "-mcx16",
++        "-msahf",
++        "-mpclmul",
++        "-mxsaveopt",
++        "-mno-gather",
++        "-mno-scatter",
++        "/clang:-w",
++      ]
+     }
+ 
+     # Enable ANSI escape codes if something emulating them is around (cmd.exe
