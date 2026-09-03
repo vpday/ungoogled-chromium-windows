@@ -1,11 +1,12 @@
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
-@@ -985,7 +985,9 @@ config("compiler") {
+@@ -985,7 +985,10 @@ config("compiler") {
      # We use clang-rt sanitizer runtimes.
      "-Zexternal-clangrt",
  
 +    "-Ctarget-cpu=x86-64-v3",
      "-Cllvm-args=-fp-contract=fast",
++    "-Ztune-cpu=skylake",
 +    "-Ctarget-feature=-fast-gather,+prefer-no-gather,+prefer-no-scatter",
    ]
  
@@ -37,17 +38,36 @@
      }
 --- a/build/config/win/BUILD.gn
 +++ b/build/config/win/BUILD.gn
-@@ -122,7 +122,12 @@ config("compiler") {
+@@ -122,7 +122,31 @@ config("compiler") {
      # microarchitecture. MSVC only supports a subset of architectures, and the
      # next step after SSE2 will be AVX.
-     if (current_cpu == "x86" || current_cpu == "x64") {
--      cflags += [ "-msse3" ]
+-    if (current_cpu == "x86" || current_cpu == "x64") {
++    if (current_cpu == "x64") {
 +      cflags += [
-+        "-march=x86-64-v3",
++        "-mtune=skylake",
++        "-msse3",
++        "-mssse3",
++        "-msse4.1",
++        "-msse4.2",
++        "-mavx",
++        "-mavx2",
++        "-mfma",
++        "-mf16c",
++        "-mlzcnt",
++        "-mbmi",
++        "-mbmi2",
++        "-mpopcnt",
++        "-mmovbe",
++        "-mcx16",
++        "-msahf",
++        "-mpclmul",
++        "-mxsave",
 +        "-mxsaveopt",
 +        "-mno-gather",
 +        "-mno-scatter",
 +      ]
++    } else if (current_cpu == "x86") {
+       cflags += [ "-msse3" ]
      }
  
      # Enable ANSI escape codes if something emulating them is around (cmd.exe
