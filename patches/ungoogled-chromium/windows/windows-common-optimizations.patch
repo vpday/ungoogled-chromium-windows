@@ -36,7 +36,7 @@
    ]
  
    if (!is_win || force_rustc_color_output) {
-@@ -1272,12 +1277,25 @@ config("disallow_unstable_features") {
+@@ -1272,12 +1274,28 @@ config("disallow_unstable_features") {
  # building with ThinLTO, no optimization is performed in the link step.
  config("thinlto_optimize_default") {
    if (!is_debug && use_thin_lto && is_a_target_toolchain) {
@@ -51,6 +51,9 @@
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
 +      ldflags += [ "-opt:lldltocgo=3" ]
 +      ldflags += [
++        "/Brepro",
++        "/prefetch-inputs",
++        "/DEBUG:GHASH",
 +        "-mllvm:-adce-remove-loops=true",
 +      ]
      } else {
@@ -63,12 +66,15 @@
      }
  
      if (toolchain_supports_rust_thin_lto) {
-@@ -1311,8 +1331,31 @@ config("thinlto_optimize_max") {
+@@ -1311,8 +1329,34 @@ config("thinlto_optimize_max") {
  
      if (is_win) {
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
 +      ldflags += [ "-opt:lldltocgo=3" ]
 +      ldflags += [
++        "/Brepro",
++        "/prefetch-inputs",
++        "/DEBUG:GHASH",
 +        "-mllvm:-import-hot-multiplier=15",
 +        "-mllvm:-adce-remove-loops=true",
 +        "-mllvm:-enable-gvn-hoist",
@@ -95,7 +101,7 @@
      }
  
      if (toolchain_supports_rust_thin_lto) {
-@@ -1736,7 +1781,7 @@ config("runtime_library") {
+@@ -1736,7 +1783,7 @@ config("runtime_library") {
    }
  
    if (use_safe_libcxx) {
@@ -104,19 +110,20 @@
    } else {
      defines += [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE" ]
    }
-@@ -1971,7 +2013,10 @@ config("default_warnings") {
+@@ -1971,7 +2015,11 @@ config("default_warnings") {
      if (is_win) {
        # TODO(thakis): https://crbug.com/617318
        # Currently RBE can not handle case sensitiveness for windows well.
 -      cflags += [ "-Wno-nonportable-include-path" ]
 +      cflags += [
++        "/clang:-gcodeview-ghash",
 +        "-Wno-deprecated-attributes",
 +        "-Wno-nonportable-include-path",
 +      ]
      }
  
      if (is_fuchsia) {
-@@ -2681,10 +2736,13 @@ config("optimize_max") {
+@@ -2681,10 +2738,13 @@ config("optimize_max") {
      # Favor speed over size, /O2 must be before the common flags.
      # /O2 implies /Ot, /Oi, and /GF.
      cflags = [ "/O2" ] + common_optimize_on_cflags

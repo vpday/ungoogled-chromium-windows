@@ -1,6 +1,6 @@
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
-@@ -988,7 +988,9 @@ config("compiler") {
+@@ -985,7 +985,9 @@ config("compiler") {
      # We use clang-rt sanitizer runtimes.
      "-Zexternal-clangrt",
  
@@ -10,37 +10,43 @@
    ]
  
    if (!is_win || force_rustc_color_output) {
-@@ -1339,5 +1343,6 @@ config("thinlto_optimize_max") {
+@@ -1284,6 +1286,7 @@ config("thinlto_optimize_default") {
+         "/prefetch-inputs",
+         "/DEBUG:GHASH",
+         "-mllvm:-adce-remove-loops=true",
++        "/guard:ehcont",
+       ]
+     } else {
+       ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
+@@ -1348,6 +1351,8 @@ config("thinlto_optimize_max") {
          "-mllvm:-phi-node-folding-threshold=4",
          "-mllvm:-sink-insts-to-avoid-spills",
          "-mllvm:-spec-exec-max-speculation-cost=15",
 +        "-mllvm:-x86-cmov-converter",
++        "/guard:ehcont",
        ]
      } else {
-@@ -1355,5 +1360,6 @@ config("thinlto_optimize_max") {
+       ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
+@@ -1361,6 +1366,7 @@ config("thinlto_optimize_max") {
          "-Wl,-mllvm,-phi-node-folding-threshold=4",
          "-Wl,-mllvm,-sink-insts-to-avoid-spills",
          "-Wl,-mllvm,-spec-exec-max-speculation-cost=15",
 +        "-Wl,-mllvm,-x86-cmov-converter",
          "-Wl,-z,pack-relative-relocs",
        ]
+     }
 --- a/build/config/win/BUILD.gn
 +++ b/build/config/win/BUILD.gn
-@@ -120,7 +120,17 @@ config("compiler") {
+@@ -122,7 +122,12 @@ config("compiler") {
      # microarchitecture. MSVC only supports a subset of architectures, and the
      # next step after SSE2 will be AVX.
      if (current_cpu == "x86" || current_cpu == "x64") {
 -      cflags += [ "-msse3" ]
 +      cflags += [
 +        "-march=x86-64-v3",
-+        "-mpopcnt",
-+        "-mcx16",
-+        "-msahf",
-+        "-mpclmul",
 +        "-mxsaveopt",
 +        "-mno-gather",
 +        "-mno-scatter",
-+        "/clang:-w",
 +      ]
      }
  
