@@ -6,7 +6,7 @@
  
 +    "-Ctarget-cpu=x86-64-v3",
      "-Cllvm-args=-fp-contract=fast",
-+    "-Ztune-cpu=skylake",
++    "-Ztune-cpu=generic",
 +    "-Ctarget-feature=-fast-gather,+prefer-no-gather,+prefer-no-scatter",
    ]
  
@@ -19,19 +19,17 @@
        ]
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
-@@ -1348,6 +1351,8 @@ config("thinlto_optimize_max") {
+@@ -1348,5 +1351,7 @@ config("thinlto_optimize_max") {
          "-mllvm:-phi-node-folding-threshold=4",
          "-mllvm:-sink-insts-to-avoid-spills",
-         "-mllvm:-spec-exec-max-speculation-cost=15",
 +        "-mllvm:-x86-cmov-converter",
 +        "/guard:ehcont",
        ]
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
-@@ -1361,6 +1366,7 @@ config("thinlto_optimize_max") {
+@@ -1361,5 +1366,6 @@ config("thinlto_optimize_max") {
          "-Wl,-mllvm,-phi-node-folding-threshold=4",
          "-Wl,-mllvm,-sink-insts-to-avoid-spills",
-         "-Wl,-mllvm,-spec-exec-max-speculation-cost=15",
 +        "-Wl,-mllvm,-x86-cmov-converter",
          "-Wl,-z,pack-relative-relocs",
        ]
@@ -44,7 +42,7 @@
 -    if (current_cpu == "x86" || current_cpu == "x64") {
 +    if (current_cpu == "x64") {
 +      cflags += [
-+        "-mtune=skylake",
++        "-mtune=generic",
 +        "-msse3",
 +        "-mssse3",
 +        "-msse4.1",

@@ -66,7 +66,7 @@
      }
  
      if (toolchain_supports_rust_thin_lto) {
-@@ -1311,8 +1329,34 @@ config("thinlto_optimize_max") {
+@@ -1311,8 +1329,30 @@ config("thinlto_optimize_max") {
  
      if (is_win) {
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
@@ -75,33 +75,29 @@
 +        "/Brepro",
 +        "/prefetch-inputs",
 +        "/DEBUG:GHASH",
-+        "-mllvm:-import-hot-multiplier=15",
 +        "-mllvm:-adce-remove-loops=true",
 +        "-mllvm:-enable-gvn-hoist",
 +        "-mllvm:-enable-gvn-sink",
 +        "-mllvm:-machine-sink-split",
 +        "-mllvm:-phi-node-folding-threshold=4",
 +        "-mllvm:-sink-insts-to-avoid-spills",
-+        "-mllvm:-spec-exec-max-speculation-cost=15",
 +      ]
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
 +      ldflags += [ "-Wl,--lto-CGO3" ]
 +      ldflags += [
-+        "-Wl,-mllvm,-import-hot-multiplier=15",
 +        "-Wl,-mllvm,-adce-remove-loops=true",
 +        "-Wl,-mllvm,-enable-gvn-hoist",
 +        "-Wl,-mllvm,-enable-gvn-sink",
 +        "-Wl,-mllvm,-machine-sink-split",
 +        "-Wl,-mllvm,-phi-node-folding-threshold=4",
 +        "-Wl,-mllvm,-sink-insts-to-avoid-spills",
-+        "-Wl,-mllvm,-spec-exec-max-speculation-cost=15",
 +        "-Wl,-z,pack-relative-relocs",
 +      ]
      }
  
      if (toolchain_supports_rust_thin_lto) {
-@@ -1736,7 +1783,7 @@ config("runtime_library") {
+@@ -1736,7 +1779,7 @@ config("runtime_library") {
    }
  
    if (use_safe_libcxx) {
@@ -110,7 +106,7 @@
    } else {
      defines += [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE" ]
    }
-@@ -1971,7 +2015,11 @@ config("default_warnings") {
+@@ -1971,7 +2011,11 @@ config("default_warnings") {
      if (is_win) {
        # TODO(thakis): https://crbug.com/617318
        # Currently RBE can not handle case sensitiveness for windows well.
@@ -123,7 +119,7 @@
      }
  
      if (is_fuchsia) {
-@@ -2681,10 +2738,13 @@ config("optimize_max") {
+@@ -2681,10 +2734,13 @@ config("optimize_max") {
      # Favor speed over size, /O2 must be before the common flags.
      # /O2 implies /Ot, /Oi, and /GF.
      cflags = [ "/O2" ] + common_optimize_on_cflags
