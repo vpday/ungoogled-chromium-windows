@@ -19,17 +19,19 @@
        ]
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
-@@ -1348,5 +1351,7 @@ config("thinlto_optimize_max") {
+@@ -1348,6 +1351,8 @@ config("thinlto_optimize_max") {
          "-mllvm:-phi-node-folding-threshold=4",
          "-mllvm:-sink-insts-to-avoid-spills",
+         "-mllvm:-spec-exec-max-speculation-cost=15",
 +        "-mllvm:-x86-cmov-converter",
 +        "/guard:ehcont",
        ]
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
-@@ -1361,5 +1366,6 @@ config("thinlto_optimize_max") {
+@@ -1361,6 +1366,7 @@ config("thinlto_optimize_max") {
          "-Wl,-mllvm,-phi-node-folding-threshold=4",
          "-Wl,-mllvm,-sink-insts-to-avoid-spills",
+         "-Wl,-mllvm,-spec-exec-max-speculation-cost=15",
 +        "-Wl,-mllvm,-x86-cmov-converter",
          "-Wl,-z,pack-relative-relocs",
        ]
