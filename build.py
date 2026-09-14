@@ -136,6 +136,7 @@ def _get_windows_components(target: WindowsTarget):
         'nodejs',
         'go-x64',
         'esbuild',
+        'typescript',
         'directx-headers',
         'webauthn',
         'rust-x64',

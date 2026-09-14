@@ -1,5 +1,5 @@
---- a/third_party/typescript/windows-amd64/src/lib/lib.dom.d.ts
-+++ b/third_party/typescript/windows-amd64/src/lib/lib.dom.d.ts
+--- a/third_party/typescript/linux-amd64/src/lib/lib.dom.d.ts
++++ b/third_party/typescript/linux-amd64/src/lib/lib.dom.d.ts
 @@ -13567,7 +13567,10 @@ interface Element extends Node, ARIAMixi
       *
       * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Element/innerHTML)

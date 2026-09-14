@@ -11,10 +11,10 @@
  chromium_toolchain_supports_platform = !is_wasm
 --- a/tools/rust/build_bindgen.py
 +++ b/tools/rust/build_bindgen.py
-@@ -205,7 +205,7 @@ def main():
-     RunCargo([
-         'clean',
-     ] + cargo_shared_args)
+@@ -226,7 +226,7 @@
+         ]
+         + cargo_shared_args
+     )
 -    static_feature = ",static" if ('windows' not in RustTargetTriple()) else ""
 +    static_feature = ""
      cargo_args = [
