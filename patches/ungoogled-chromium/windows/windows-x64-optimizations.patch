@@ -6,7 +6,7 @@
  
 +    "-Ctarget-cpu=x86-64-v3",
      "-Cllvm-args=-fp-contract=fast",
-+    "-Ztune-cpu=generic",
++    "-Ztune-cpu=skylake",
 +    "-Ctarget-feature=-fast-gather,+prefer-no-gather,+prefer-no-scatter",
    ]
  
@@ -44,7 +44,7 @@
 -    if (current_cpu == "x86" || current_cpu == "x64") {
 +    if (current_cpu == "x64") {
 +      cflags += [
-+        "-mtune=generic",
++        "-mtune=skylake",
 +        "-msse3",
 +        "-mssse3",
 +        "-msse4.1",
