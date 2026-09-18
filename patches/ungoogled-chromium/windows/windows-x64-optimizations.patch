@@ -11,37 +11,57 @@
    ]
  
    if (!is_win || force_rustc_color_output) {
-@@ -1284,6 +1286,7 @@ config("thinlto_optimize_default") {
+@@ -1284,12 +1287,17 @@ config("thinlto_optimize_default") {
          "/prefetch-inputs",
          "/DEBUG:GHASH",
          "-mllvm:-adce-remove-loops=true",
++        "-mllvm:-x86-align-branch-boundary=32",
++        "-mllvm:-x86-align-branch=jcc+jmp+indirect",
 +        "/guard:ehcont",
        ]
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
-@@ -1348,6 +1351,8 @@ config("thinlto_optimize_max") {
+       ldflags += [ "-Wl,--lto-CGO3" ]
+       ldflags += [
+         "-Wl,-mllvm,-adce-remove-loops=true",
++        "-Wl,-mllvm,-x86-align-branch-boundary=32",
++        "-Wl,-mllvm,-x86-align-branch=jcc+jmp+indirect",
+         "-Wl,-z,pack-relative-relocs",
+       ]
+     }
+@@ -1346,6 +1354,12 @@ config("thinlto_optimize_max") {
+         "-mllvm:-machine-sink-split",
          "-mllvm:-phi-node-folding-threshold=4",
          "-mllvm:-sink-insts-to-avoid-spills",
-         "-mllvm:-spec-exec-max-speculation-cost=15",
++        "-mllvm:-import-hot-multiplier=20",
++        "-mllvm:-spec-exec-max-speculation-cost=15",
++        "-mllvm:-x86-align-branch-boundary=32",
++        "-mllvm:-x86-align-branch=jcc+jmp+indirect",
 +        "-mllvm:-x86-cmov-converter",
 +        "/guard:ehcont",
        ]
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
-@@ -1361,6 +1366,7 @@ config("thinlto_optimize_max") {
+@@ -1357,6 +1371,11 @@ config("thinlto_optimize_max") {
+         "-Wl,-mllvm,-machine-sink-split",
          "-Wl,-mllvm,-phi-node-folding-threshold=4",
          "-Wl,-mllvm,-sink-insts-to-avoid-spills",
-         "-Wl,-mllvm,-spec-exec-max-speculation-cost=15",
++        "-Wl,-mllvm,-import-hot-multiplier=20",
++        "-Wl,-mllvm,-spec-exec-max-speculation-cost=15",
++        "-Wl,-mllvm,-x86-align-branch-boundary=32",
++        "-Wl,-mllvm,-x86-align-branch=jcc+jmp+indirect",
 +        "-Wl,-mllvm,-x86-cmov-converter",
          "-Wl,-z,pack-relative-relocs",
        ]
      }
 --- a/build/config/win/BUILD.gn
 +++ b/build/config/win/BUILD.gn
-@@ -122,7 +122,31 @@ config("compiler") {
+@@ -122,7 +122,29 @@ config("compiler") {
      # microarchitecture. MSVC only supports a subset of architectures, and the
      # next step after SSE2 will be AVX.
 -    if (current_cpu == "x86" || current_cpu == "x64") {
+-      cflags += [ "-msse3" ]
+-    }
 +    if (current_cpu == "x64") {
 +      cflags += [
 +        "-mtune=skylake",
@@ -66,8 +86,6 @@
 +        "-mno-gather",
 +        "-mno-scatter",
 +      ]
-+    } else if (current_cpu == "x86") {
-       cflags += [ "-msse3" ]
-     }
++    }
  
      # Enable ANSI escape codes if something emulating them is around (cmd.exe
