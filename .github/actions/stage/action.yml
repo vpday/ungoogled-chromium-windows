@@ -7,12 +7,12 @@ inputs:
   from_artifact:
     description: If a previous stage already uploaded build artifacts, the stage will resume building
     required: true
-  job_started_at:
-    description: Unix timestamp in seconds when the job started
-    required: true
   target:
     description: Canonical Windows target (x64, x86, or arm64)
     required: true
+  github_token:
+    description: GitHub Token for querying workflow job metadata
+    required: false
 outputs:
   finished:
     description: If a previous stage already finished the build, the stage will set all output variables to the input ones and exit

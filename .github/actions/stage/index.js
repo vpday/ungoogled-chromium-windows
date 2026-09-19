@@ -4,25 +4,26 @@ import * as exec from '@actions/exec';
 import { DefaultArtifactClient } from '@actions/artifact';
 import * as glob from '@actions/glob';
 import fs from 'fs';
+import { Octokit } from "@octokit/core";
 
 const TARGET_POLICIES = Object.freeze({
     x64: Object.freeze({
         cacheArtifact: 'build-artifact',
         finalArtifact: 'chromium',
         maximumBuildSeconds: 18900,
-        reserveSeconds: 1800,
+        reserveSeconds: 2100,
     }),
     x86: Object.freeze({
         cacheArtifact: 'build-artifact-x86',
         finalArtifact: 'chromium-x86',
         maximumBuildSeconds: 18600,
-        reserveSeconds: 1800,
+        reserveSeconds: 2100,
     }),
     arm64: Object.freeze({
         cacheArtifact: 'build-artifact-arm',
         finalArtifact: 'chromium-arm',
         maximumBuildSeconds: 18600,
-        reserveSeconds: 2100,
+        reserveSeconds: 2400,
     }),
 });
 
@@ -153,6 +154,84 @@ async function restoreFromArtifacts(artifact, artifactName, archivePath, buildDi
     return true;
 }
 
+async function getJobTimeInfo(token) {
+    if (!token) {
+        console.log('No GitHub token provided; skipping job metadata query');
+        return null;
+    }
+
+    const repository = process.env.GITHUB_REPOSITORY;
+    const runId = process.env.GITHUB_RUN_ID;
+    const githubJob = process.env.GITHUB_JOB;
+    const runnerName = process.env.RUNNER_NAME;
+
+    if (!repository || !runId) {
+        console.log('GITHUB_REPOSITORY or GITHUB_RUN_ID not set; skipping job metadata query');
+        return null;
+    }
+
+    const [owner, repo] = repository.split('/');
+    if (!owner || !repo) {
+        console.warn(`Invalid GITHUB_REPOSITORY format: ${repository}`);
+        return null;
+    }
+
+    const octokit = new Octokit({
+        auth: token,
+        baseUrl: process.env.GITHUB_API_URL || 'https://api.github.com'
+    });
+
+    try {
+        const response = await octokit.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs', {
+            owner,
+            repo,
+            run_id: Number(runId),
+            per_page: 100,
+            headers: {
+                'X-GitHub-Api-Version': '2026-03-10'
+            }
+        });
+
+        const jobs = response?.data?.jobs;
+        if (!Array.isArray(jobs)) {
+            console.warn('Unexpected GitHub API response payload structure');
+            return null;
+        }
+
+        const runAttemptInput = process.env.GITHUB_RUN_ATTEMPT;
+        const runAttempt = runAttemptInput ? Number(runAttemptInput) : null;
+
+        // Find the current job matching in_progress and runner_name / githubJob, respecting run_attempt
+        const matchingJob = jobs.find(j => {
+            if (j.status !== 'in_progress') return false;
+            if (runAttempt && j.run_attempt && j.run_attempt !== runAttempt) return false;
+            if (runnerName && j.runner_name === runnerName) return true;
+            if (githubJob && (j.name === githubJob || j.name.endsWith(` / ${githubJob}`))) return true;
+            return false;
+        }) || jobs.find(j => {
+            if (runAttempt && j.run_attempt && j.run_attempt !== runAttempt) return false;
+            if (githubJob && (j.name === githubJob || j.name.endsWith(` / ${githubJob}`))) return true;
+            return false;
+        });
+
+        if (!matchingJob || !matchingJob.created_at) {
+            console.warn(`Could not locate matching in_progress job metadata for GITHUB_JOB=${githubJob}`);
+            return null;
+        }
+
+        const createdAtSeconds = Math.floor(new Date(matchingJob.created_at).getTime() / 1000);
+        const startedAtSeconds = matchingJob.started_at ? Math.floor(new Date(matchingJob.started_at).getTime() / 1000) : null;
+        return {
+            createdAt: createdAtSeconds,
+            startedAt: startedAtSeconds,
+            createdAtISO: matchingJob.created_at,
+        };
+    } catch (err) {
+        console.warn(`Failed to query job metadata: ${err.message}`);
+        return null;
+    }
+}
+
 async function run() {
     process.on('SIGTERM', () => {
         console.error('Received SIGTERM, writing finished output and exiting');
@@ -165,12 +244,14 @@ async function run() {
         process.exit(1);
     });
 
+    const actionStartedAt = Math.floor(Date.now() / 1000);
+
     try {
         const finished = core.getBooleanInput('finished', { required: true });
         const from_artifact = core.getBooleanInput('from_artifact', { required: true });
-        const jobStartedAtInput = core.getInput('job_started_at', { required: true });
         const target = core.getInput('target', {required: true});
         const targetPolicy = getTargetPolicy(target);
+        const githubToken = core.getInput('github_token') || core.getInput('github-token') || process.env.GITHUB_TOKEN || '';
         console.log(`finished: ${finished}, artifact: ${from_artifact}`);
         if (finished) {
             finishedOutput = true;
@@ -179,12 +260,6 @@ async function run() {
 
         const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE || process.cwd();
         const BUILD_DIR = `${GITHUB_WORKSPACE}/build`;
-        const jobStartedAt = Number(jobStartedAtInput);
-        // Date.now() returns milliseconds, so divide by 1000 to compare Unix seconds.
-        const currentTimeSeconds = Math.floor(Date.now() / 1000);
-        if (!/^\d+$/.test(jobStartedAtInput) || !Number.isSafeInteger(jobStartedAt) || jobStartedAt <= 0 || jobStartedAt > currentTimeSeconds) {
-            throw new Error(`Invalid job_started_at Unix timestamp: ${jobStartedAtInput}`);
-        }
 
         const artifact = new DefaultArtifactClient();
         const artifactName = targetPolicy.cacheArtifact;
@@ -206,16 +281,36 @@ async function run() {
 
         // x86: 18,600s (5h 10m), arm64: 18,600s (5h 10m), x64: 18,900s (5h 15m).
         const maximumBuildSeconds = targetPolicy.maximumBuildSeconds;
-        // x86: 1,800s (30m), arm64: 2,100s (35m), x64: 1,800s (30m).
+        // x86: 2,100s (35m), arm64: 2,400s (40m), x64: 2,100s (35m).
         // This covers the timeout grace period, unmounting, compression, and artifact upload.
         const reserveSeconds = targetPolicy.reserveSeconds;
-        // Date.now() returns milliseconds, so divide by 1000 to include setup in Unix seconds.
-        const elapsedSeconds = Math.floor(Date.now() / 1000) - jobStartedAt;
-        // 21,600s is GitHub-hosted runners' six-hour job limit.
-        const remainingBuildSeconds = 21600 - elapsedSeconds - reserveSeconds;
+        // Query true job creation timestamp from GitHub API to account for queuing delay against 6-hour limit.
+        const jobTimeInfo = await getJobTimeInfo(githubToken);
+        // Date.now() returns milliseconds, so divide by 1000 to include setup and query time in Unix seconds.
+        const nowSeconds = Math.floor(Date.now() / 1000);
+
+        let remainingBuildSeconds;
+        if (jobTimeInfo?.createdAt && jobTimeInfo.createdAt > 0 && jobTimeInfo.createdAt <= nowSeconds) {
+            const totalElapsedSeconds = nowSeconds - jobTimeInfo.createdAt;
+            if (jobTimeInfo.startedAt) {
+                const queueSeconds = Math.max(0, jobTimeInfo.startedAt - jobTimeInfo.createdAt);
+                console.log(`Job queue delay: ${queueSeconds}s (queued: ${jobTimeInfo.createdAtISO}, elapsed: ${totalElapsedSeconds}s)`);
+            } else {
+                console.log(`Job total elapsed: ${totalElapsedSeconds}s (queued: ${jobTimeInfo.createdAtISO})`);
+            }
+            // 21,600s is GitHub-hosted runners' six-hour job limit calculated from job creation.
+            remainingBuildSeconds = 21600 - totalElapsedSeconds - reserveSeconds;
+        } else {
+            // Fallback when API job metadata is unavailable: deduct action setup time and apply 30m conservative buffer for unmeasured queue delay.
+            const actionElapsedSeconds = Math.max(0, nowSeconds - actionStartedAt);
+            const fallbackRedundancySeconds = 1800;
+            console.log(`Using fallback budget: action elapsed ${actionElapsedSeconds}s, reserved ${fallbackRedundancySeconds}s buffer for queue delay`);
+            remainingBuildSeconds = 21600 - actionElapsedSeconds - fallbackRedundancySeconds - reserveSeconds;
+        }
+
         // Stop at whichever limit is reached first.
         const buildTimeoutSeconds = Math.min(maximumBuildSeconds, remainingBuildSeconds);
-        console.log(`Build time budget: maximum=${maximumBuildSeconds}s, reserve=${reserveSeconds}s, elapsed=${elapsedSeconds}s, remaining=${remainingBuildSeconds}s, timeout=${buildTimeoutSeconds}s`);
+        console.log(`Build time budget: maximum=${maximumBuildSeconds}s, reserve=${reserveSeconds}s, remaining=${remainingBuildSeconds}s, timeout=${buildTimeoutSeconds}s`);
 
         if (buildTimeoutSeconds < 60) {
             if (from_artifact) {

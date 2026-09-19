@@ -14,9 +14,6 @@ jobs:
   build-1:
     runs-on: ubuntu-latest
     steps:
-      - name: Record job start time
-        id: job-start
-        run: echo "job_started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v7
         with:
           submodules: 'recursive'
@@ -29,8 +26,8 @@ jobs:
         with:
           finished: false
           from_artifact: false
-          job_started_at: ${{ steps.job-start.outputs.job_started_at }}
           target: ${{ inputs.target }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
 
@@ -38,9 +35,6 @@ jobs:
     needs: build-1
     runs-on: ubuntu-latest
     steps:
-      - name: Record job start time
-        id: job-start
-        run: echo "job_started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v7
         with:
           submodules: 'recursive'
@@ -53,8 +47,8 @@ jobs:
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
           from_artifact: true
-          job_started_at: ${{ steps.job-start.outputs.job_started_at }}
           target: ${{ inputs.target }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
 
@@ -62,9 +56,6 @@ jobs:
     needs: build-2
     runs-on: ubuntu-latest
     steps:
-      - name: Record job start time
-        id: job-start
-        run: echo "job_started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v7
         with:
           submodules: 'recursive'
@@ -77,8 +68,8 @@ jobs:
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
           from_artifact: true
-          job_started_at: ${{ steps.job-start.outputs.job_started_at }}
           target: ${{ inputs.target }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
 
@@ -86,9 +77,6 @@ jobs:
     needs: build-3
     runs-on: ubuntu-latest
     steps:
-      - name: Record job start time
-        id: job-start
-        run: echo "job_started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v7
         with:
           submodules: 'recursive'
@@ -101,8 +89,8 @@ jobs:
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
           from_artifact: true
-          job_started_at: ${{ steps.job-start.outputs.job_started_at }}
           target: ${{ inputs.target }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
 
@@ -110,9 +98,6 @@ jobs:
     needs: build-4
     runs-on: ubuntu-latest
     steps:
-      - name: Record job start time
-        id: job-start
-        run: echo "job_started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v7
         with:
           submodules: 'recursive'
@@ -125,8 +110,8 @@ jobs:
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
           from_artifact: true
-          job_started_at: ${{ steps.job-start.outputs.job_started_at }}
           target: ${{ inputs.target }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
 
@@ -134,9 +119,6 @@ jobs:
     needs: build-5
     runs-on: ubuntu-latest
     steps:
-      - name: Record job start time
-        id: job-start
-        run: echo "job_started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v7
         with:
           submodules: 'recursive'
@@ -149,8 +131,8 @@ jobs:
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
           from_artifact: true
-          job_started_at: ${{ steps.job-start.outputs.job_started_at }}
           target: ${{ inputs.target }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
 
@@ -158,9 +140,6 @@ jobs:
     needs: build-6
     runs-on: ubuntu-latest
     steps:
-      - name: Record job start time
-        id: job-start
-        run: echo "job_started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v7
         with:
           submodules: 'recursive'
@@ -173,8 +152,8 @@ jobs:
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
           from_artifact: true
-          job_started_at: ${{ steps.job-start.outputs.job_started_at }}
           target: ${{ inputs.target }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
 
@@ -182,9 +161,6 @@ jobs:
     needs: build-7
     runs-on: ubuntu-latest
     steps:
-      - name: Record job start time
-        id: job-start
-        run: echo "job_started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v7
         with:
           submodules: 'recursive'
@@ -197,8 +173,8 @@ jobs:
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
           from_artifact: true
-          job_started_at: ${{ steps.job-start.outputs.job_started_at }}
           target: ${{ inputs.target }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
 
