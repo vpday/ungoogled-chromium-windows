@@ -13,7 +13,7 @@ Use a tag when building a release. The `master` branch is for development and ma
 ## Quick Start
 
 This project builds Windows Chromium binaries on Linux. You need a Linux system
-(Ubuntu 24.04+ recommended) with at least 80GB free disk space. Install the
+(Ubuntu 26.04 recommended) with at least 80GB free disk space. Install the
 packages listed in [System Dependencies](#system-dependencies) first.
 
 ```bash
@@ -37,7 +37,7 @@ A zip archive and installer will be created under `build/`.
 
 ### Linux Distribution
 
-- Recommended distro: Ubuntu 24.04+, or equivalent
+- Recommended distro: Ubuntu 26.04, or equivalent
 - Build machine architecture: x86_64 (for cross-compiling to Windows x64/x86/arm64)
 
 ### Disk Space
@@ -51,7 +51,7 @@ Install these packages before building:
 ```bash
 sudo apt-get update
 sudo apt-get install -y \
-    p7zip-full pkg-config libglib2.0-dev libfuse2 libfuse2t64 \
+    7zip pkg-config libglib2.0-dev libfuse2t64 \
     libnss3-dev libcups2-dev libpci-dev libdrm-dev \
     libxkbcommon-dev gperf libkrb5-dev python3 git
 ```
@@ -62,9 +62,9 @@ For x86 (32-bit) builds, also install:
 sudo dpkg --add-architecture i386
 sudo apt-get update
 sudo apt-get install -y libc6-dev-i386 linux-libc-dev:i386 \
-    gcc-multilib g++-multilib libglib2.0-0:i386 libnss3:i386 \
-    libnspr4:i386 libatk1.0-0:i386 libatk-bridge2.0-0:i386 \
-    libcups2:i386 libdrm2:i386 libdbus-1-3:i386 libexpat1:i386
+    gcc-multilib g++-multilib libglib2.0-0t64:i386 libnss3:i386 \
+    libnspr4:i386 libatk1.0-0t64:i386 libatk-bridge2.0-0t64:i386 \
+    libcups2t64:i386 libdrm2:i386 libdbus-1-3:i386 libexpat1:i386
 ```
 
 ## Building
