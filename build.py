@@ -172,6 +172,8 @@ def _generate_gn_flags(target: WindowsTarget, is_tarball: bool) -> str:
     windows_flags = _set_gn_target_args(windows_flags, target)
     if is_tarball:
         windows_flags += '\nchrome_pgo_phase=0\n'
+    if target.id == 'x64':
+        windows_flags += '\nv8_enable_wasm_simd256_revec=true\n'
     gn_flags += windows_flags
     return gn_flags
 
