@@ -51,9 +51,19 @@ Install these packages before building:
 ```bash
 sudo apt-get update
 sudo apt-get install -y \
-    7zip pkg-config libglib2.0-dev libfuse2t64 \
+    curl 7zip pkg-config libglib2.0-dev libfuse2t64 \
     libnss3-dev libcups2-dev libpci-dev libdrm-dev \
     libxkbcommon-dev gperf libkrb5-dev python3 git
+```
+
+The prebuilt LLVM toolchain requires `libicui18n.so.70`. Newer Ubuntu releases (such as Ubuntu 26.04) ship with newer ICU libraries and do not provide `libicu70` in their default package repositories. On Ubuntu 26.04, install `libicu70` manually:
+
+```bash
+if ! ldconfig -p 2>/dev/null | grep 'libicui18n\.so\.70' >/dev/null 2>&1; then
+    curl -fsSL --retry 3 --retry-connrefused http://archive.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb -o /tmp/libicu70.deb
+    sudo dpkg -i /tmp/libicu70.deb
+    rm -f /tmp/libicu70.deb
+fi
 ```
 
 For x86 (32-bit) builds, also install:
