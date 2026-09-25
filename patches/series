@@ -20,6 +20,7 @@ ungoogled-chromium/windows/windows-fix-missing-includes.patch
 ungoogled-chromium/windows/windows-fix-building-without-crubit.patch
 ungoogled-chromium/windows/windows-fix-python.patch
 ungoogled-chromium/windows/windows-fix-typescript-lib-dom.patch
+ungoogled-chromium/windows/windows-disable-private-verification-tokens.patch
 ungoogled-chromium/windows/windows-fix-files-cfg-case.patch
 ungoogled-chromium/windows/windows-fix-v8-snapshot-toolchain-linux-win-arm64.patch
 ungoogled-chromium/windows/windows-fix-rust-toolchain-compat.patch
