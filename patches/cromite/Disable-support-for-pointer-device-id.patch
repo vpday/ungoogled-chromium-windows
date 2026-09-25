@@ -1,0 +1,10 @@
+--- a/ui/views/win/pen_id_handler.cc
++++ b/ui/views/win/pen_id_handler.cc
+@@ -56,6 +56,7 @@ class PenIdStatics {
+ };
+ 
+ bool PenDeviceApiSupported() {
++  return false;
+   // PenDevice API only works properly on WIN11 or Win10 post v19044.
+   return base::win::OSInfo::Kernel32Version() >
+              base::win::Version::WIN10_21H2 ||

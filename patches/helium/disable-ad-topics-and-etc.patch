@@ -1,0 +1,23 @@
+--- a/services/network/public/cpp/features.cc
++++ b/services/network/public/cpp/features.cc
+@@ -434,7 +434,7 @@ BASE_FEATURE(kUpdateRequestForCorsRedire
+ 
+ // https://github.com/patcg-individual-drafts/topics
+ // Kill switch for the Topics API.
+-BASE_FEATURE(kBrowsingTopics, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kBrowsingTopics, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ 
+ BASE_FEATURE(kIncreaseCookieAccessCacheSize, base::FEATURE_ENABLED_BY_DEFAULT);
+--- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
++++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
+@@ -297,9 +297,6 @@
+     {
+       // Interest Group JS API/runtimeflag.
+       name: "AdInterestGroupAPI",
+-      status: "stable",
+-      origin_trial_feature_name: "AdInterestGroupAPI",
+-      implied_by: ["Fledge", "Parakeet"],
+       public: true,
+     },
+     // Adjust the end of the next paragraph if the end position for the

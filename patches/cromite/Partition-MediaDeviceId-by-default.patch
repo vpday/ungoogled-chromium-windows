@@ -1,0 +1,14 @@
+--- a/content/browser/renderer_host/media/media_devices_manager.cc
++++ b/content/browser/renderer_host/media/media_devices_manager.cc
+@@ -1229,6 +1229,11 @@ void MediaDevicesManager::OnDevicesEnumeratedAndRanked(
+       }
+     }
+   }
++#if !BUILDFLAG(IS_ANDROID)
++  int video_input_index = static_cast<size_t>(MediaDeviceType::kMediaVideoInput);
++  if (requested_types[video_input_index] && !has_permissions[video_input_index])
++    translation[video_input_index].clear();
++#endif
+ 
+   GetAudioInputCapabilities(request_id, video_input_capabilities_requested,
+                             audio_input_capabilities_requested,

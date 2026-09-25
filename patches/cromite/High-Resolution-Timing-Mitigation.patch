@@ -1,0 +1,33 @@
+--- a/third_party/blink/renderer/core/timing/time_clamper.cc
++++ b/third_party/blink/renderer/core/timing/time_clamper.cc
+@@ -40,9 +40,7 @@ base::TimeDelta TimeClamper::ClampTimeResolution(
+ 
+   // Determine resolution based on the context's cross-origin isolation
+   // capability. https://w3c.github.io/hr-time/#dfn-coarsen-time
+-  int resolution = cross_origin_isolated_capability
+-                       ? kFineResolutionMicroseconds
+-                       : kCoarseResolutionMicroseconds;
++  int resolution = 1000;
+ 
+   // Clamped the time based on the resolution.
+   int64_t clamped_time = time_lower_digits - time_lower_digits % resolution;
+--- a/third_party/blink/renderer/modules/video_rvfc/video_frame_callback_requester_impl.cc
++++ b/third_party/blink/renderer/modules/video_rvfc/video_frame_callback_requester_impl.cc
+@@ -316,16 +316,7 @@ double VideoFrameCallbackRequesterImpl::GetClampedTimeInMillis(
+ // static
+ double VideoFrameCallbackRequesterImpl::GetCoarseClampedTimeInSeconds(
+     base::TimeDelta time) {
+-  constexpr auto kCoarseResolution = base::Microseconds(100);
+-  // Add this assert, in case TimeClamper's resolution were to change to be
+-  // stricter.
+-  static_assert(
+-      kCoarseResolution >=
+-          base::Microseconds(TimeClamper::kCoarseResolutionMicroseconds),
+-      "kCoarseResolution should be at least as coarse as other clock "
+-      "resolutions");
+-
+-  return time.FloorToMultiple(kCoarseResolution).InSecondsF();
++  return time.FloorToMultiple(base::Microseconds(1000)).InSecondsF();
+ }
+ 
+ int VideoFrameCallbackRequesterImpl::requestVideoFrameCallback(

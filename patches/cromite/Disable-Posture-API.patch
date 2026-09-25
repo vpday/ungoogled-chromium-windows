@@ -1,0 +1,22 @@
+From: uazo <uazo@users.noreply.github.com>
+Date: Mon, 20 Jan 2025 16:54:03 +0000
+Subject: Disable Posture API
+
+see https://issues.chromium.org/issues/40124716
+and https://github.com/w3c/device-posture/blob/gh-pages/security-privacy-self-assessment.md
+---
+ .../browser/device_posture/device_posture_platform_provider.cc   | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/content/browser/device_posture/device_posture_platform_provider.cc b/content/browser/device_posture/device_posture_platform_provider.cc
+--- a/content/browser/device_posture/device_posture_platform_provider.cc
++++ b/content/browser/device_posture/device_posture_platform_provider.cc
+@@ -18,6 +18,7 @@ namespace content {
+ // static
+ std::unique_ptr<DevicePosturePlatformProvider>
+ DevicePosturePlatformProvider::Create(WebContents* web_contents) {
++  if ((true)) return std::make_unique<DevicePosturePlatformProviderDefault>();
+ #if BUILDFLAG(IS_WIN)
+   return std::make_unique<DevicePosturePlatformProviderWin>();
+ #elif BUILDFLAG(IS_ANDROID)
+--

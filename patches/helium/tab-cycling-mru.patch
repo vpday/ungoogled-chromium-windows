@@ -1,0 +1,42 @@
+--- a/chrome/browser/ui/tabs/tab_strip_model.cc
++++ b/chrome/browser/ui/tabs/tab_strip_model.cc
+@@ -1951,11 +1951,11 @@ void TabStripModel::CloseSelectedTabs()
+ }
+ 
+ void TabStripModel::SelectNextTab(TabStripUserGestureDetails detail) {
+-  SelectRelativeTab(TabRelativeDirection::kNext, detail);
++  SelectRelativeTabCycle(TabRelativeDirection::kNext, detail);
+ }
+ 
+ void TabStripModel::SelectPreviousTab(TabStripUserGestureDetails detail) {
+-  SelectRelativeTab(TabRelativeDirection::kPrevious, detail);
++  SelectRelativeTabCycle(TabRelativeDirection::kPrevious, detail);
+ }
+ 
+ void TabStripModel::SelectLastTab(TabStripUserGestureDetails detail) {
+@@ -4183,6 +4183,11 @@ TabStripSelectionChange TabStripModel::S
+   return selection;
+ }
+ 
++void TabStripModel::SelectRelativeTabCycle(TabRelativeDirection direction,
++                                           TabStripUserGestureDetails detail) {
++  SelectMRUTab(direction, detail);
++}
++
+ void TabStripModel::SelectMRUTab(TabRelativeDirection direction,
+                                  TabStripUserGestureDetails detail) {
+   if (mru_cycle_list_.empty()) {
+--- a/chrome/browser/ui/tabs/tab_strip_model.h
++++ b/chrome/browser/ui/tabs/tab_strip_model.h
+@@ -1181,6 +1181,11 @@ class TabStripModel {
+     kPrevious,
+   };
+ 
++  // Selects either the next tab or the previous tab.
++  // Uses MRU order if the user prefers it.
++  void SelectRelativeTabCycle(TabRelativeDirection direction,
++                              TabStripUserGestureDetails detail);
++
+   // Selects either the most recently used tab
+   // or the least recently used tab.
+   void SelectMRUTab(TabRelativeDirection direction,

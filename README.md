@@ -340,13 +340,13 @@ Update `win_toolchain.json` when:
 ```json
 {
   "variables": {
-    "chromium_version": "153.0.8010.36",
+    "chromium_version": "154.0.8037.57",
     "sdk_version": "10.0.28000.0",
     "vs_version": "2026",
     "repo": "vpday/chromium-win-toolchain-builder"
   },
   "win-toolchain": {
-    "zip_filename": "9fe5a6ef2a",
+    "zip_filename": "acf4d73b86",
     "sha512": "...",
     "files": []
   },
@@ -384,13 +384,13 @@ Visit: `https://github.com/vpday/chromium-win-toolchain-builder/releases/tag/VER
 
 From the release page, collect:
 - Tar archives: `win_toolchain_chromium-VERSION_vs-YEAR_sdk-SDK.tar.001/002` (with ARM) or `...noarm.tar` (without ARM)
-- Zip filenames: `9fe5a6ef2a.zip` (with ARM), `2681c2f2e0.zip` (without ARM)
+- Zip filenames: `acf4d73b86.zip` (with ARM), `2681c2f2e0.zip` (without ARM)
 - SHA-256 and SHA-512 checksums for both tar and zip files
 
 3. Get zip information from the releases page.
 
 From the release page, copy:
-- Zip filename (e.g., `9fe5a6ef2a.zip` for full toolchain, `2681c2f2e0.zip` for noarm)
+- Zip filename (e.g., `acf4d73b86.zip` for full toolchain, `2681c2f2e0.zip` for noarm)
 - Zip SHA-512 checksum
 
 Use these values for the `zip_filename` and `sha512` fields in `win_toolchain.json`.
@@ -409,7 +409,7 @@ Update `variables` section:
 ```json
 {
   "variables": {
-    "chromium_version": "153.0.8010.36",
+    "chromium_version": "154.0.8037.57",
     "sdk_version": "10.0.28000.0",
     "vs_version": "2026"
   }
@@ -444,15 +444,13 @@ The build system supports three Windows target architectures:
 - x86: 32-bit Windows, requires multilib support on build machine
 - arm64: ARM64 Windows
 
-### AVX2 Optimizations
+### Integrated Patchsets
 
-The AVX2 optimization patch is based on work from
-[RobRich999/Chromium_Clang](https://github.com/RobRich999/Chromium_Clang).
+Incorporates selected patches from other browser projects:
 
-For x64 builds, the system automatically applies AVX2 optimizations via
-`patches/ungoogled-chromium/windows/windows-enable-avx2-optimizations.patch`.
-This patch is conditionally added to `patches/series` based on the target
-architecture.
+- [Brave](https://github.com/brave/brave-core): [`patches/brave/`](patches/brave/).
+- [Helium](https://github.com/imputnet/helium): [`patches/helium/`](patches/helium/).
+- [Cromite](https://github.com/uazo/cromite): [`patches/cromite/`](patches/cromite/).
 
 ## License
 
