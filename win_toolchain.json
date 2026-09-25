@@ -34,7 +34,7 @@
         "sequence": 1,
         "url": "https://github.com/{repo}/releases/download/{chromium_version}/win_toolchain_chromium-{chromium_version}_vs-{vs_version}_sdk-{sdk_version}_noarm.tar",
         "filename": "win_toolchain_chromium-{chromium_version}_vs-{vs_version}_sdk-{sdk_version}_noarm.tar",
-        "sha256": "6a1cedcfc8ac5d011934bc2a3546541bbb139014fa5bf78099253fdf35b1a43a:6a1cedcfc8ac5d011934bc2a3546541bbb139014fa5bf78099253fdf35b1a43a4b91898e52a9f7e3e0c5732a26f9"
+        "sha256": "6a1cedcfc8ac5d011934bc2a3546541bbb139014fa5bf78099253fdf35b1a43a"
       }
     ]
   }
