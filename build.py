@@ -382,6 +382,21 @@ def _step_setup_symlinks(source_tree: Path, ci_mode: bool) -> None:
             else:
                 raise RuntimeError('System gperf not found.')
 
+    # Setup esbuild symlink (bin/esbuild -> esbuild)
+    with build_step(source_tree, '.setup_esbuild_symlink.stamp', 'setting up esbuild symlink', ci_mode) as should_run:
+        if should_run:
+            esbuild_dir = source_tree / 'third_party' / 'devtools-frontend' / 'src' / 'third_party' / 'esbuild'
+            esbuild_bin = esbuild_dir / 'bin' / 'esbuild'
+            symlink_esbuild = esbuild_dir / 'esbuild'
+
+            if esbuild_bin.exists():
+                if symlink_esbuild.exists() or symlink_esbuild.is_symlink():
+                    symlink_esbuild.unlink()
+                symlink_esbuild.symlink_to('bin/esbuild')
+                get_logger().info('Created symlink: %s -> bin/esbuild', symlink_esbuild)
+            else:
+                get_logger().warning('esbuild binary not found at %s, skipping symlink creation', esbuild_bin)
+
 
 def _step_apply_patches(source_tree: Path, target: WindowsTarget, ci_mode: bool) -> None:
     # Apply patches
