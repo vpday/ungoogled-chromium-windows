@@ -56,10 +56,10 @@
  const char kChPlatformOverrideForTabletSite[] = "Android";
  
 +std::u16string FormatURLForCopy(content::WebContents* web_contents) {
-+  return url_formatter::FormatUrl(web_contents->GetVisibleURL(),
-+                                  url_formatter::kFormatReplaceChromeProtocol,
-+                                  base::UnescapeRule::NORMAL, nullptr, nullptr,
-+                                  nullptr);
++  if (!web_contents) {
++    return std::u16string();
++  }
++  return base::UTF8ToUTF16(web_contents->GetVisibleURL().spec());
 +}
 +
  // Creates a new tabbed browser window, with the same size, type and profile as
