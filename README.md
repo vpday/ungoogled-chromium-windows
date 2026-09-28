@@ -2,19 +2,17 @@
 
 This repository cross-compiles Windows binaries of [ungoogled-chromium](https://github.com/Eloston/ungoogled-chromium) on Linux.
 
+It also integrates curated patches from **[Brave](https://github.com/brave/brave-core)**, **[Helium](https://github.com/imputnet/helium)** and **[Cromite](https://github.com/uazo/cromite)** — creating a feature-rich, tuned Frankenstein build.
+
 ## Downloads
 
-[Download binaries from the Contributor Binaries website](https://ungoogled-software.github.io/ungoogled-chromium-binaries/).
-
-Or install using `winget install --id=eloston.ungoogled-chromium -e`.
+Download pre-built Windows packages (portable `.zip` and installer `.exe` for `x64`, `x86`, and `arm64`) from the [GitHub Releases](https://github.com/vpday/ungoogled-chromium-windows/releases) page.
 
 Use a tag when building a release. The `master` branch is for development and may be unstable.
 
 ## Quick Start
 
-This project builds Windows Chromium binaries on Linux. You need a Linux system
-(Ubuntu 26.04 recommended) with at least 80GB free disk space. Install the
-packages listed in [System Dependencies](#system-dependencies) first.
+This project builds Windows Chromium binaries on Linux. You need a Linux system (Ubuntu 26.04 recommended) with at least 80GB free disk space. Install the packages listed in [System Dependencies](#system-dependencies) first.
 
 ```bash
 # Clone repository
@@ -86,9 +84,7 @@ python3 build.py --target x64
 python3 package.py
 ```
 
-Packaging reads the authoritative target from `build/src/out/Default/args.gn`
-and derives both its file filter and output filename suffix from that value. Its optional `--cpu-arch` argument is only
-a compatibility assertion and must match the generated target.
+Packaging reads the authoritative target from `build/src/out/Default/args.gn` and derives both its file filter and output filename suffix from that value. Its optional `--cpu-arch` argument is only a compatibility assertion and must match the generated target.
 
 ### Architecture-Specific Builds
 
@@ -101,23 +97,24 @@ python3 build.py --target arm64
 python3 build.py
 ```
 
-The canonical targets are `x64`, `x86`, and `arm64`. The existing `--x86` and
-`--arm` selectors remain supported as compatibility aliases.
+The canonical targets are `x64`, `x86`, and `arm64`. The existing `--x86` and `--arm` selectors remain supported as compatibility aliases.
 
 ### Build Options
 
 ```bash
 # Use 16 CPU threads
 python3 build.py -j 16
-# Enable incremental build (skip completed steps)
+# Enable incremental build (skip completed steps) and run package.py automatically
 python3 build.py --ci
 # Use pre-packaged Chromium tarball
 python3 build.py --tarball
+# Specify custom GN output directory (default: build/src/out/Default)
+python3 build.py --out-dir build/src/out/Default
+# Disable SSL certificate verification for downloads
+python3 build.py --disable-ssl-verification
 ```
 
-The `--ci` flag turns on stamp-based step skipping. Most completed steps are
-skipped when their stamp file already exists, which is useful when resuming an
-interrupted build or continuing a multi-stage CI run.
+The `--ci` flag turns on stamp-based step skipping (`build/src/.stamps` and `build/.stamps`). Completed steps are skipped when their stamp file already exists, which is useful when resuming an interrupted build or continuing a multi-stage CI run. In `--ci` mode, `build.py` automatically executes `package.py` after compilation.
 
 ### Build Recovery
 
@@ -134,9 +131,7 @@ rm -rf build/src
 python3 build.py
 ```
 
-This removes `build/src/.stamps` along with the source tree, which resets most
-build steps. `build/.stamps` is separate and only tracks Windows toolchain
-extraction state.
+This removes `build/src/.stamps` along with the source tree, which resets most build steps. `build/.stamps` is separate and only tracks Windows toolchain extraction state.
 
 For a full clean rebuild, run:
 ```bash
@@ -146,38 +141,24 @@ python3 build.py
 
 ## Build Process Overview
 
-The `build.py` script runs these steps in order. In `--ci` mode, most step
-state is stored in `build/src/.stamps`. Windows toolchain extraction is the
-exception: it uses `build/.stamps/.vs_toolchain_updated_{target_arch}.stamp`.
-That split exists to support GitHub Actions multi-stage builds, where the VS
-toolchain setup may need to run at the start of each stage while the other
-steps usually only need to run once.
+The `build.py` script runs these steps in order. In `--ci` mode, most step state is stored in `build/src/.stamps`. Windows toolchain extraction is the exception: it uses `build/.stamps/.vs_toolchain_updated_{target_arch}.stamp`.
+That split exists to support GitHub Actions multi-stage builds, where the VS toolchain setup may need to run at the start of each stage while the other steps usually only need to run once.
 
-1. Clone Chromium source or extract a tarball.
-2. Download Windows-specific dependencies from `downloads.ini`.
-3. Remove unnecessary binaries listed in `pruning.list`.
-4. Extract downloaded archives into the source tree.
-5. Create the installer packaging symlink (`7za` → `7zz`).
-6. Apply patches:
-   - Conditionally add/remove AVX2 optimization patch based on target architecture
-   - Apply core ungoogled-chromium patches
-   - Apply Windows-specific patches
-7. Replace obfuscated Google domains with real ones.
-8. Configure Rust for the Linux host and the Windows target.
-9. Combine `ungoogled-chromium/flags.gn` and `flags.windows.gn`.
-10. Configure the Windows SDK and Visual Studio tools.
-11. Run the remaining toolchain setup:
-    - Fix domain references in tool download scripts
-    - Download rc binary for cross-compilation
-    - Set up LLVM environment variables
-12. Build the GN build system.
-13. Generate Ninja build files.
-14. Compile `chrome`, `chromedriver`, and `mini_installer`.
-15. In CI mode, `build.py` calls `package.py` automatically.
-    For local builds, run `python3 package.py` yourself.
+1. Clone Chromium source (including the `v8` submodule and V8 Builtins PGO profiles) or extract a pre-packaged tarball.
+2. Download target-specific Windows dependencies and build tools from `downloads.ini`.
+3. Prune unnecessary pre-built binaries according to `pruning.list`.
+4. Extract downloaded archives and toolchain packages into the source tree.
+5. Create required build tool symlinks (`7za` → `7zz`, system `gperf`, and `esbuild`).
+6. Apply core ungoogled-chromium patches, Windows platform fixes, curated patches (Brave, Helium, Cromite), and any target-specific optimization patches.
+7. Replace Google domains with non-tracking alternatives using domain substitution lists.
+8. Set up Rust and Windows SDK toolchains, download the cross-compilation `rc` binary, and configure LLVM build environment variables.
+9. Generate `args.gn` by combining base and Windows flags, setting `target_cpu`, and injecting architecture-specific options (e.g., Wasm SIMD256 re-vectorization for `x64`, or `chrome_pgo_phase=0` for tarball builds).
+10. Create a `third_party` symlink for out-of-tree GN output directories if required.
+11. Bootstrap the GN binary, create the `buildtools` discovery symlink, and generate Ninja build files (`gn gen`).
+12. Compile `chrome`, `chromedriver`, and `mini_installer` using Ninja.
+13. In CI mode, run `package.py` automatically to produce portable zip archives and NSIS installers (run manually for local builds).
 
-Most of these steps can be skipped when their stamp file already exists, which
-makes recovery much faster after a failed build.
+Most of these steps can be skipped when their stamp file already exists, which makes recovery much faster after a failed build.
 
 ## CI Builds
 
@@ -188,14 +169,18 @@ The CI pipeline is split into four workflows:
 - `.github/workflows/build-arm.yml` - arm64 build
 - `.github/workflows/publish-release.yml` - release aggregation and publishing
 
-Each architecture workflow passes its canonical `x64`, `x86`, or `arm64` target through the reusable workflow and keeps
-the existing 8-stage recovery chain to work around the 6-hour GitHub Actions job timeout. A failed or retried target
-build only requires rerunning that target's workflow, while the release remains gated on all three targets being
-available for the same tag.
+Each architecture workflow passes its canonical `x64`, `x86`, or `arm64` target through the reusable workflow and keeps the existing 8-stage recovery chain to work around the 6-hour GitHub Actions job timeout.
+A failed or retried target build only requires rerunning that target's workflow, while the release remains gated on all three targets being available for the same tag.
 
 The publish workflow listens for successful architecture builds, finds the latest successful x64/x86/arm runs for the same tag, downloads their final `chromium`, `chromium-x86`, and `chromium-arm` artifacts, and publishes a single GitHub Release once all three are present. If one architecture is still missing, the publish workflow exits without creating a partial release.
 
-See `.github/workflows/build-x64.yml`, `.github/workflows/build-x86.yml`, `.github/workflows/build-arm.yml`, `.github/workflows/publish-release.yml`, and `.github/actions/prepare/action.yml` for the complete CI setup.
+For the complete CI setup and workflow definitions, see:
+- `.github/workflows/build-x64.yml`
+- `.github/workflows/build-x86.yml`
+- `.github/workflows/build-arm.yml`
+- `.github/workflows/reusable-build.yml`
+- `.github/workflows/publish-release.yml`
+- `.github/actions/prepare/action.yml`
 
 ## Developer Guide
 
@@ -246,6 +231,25 @@ All dependency versions are defined in `downloads.ini`. Dependencies are organiz
 3. Search for `third_party/esbuild` to get version (e.g., `version:3@0.25.1.chromium.2` → `0.25.1`)
 4. Download from npm: `https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-VERSION.tgz`
 5. Update `downloads.ini` `[esbuild]` with version and SHA-256 checksum
+
+##### Go toolchain (`go-x64`, `go-arm64`)
+
+Used by `third_party/dawn/tools/generate-sources-gn.py` to generate Dawn Tint sources:
+1. Check `dawn_go_version` in `build/src/third_party/dawn/DEPS`
+2. Download official Go archive from `https://go.dev/dl/goVERSION.linux-amd64.tar.gz` (and `arm64` if targeting ARM64 Windows host builds)
+3. Compute SHA-256 checksum and update `downloads.ini` `[go-x64]` (and `[go-arm64]`):
+   - `version = VERSION`
+   - `sha256 = CHECKSUM`
+
+##### TypeScript Native Preview (`typescript`)
+
+Used by `tools/typescript/ts_library.gni` for compiling WebUI and DevTools frontend:
+1. Check `src/third_party/typescript/linux-amd64/src` in `build/src/DEPS` for the version tag (e.g., `version:2@7.0.2` → `7.0.2`)
+2. Download upstream release tarball: `https://github.com/microsoft/TypeScript/releases/download/vVERSION/typescript-linux-x64.tgz`
+3. Compute SHA-256 checksum and update `downloads.ini` `[typescript]`:
+   - `version = VERSION`
+   - `sha256 = CHECKSUM`
+4. Note: Unlike the CIPD package, this upstream release requires `windows-fix-typescript-lib-dom.patch` to adapt Chromium's local DOM typing additions.
 
 #### Windows Platform Dependencies
 
@@ -427,22 +431,14 @@ Update `win-toolchain` and `win-toolchain-noarm` sections:
 
 ### Cross-Compilation Setup
 
-This project downloads a complete Windows toolchain (LLVM, Windows SDK, Rust)
-and builds Windows binaries on Linux. The build works like this:
+This project downloads a complete Windows toolchain (LLVM, Windows SDK, Rust) and builds Windows binaries on Linux.
 
-1. Downloads Linux-native build tools (LLVM, Ninja, Node.js)
+The build works like this:
+1. Downloads Linux-native build tools (LLVM, Ninja, 7-Zip, Node.js, Go, esbuild, TypeScript) from `downloads.ini`
 2. Downloads Windows cross-compilation toolchain via `win_toolchain.json`
 3. Downloads Rust toolchain (Linux host + Windows targets)
-4. Configures GN with `target_os = "win"` and `is_clang = true`
-5. Builds using the cross-compilation toolchain
-
-### Architecture Support
-
-The build system supports three Windows target architectures:
-
-- x64 (default): 64-bit Windows, includes AVX2 optimizations
-- x86: 32-bit Windows, requires multilib support on build machine
-- arm64: ARM64 Windows
+4. Configures GN with `target_os = "win"`, `is_clang = true`, and target-specific optimizations
+5. Builds using Clang/LLVM and Ninja within a case-insensitive CIOPFS mount
 
 ### Integrated Patchsets
 
