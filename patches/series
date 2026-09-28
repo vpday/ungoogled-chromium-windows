@@ -63,3 +63,10 @@ cromite/Disable-visited-pseudo-class.patch
 cromite/Keep-ComputePressure-disabled.patch
 cromite/Keep-disabled-CpuPerformance.patch
 cromite/Keep-disabled-FetchLaterAPI.patch
+brave/crashpad-prune-win-environment-block.patch
+brave/consolidated-features-overrides.patch
+brave/disable-history-embeddings.patch
+brave/kill-profile-reset-report-uploader.patch
+brave/disable-global-signin-promos.patch
+brave/hide-cookie-controls-location-bar-icon.patch
+brave/suppress-undo-tab-close-toast.patch

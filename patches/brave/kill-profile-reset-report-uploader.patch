@@ -1,0 +1,59 @@
+--- a/chrome/browser/profile_resetter/reset_report_uploader.cc
++++ b/chrome/browser/profile_resetter/reset_report_uploader.cc
+@@ -51,54 +51,8 @@ void ResetReportUploader::DispatchReport(
+ }
+ 
+ void ResetReportUploader::DispatchReportInternal(
+-    const std::string& request_data) {
+-  // Create traffic annotation tag.
+-  net::NetworkTrafficAnnotationTag traffic_annotation =
+-      net::DefineNetworkTrafficAnnotation("profile_resetter_upload", R"(
+-        semantics {
+-          sender: "Profile Resetter"
+-          description:
+-            "When users choose to reset their profile, they are offered the "
+-            "choice to report to Google the settings and their values that are "
+-            "affected by the reset. The user can inspect the values before "
+-            "they are sent to Google and needs to consent to sending them."
+-          trigger:
+-            "Users reset their profile in Chrome settings and consent to "
+-            "sending a report."
+-          data:
+-            "Startup URLs, homepage URL, default search engine, installed "
+-            "extensions, Chrome shortcut on the desktop and the Windows start "
+-            "menu, some settings. See "
+-            "chrome/browser/profile_resetter/profile_reset_report.proto "
+-            "for details."
+-          destination: GOOGLE_OWNED_SERVICE
+-        }
+-        policy {
+-          cookies_allowed: NO
+-          setting: "None, the user needs to actively send the data."
+-          policy_exception_justification:
+-            "None, considered not useful because the user needs to actively "
+-            "send the data."
+-        })");
+-
+-  auto resource_request = std::make_unique<network::ResourceRequest>();
+-  resource_request->url = GetClientReportUrl(kResetReportUrl);
+-  resource_request->load_flags = net::LOAD_DISABLE_CACHE;
+-  resource_request->credentials_mode = network::mojom::CredentialsMode::kOmit;
+-  resource_request->method = "POST";
+-  std::unique_ptr<network::SimpleURLLoader> simple_url_loader =
+-      network::SimpleURLLoader::Create(std::move(resource_request),
+-                                       traffic_annotation);
+-  network::SimpleURLLoader* const simple_url_loader_ptr =
+-      simple_url_loader.get();
+-  simple_url_loader->AttachStringForUpload(request_data,
+-                                           "application/octet-stream");
+-  auto it = simple_url_loaders_.insert(simple_url_loaders_.begin(),
+-                                       std::move(simple_url_loader));
+-  simple_url_loader_ptr->DownloadHeadersOnly(
+-      url_loader_factory_.get(),
+-      base::BindOnce(&ResetReportUploader::OnSimpleLoaderComplete,
+-                     base::Unretained(this), std::move(it)));
++    const std::string& /*request_data*/) {
++  return;
+ }
+ 
+ void ResetReportUploader::OnSimpleLoaderComplete(

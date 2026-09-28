@@ -1,0 +1,29 @@
+--- a/third_party/crashpad/crashpad/snapshot/win/process_snapshot_win.cc
++++ b/third_party/crashpad/crashpad/snapshot/win/process_snapshot_win.cc
+@@ -519,24 +519,8 @@ void ProcessSnapshotWin::AddMemorySnapshotForLdrLIST_ENTRY(
+ }
+ 
+ WinVMSize ProcessSnapshotWin::DetermineSizeOfEnvironmentBlock(
+-    WinVMAddress start_of_environment_block) {
+-  // https://blogs.msdn.microsoft.com/oldnewthing/20100203-00/?p=15083: On newer
+-  // OSs there's no stated limit, but in practice grabbing 32k characters should
+-  // be more than enough.
+-  std::wstring env_block;
+-  env_block.resize(32768);
+-  size_t bytes_read = process_reader_.Memory()->ReadAvailableMemory(
+-      start_of_environment_block,
+-      env_block.size() * sizeof(env_block[0]),
+-      &env_block[0]);
+-  env_block.resize(
+-      static_cast<unsigned int>(bytes_read / sizeof(env_block[0])));
+-  static constexpr wchar_t terminator[] = {0, 0};
+-  size_t at = env_block.find(std::wstring(terminator, std::size(terminator)));
+-  if (at != std::wstring::npos)
+-    env_block.resize(at + std::size(terminator));
+-
+-  return env_block.size() * sizeof(env_block[0]);
++    WinVMAddress /*start_of_environment_block*/) {
++  return 0;
+ }
+ 
+ template <class Traits>

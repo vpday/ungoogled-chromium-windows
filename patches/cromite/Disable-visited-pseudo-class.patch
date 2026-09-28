@@ -1,19 +1,6 @@
-From: uazo <uazo@users.noreply.github.com>
-Date: Tue, 14 Feb 2023 16:41:42 +0000
-Subject: Disable visited pseudo class
-
-Disable support for pseudo css visited class
-
-License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
----
- components/visitedlink/browser/visitedlink_writer.cc | 8 ++++----
- components/visitedlink/common/visitedlink_common.cc  | 1 +
- 2 files changed, 5 insertions(+), 4 deletions(-)
-
-diff --git a/components/visitedlink/browser/visitedlink_writer.cc b/components/visitedlink/browser/visitedlink_writer.cc
 --- a/components/visitedlink/browser/visitedlink_writer.cc
 +++ b/components/visitedlink/browser/visitedlink_writer.cc
-@@ -233,7 +233,7 @@ VisitedLinkWriter::VisitedLinkWriter(content::BrowserContext* browser_context,
+@@ -233,7 +233,7 @@
      : browser_context_(browser_context),
        delegate_(delegate),
        listener_(std::make_unique<VisitedLinkEventListener>(browser_context)),
@@ -22,7 +9,7 @@ diff --git a/components/visitedlink/browser/visitedlink_writer.cc b/components/v
  
  VisitedLinkWriter::VisitedLinkWriter(Listener* listener,
                                       VisitedLinkDelegate* delegate,
-@@ -243,10 +243,10 @@ VisitedLinkWriter::VisitedLinkWriter(Listener* listener,
+@@ -243,10 +243,10 @@
                                       int32_t default_table_size)
      : delegate_(delegate),
        listener_(listener),
@@ -35,15 +22,55 @@ diff --git a/components/visitedlink/browser/visitedlink_writer.cc b/components/v
    DCHECK(listener_);
  }
  
-@@ -316,6 +316,7 @@ void VisitedLinkWriter::AddURL(const GURL& url, bool update_file) {
+@@ -316,45 +316,8 @@
  }
  
  VisitedLinkWriter::Hash VisitedLinkWriter::TryToAddURL(const GURL& url) {
-+  if ((true)) return kNullHash;
-   // Extra check that we are not incognito. This should not happen.
-   // TODO(boliu): Move this check to HistoryService when IsOffTheRecord is
-   // removed from BrowserContext.
-@@ -1022,7 +1023,6 @@ bool VisitedLinkWriter::RebuildTableFromDelegate() {
+-  // Extra check that we are not incognito. This should not happen.
+-  // TODO(boliu): Move this check to HistoryService when IsOffTheRecord is
+-  // removed from BrowserContext.
+-  if (browser_context_ && browser_context_->IsOffTheRecord()) {
+-    NOTREACHED();
+-  }
+-
+-  if (!url.is_valid())
+-    return kNullHash;  // Don't add invalid URLs.
+-
+-  Fingerprint fingerprint = ComputeURLFingerprint(url.spec(), salt_);
+-  // If the table isn't loaded the table will be rebuilt and after
+-  // that accumulated fingerprints will be applied to the table.
+-  if (table_builder_.get() || table_is_loading_from_file_) {
+-    // If we have a pending delete for this fingerprint, cancel it.
+-    deleted_since_rebuild_.erase(fingerprint);
+-
+-    // A rebuild or load is in progress, save this addition in the temporary
+-    // list so it can be added once rebuild is complete.
+-    added_since_rebuild_.insert(fingerprint);
+-  }
+-
+-  if (table_is_loading_from_file_) {
+-    // If we have a pending delete for this url, cancel it.
+-    deleted_since_load_.erase(url);
+-
+-    // The loading is in progress, save this addition in the temporary
+-    // list so it can be added once the loading is complete.
+-    added_since_load_.insert(url);
+-  }
+-
+-  // If the table is "full", we don't add URLs and just drop them on the floor.
+-  // This can happen if we get thousands of new URLs and something causes
+-  // the table resizing to fail. This check prevents a hang in that case. Note
+-  // that this is *not* the resize limit, this is just a sanity check.
+-  if (used_items_ / 8 > table_length_ / 10)
+-    return kNullHash;  // Table is more than 80% full.
+-
+-  return AddFingerprint(fingerprint, true);
++  (void)url;
++  return kNullHash;
+ }
+ 
+ void VisitedLinkWriter::PostIOTask(const base::Location& from_here,
+@@ -1022,7 +985,6 @@
  
    // TODO(brettw) make sure we have reasonable salt!
    table_builder_ = new TableBuilder(this, salt_);
@@ -51,15 +78,42 @@ diff --git a/components/visitedlink/browser/visitedlink_writer.cc b/components/v
    return true;
  }
  
-diff --git a/components/visitedlink/common/visitedlink_common.cc b/components/visitedlink/common/visitedlink_common.cc
 --- a/components/visitedlink/common/visitedlink_common.cc
 +++ b/components/visitedlink/common/visitedlink_common.cc
-@@ -76,6 +76,7 @@ bool VisitedLinkCommon::IsVisited(const GURL& link_url,
+@@ -76,34 +76,6 @@
  }
  
  bool VisitedLinkCommon::IsVisited(Fingerprint fingerprint) const {
-+  if ((true)) return false;
-   // Go through the table until we find the item or an empty spot (meaning it
-   // wasn't found). This loop will terminate as long as the table isn't full,
-   // which should be enforced by AddFingerprint.
---
+-  // Go through the table until we find the item or an empty spot (meaning it
+-  // wasn't found). This loop will terminate as long as the table isn't full,
+-  // which should be enforced by AddFingerprint.
+-  Hash first_hash = HashFingerprint(fingerprint);
+-  Hash cur_hash = first_hash;
+-  size_t collision_count = 0;
+-  while (true) {
+-    Fingerprint cur_fingerprint = FingerprintAt(cur_hash);
+-    // Search for fingerprint match.
+-    if (cur_fingerprint == kNullFingerprint || cur_fingerprint == fingerprint) {
+-      // Log the number of collisions encountered during the search for
+-      // matches.
+-      UMA_HISTOGRAM_COUNTS_100(
+-          "History.VisitedLinks.WebView.LookupCollisionCount2",
+-          collision_count);
+-      return cur_fingerprint == fingerprint;  // Match or end of sequence found.
+-    }
+-
+-    // This spot was taken, but not by the item we're looking for, search in
+-    // the next position.
+-    collision_count++;
+-    cur_hash++;
+-    if (cur_hash == table_length_)
+-      cur_hash = 0;
+-    if (cur_hash == first_hash) {
+-      // Wrapped around and didn't find an empty space, this means we're in an
+-      // infinite loop because AddFingerprint didn't do its job resizing.
+-      NOTREACHED();
+-    }
+-  }
++  (void)fingerprint;
++  return false;
+ }

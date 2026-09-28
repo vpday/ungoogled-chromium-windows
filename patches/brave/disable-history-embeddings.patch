@@ -1,0 +1,11 @@
+--- a/chrome/browser/history_embeddings/history_embeddings_utils.cc
++++ b/chrome/browser/history_embeddings/history_embeddings_utils.cc
+@@ -57,7 +57,7 @@ constexpr auto kEnabledByDefaultForDesktopOnly =
+ #endif
+ 
+ // These are the kill switches for the launched history embeddings features.
+-BASE_FEATURE(kLaunchedHistoryEmbeddings, kEnabledByDefaultForDesktopOnly);
++BASE_FEATURE(kLaunchedHistoryEmbeddings, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ bool IsHistoryEmbeddingsEnabledForProfile(Profile* profile) {
+   if (!IsHistoryEmbeddingsFeatureEnabled()) {

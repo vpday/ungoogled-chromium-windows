@@ -1,25 +1,3 @@
-From: uazo <uazo@users.noreply.github.com>
-Date: Thu, 28 Sep 2023 08:11:00 +0000
-Subject: Keep disabled FetchLaterAPI
-
-Disallow a network request to survive to context destoy.
-For Request with active keepalive, if the request does not
-start from the same origin.
-It also inhibits the blocked request exception to javascript.
-
-License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
----
- .../browser/loader/keep_alive_url_loader.cc   | 33 +++++++++++++++++--
- .../browser/loader/keep_alive_url_loader.h    |  3 --
- .../Keep-disabled-FetchLaterAPI.inc           |  1 +
- .../renderer/core/fetch/fetch_manager.cc      | 21 ++++++++++--
- .../loader/child_url_loader_factory_bundle.cc | 20 +++++++++--
- .../platform/loader/fetch/resource_fetcher.cc |  2 +-
- .../platform/runtime_enabled_features.json5   |  4 +--
- 7 files changed, 72 insertions(+), 12 deletions(-)
- create mode 100644 cromite_flags/third_party/blink/common/features_cc/Keep-disabled-FetchLaterAPI.inc
-
-diff --git a/content/browser/loader/keep_alive_url_loader.cc b/content/browser/loader/keep_alive_url_loader.cc
 --- a/content/browser/loader/keep_alive_url_loader.cc
 +++ b/content/browser/loader/keep_alive_url_loader.cc
 @@ -51,6 +51,36 @@
@@ -41,7 +19,7 @@ diff --git a/content/browser/loader/keep_alive_url_loader.cc b/content/browser/l
 +        last_reviewed: "2024-03-22"
 +        internal {
 +          contacts {
-+            email: "uazo@users.noreply.github.com"
++            email: "security@ungoogled-chromium.org"
 +          }
 +        }
 +        user_data {
@@ -207,4 +185,3 @@ diff --git a/third_party/blink/renderer/platform/runtime_enabled_features.json5 
      },
      {
        // The retry ability for Fetch keepalive requests.
---

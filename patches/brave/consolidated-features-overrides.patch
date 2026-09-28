@@ -1,0 +1,303 @@
+--- a/chrome/browser/browser_features.cc
++++ b/chrome/browser/browser_features.cc
+@@ -24,7 +24,7 @@ BASE_FEATURE(kAutocompleteActionPredictorConfidenceCutoff,
+ // This is used as a kill switch for Bookmark triggered prerendering. See
+ // crbug.com/40259793 for more details of Bookmark triggered prerendering.
+ BASE_FEATURE(kBookmarkTriggerForPrerender2KillSwitch,
+-             base::FEATURE_DISABLED_BY_DEFAULT);
++             base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // This flag is used for enabling BookmarkBar triggered preconnect.
+ BASE_FEATURE(kBookmarkTriggerForPreconnect, base::FEATURE_ENABLED_BY_DEFAULT);
+@@ -102,7 +102,7 @@ BASE_FEATURE(kNetworkAnnotationMonitoring, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // This flag is used for enabling New Tab Page triggered prerendering. See
+ // crbug.com/40275094 for more details of New Tab Page triggered prerendering.
+-BASE_FEATURE(kNewTabPageTriggerForPrerender2, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kNewTabPageTriggerForPrerender2, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // This flag is used for enabling New Tab Page triggered prefetch. See
+ // crbug.com/421941586 for more details of New Tab Page triggered prefetching.
+diff --git a/chrome/browser/devtools/features.cc b/chrome/browser/devtools/features.cc
+index 0a45817..358f620 100644
+--- a/chrome/browser/devtools/features.cc
++++ b/chrome/browser/devtools/features.cc
+@@ -12,7 +12,7 @@ namespace features {
+ 
+ // Let the DevTools front-end query an AIDA endpoint for explanations and
+ // insights regarding console (error) messages.
+-BASE_FEATURE(kDevToolsConsoleInsights, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kDevToolsConsoleInsights, base::FEATURE_DISABLED_BY_DEFAULT);
+ const base::FeatureParam<std::string> kDevToolsConsoleInsightsModelId{
+     &kDevToolsConsoleInsights, "aida_model_id", /*default_value=*/""};
+ const base::FeatureParam<double> kDevToolsConsoleInsightsTemperature{
+@@ -117,7 +117,7 @@ BASE_FEATURE(kDevToolsAiAssistanceStorageAgent,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // Whether the DevTools AI Code Completion is enabled.
+-BASE_FEATURE(kDevToolsAiCodeCompletion, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kDevToolsAiCodeCompletion, base::FEATURE_DISABLED_BY_DEFAULT);
+ const base::FeatureParam<std::string> kDevToolsAiCodeCompletionModelId{
+     &kDevToolsAiCodeCompletion, "aida_model_id",
+     /*default_value=*/""};
+@@ -131,7 +131,7 @@ const base::FeatureParam<DevToolsFreestylerUserTier>
+         &devtools_freestyler_user_tier_options};
+ 
+ // Whether the DevTools AI Code Generation is enabled.
+-BASE_FEATURE(kDevToolsAiCodeGeneration, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kDevToolsAiCodeGeneration, base::FEATURE_DISABLED_BY_DEFAULT);
+ const base::FeatureParam<std::string> kDevToolsAiCodeGenerationModelId{
+     &kDevToolsAiCodeGeneration, "aida_model_id",
+     /*default_value=*/""};
+@@ -171,7 +171,7 @@ BASE_FEATURE(kDevToolsAiGeneratedTimelineLabels,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // Whether the DevTools AI generated annotation labels in timeline are enabled.
+-BASE_FEATURE(kDevToolsNewPermissionDialog, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kDevToolsNewPermissionDialog, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Whether DevTools drawer can be toggled to vertical orientation.
+ BASE_FEATURE(kDevToolsVerticalDrawer, base::FEATURE_ENABLED_BY_DEFAULT);
+@@ -216,7 +216,7 @@ BASE_FEATURE(kDevToolsAcceptDebuggingConnections,
+ BASE_FEATURE(kDevToolsShowPolicyDialog, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kDevToolsAiAssistanceContextSelectionAgent,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Whether Console Insights Teasers are enabled.
+ BASE_FEATURE(kDevToolsConsoleInsightsTeasers,
+diff --git a/chrome/browser/ui/omnibox/omnibox_next_features.cc b/chrome/browser/ui/omnibox/omnibox_next_features.cc
+index 79cfa8e..ee73c1c 100644
+--- a/chrome/browser/ui/omnibox/omnibox_next_features.cc
++++ b/chrome/browser/ui/omnibox/omnibox_next_features.cc
+@@ -38,11 +38,11 @@ namespace omnibox {
+ namespace internal {
+ 
+ // If enabled, shows the omnibox suggestions in the popup in WebUI.
+-BASE_FEATURE(kWebUIOmniboxPopup, ENABLED);
++BASE_FEATURE(kWebUIOmniboxPopup, DISABLED);
+ 
+ // If enabled, Omnibox popup will transition to AI-Mode with the compose-box
+ // panel taking up the whole of the popup, covering the location bar completely.
+-BASE_FEATURE(kWebUIOmniboxAimPopup, ENABLED);
++BASE_FEATURE(kWebUIOmniboxAimPopup, DISABLED);
+ 
+ // If enabled, the Omnibox Popup will enable a different UI state when on a
+ // webpage.
+diff --git a/chrome/browser/ui/ui_features.cc b/chrome/browser/ui/ui_features.cc
+index 1530a17..5f102da 100644
+--- a/chrome/browser/ui/ui_features.cc
++++ b/chrome/browser/ui/ui_features.cc
+@@ -243,13 +243,7 @@ bool IsTabGroupHoverCardsEnabled() {
+ 
+ // Enables preview images in tab-hover cards.
+ // https://crbug.com/41439486
+-BASE_FEATURE(kTabHoverCardImages,
+-#if BUILDFLAG(IS_MAC)
+-             base::FEATURE_DISABLED_BY_DEFAULT
+-#else
+-             base::FEATURE_ENABLED_BY_DEFAULT
+-#endif
+-);
++BASE_FEATURE(kTabHoverCardImages, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kTabModalUsesDesktopWidget, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+diff --git a/chrome/common/chrome_features.cc b/chrome/common/chrome_features.cc
+index e9f21e3..90bbee1 100644
+--- a/chrome/common/chrome_features.cc
++++ b/chrome/common/chrome_features.cc
+@@ -1660,7 +1660,7 @@ BASE_FEATURE(kSafetyHubTrustSafetySentimentSurvey,
+ // Safe Browsing Reporting to perform a k-anonymous query to see if Google knows
+ // about an SCT seen in the wild. If it hasn't been seen, then it is considered
+ // a security incident and uploaded to Google.
+-BASE_FEATURE(kSCTAuditingHashdance, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kSCTAuditingHashdance, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // An estimated high bound for the time it takes Google to ingest updates to an
+ // SCT log. Chrome will wait for at least this time plus the Log's Maximum Merge
+diff --git a/components/compose/core/browser/compose_features.cc b/components/compose/core/browser/compose_features.cc
+index bc0d7b5..0f37566 100644
+--- a/components/compose/core/browser/compose_features.cc
++++ b/components/compose/core/browser/compose_features.cc
+@@ -10,7 +10,7 @@ namespace compose::features {
+ 
+ // Note: Compose is enabled by default because it is country--restricted at
+ // runtime.
+-BASE_FEATURE(kEnableCompose, "Compose", base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kEnableCompose, "Compose", base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kComposeInputParams, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+diff --git a/components/omnibox/common/omnibox_features.cc b/components/omnibox/common/omnibox_features.cc
+index 62a8eb0..a55e207 100644
+--- a/components/omnibox/common/omnibox_features.cc
++++ b/components/omnibox/common/omnibox_features.cc
+@@ -336,7 +336,7 @@ BASE_FEATURE(kMlUrlScoreCaching, enable_if(!IS_ANDROID));
+ 
+ // If enabled, runs the ML scoring model to assign new relevance scores to the
+ // URL suggestions and reranks them.
+-BASE_FEATURE(kMlUrlScoring, enable_if(!IS_ANDROID));
++BASE_FEATURE(kMlUrlScoring, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // If enabled, specifies how URL model scores integrate with search traditional
+ // scores.
+@@ -373,7 +373,7 @@ BASE_FEATURE(kStarterPackIPH, DISABLED);
+ BASE_FEATURE(kAiModeStartPack, DISABLED);
+ 
+ // If enabled, |SearchProvider| will not function in Zero Suggest.
+-BASE_FEATURE(kAblateSearchProviderWarmup, DISABLED);
++BASE_FEATURE(kAblateSearchProviderWarmup, ENABLED);
+ 
+ // If enabled, hl= is reported in search requests (applicable to iOS only).
+ BASE_FEATURE(kReportApplicationLanguageInSearchRequest, ENABLED);
+diff --git a/components/optimization_guide/core/optimization_guide_features.cc b/components/optimization_guide/core/optimization_guide_features.cc
+index 075524a..35bb709 100644
+--- a/components/optimization_guide/core/optimization_guide_features.cc
++++ b/components/optimization_guide/core/optimization_guide_features.cc
+@@ -57,7 +57,7 @@ constexpr auto enabled_by_default_mobile_only =
+ 
+ // Enables the syncing of the Optimization Hints component, which provides
+ // hints for what optimizations can be applied on a page load.
+-BASE_FEATURE(kOptimizationHints, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kOptimizationHints, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Enables the prediction of optimization targets.
+ BASE_FEATURE(kOptimizationTargetPrediction, base::FEATURE_ENABLED_BY_DEFAULT);
+@@ -82,7 +82,7 @@ BASE_FEATURE(kOverrideNumThreadsForModelExecution,
+ // Service.
+ BASE_FEATURE(kOptimizationGuideFetchingForSRP,
+              "OptimizationHintsFetchingSRP",
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Kill switch for disabling model quality logging.
+ BASE_FEATURE(kModelQualityLogging, base::FEATURE_ENABLED_BY_DEFAULT);
+@@ -96,7 +96,7 @@ BASE_FEATURE(kOptimizationGuidePredictionModelKillswitch,
+ 
+ // Whether to enable model execution.
+ BASE_FEATURE(kOptimizationGuideModelExecution,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Whether the on device service is launched after a delay on startup to log
+ // metrics.
+diff --git a/components/passage_embeddings/core/passage_embeddings_features.cc b/components/passage_embeddings/core/passage_embeddings_features.cc
+index 9c55b13..979e70a 100644
+--- a/components/passage_embeddings/core/passage_embeddings_features.cc
++++ b/components/passage_embeddings/core/passage_embeddings_features.cc
+@@ -21,7 +21,7 @@ constexpr auto enabled_by_default_desktop_only =
+ 
+ }  // namespace
+ 
+-BASE_FEATURE(kPassageEmbedder, enabled_by_default_desktop_only);
++BASE_FEATURE(kPassageEmbedder, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kPDFEmbeddingsGeneration, enabled_by_default_desktop_only);
+ 
+diff --git a/components/permissions/features.cc b/components/permissions/features.cc
+index 0928e76..e4a27cb 100644
+--- a/components/permissions/features.cc
++++ b/components/permissions/features.cc
+@@ -34,7 +34,7 @@ BASE_FEATURE(kPermissionElementPromptPositioning,
+ // Enables heuristic auto-grant for permissions.
+ BASE_FEATURE(kPermissionHeuristicAutoGrant, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kPermissionPredictionsV2, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kPermissionPredictionsV2, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kPermissionsAIv4, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+@@ -93,7 +93,7 @@ BASE_FEATURE(kRecordChooserPermissionLastVisitedTimestamps,
+ BASE_FEATURE(kShowRelatedWebsiteSetsPermissionGrants,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kCpssUseTfliteSignatureRunner, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kCpssUseTfliteSignatureRunner, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kGlicActorPermissionsAutoReject, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+diff --git a/components/segmentation_platform/public/features.cc b/components/segmentation_platform/public/features.cc
+index e1449a2..10d3950 100644
+--- a/components/segmentation_platform/public/features.cc
++++ b/components/segmentation_platform/public/features.cc
+@@ -13,7 +13,7 @@ namespace segmentation_platform::features {
+ 
+ BASE_FEATURE(kSegmentationPlatformFeature,
+              "SegmentationPlatform",
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kSegmentationPlatformUkmEngine,
+ 
+@@ -73,7 +73,7 @@ const base::FeatureParam<bool>
+ BASE_FEATURE(kSegmentationDefaultReportingSegments,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kSegmentationPlatformDeviceTier, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kSegmentationPlatformDeviceTier, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kSegmentationPlatformTabletProductivityUser,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+diff --git a/content/public/common/content_features.cc b/content/public/common/content_features.cc
+index 4f3036e..7e48593 100644
+--- a/content/public/common/content_features.cc
++++ b/content/public/common/content_features.cc
+@@ -1535,7 +1535,7 @@ BASE_FEATURE(kIOThreadInteractiveThreadType, base::FEATURE_DISABLED_BY_DEFAULT);
+ const base::FeatureParam<int> kNavigationCapturingIPHGuardrailStorageDuration{
+     &kPwaNavigationCapturing, "link_capturing_guardrail_storage_duration", 30};
+ 
+-BASE_FEATURE(kPwaNavigationCapturing, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kPwaNavigationCapturing, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ const base::FeatureParam<CapturingState>::Option kNavigationCapturingParams[] =
+     {{CapturingState::kReimplDefaultOn, "reimpl_default_on"},
+diff --git a/extensions/common/extension_features.cc b/extensions/common/extension_features.cc
+index ba028c9..fc39294 100644
+--- a/extensions/common/extension_features.cc
++++ b/extensions/common/extension_features.cc
+@@ -30,7 +30,7 @@ BASE_FEATURE(kApiOdfsConfigPrivate, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kApiContextualTasksPrivate, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kApiGlicPrivate, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kApiGlicPrivate, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kApiEnterpriseReportingPrivateOnDataMaskingRulesTriggered,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+diff --git a/net/base/features.cc b/net/base/features.cc
+index da499bb..78ad6aa 100644
+--- a/net/base/features.cc
++++ b/net/base/features.cc
+@@ -211,7 +211,7 @@ BASE_FEATURE(kSplitCodeCacheByNetworkIsolationKey,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kPartitionConnectionsByNetworkIsolationKey,
+-             base::FEATURE_DISABLED_BY_DEFAULT);
++             base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kSplitHostCacheByNetworkAnonymizationKey,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+@@ -729,7 +729,7 @@ BASE_FEATURE(kRestrictAbusePorts, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kRestrictAbusePortsOnLocalhost, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kTLSTrustAnchorIDs, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kTLSTrustAnchorIDs, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kNonMtcTrustAnchorIDs, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+diff --git a/pdf/pdf_features.cc b/pdf/pdf_features.cc
+index 7f0e882..9194aef 100644
+--- a/pdf/pdf_features.cc
++++ b/pdf/pdf_features.cc
+@@ -86,7 +86,7 @@ const base::FeatureParam<bool> kPdfInk2TextAnnotationsExtraStyles{
+ 
+ #if BUILDFLAG(ENABLE_PDF_SAVE_TO_DRIVE)
+ // Saves the PDF file to Google Drive.
+-BASE_FEATURE(kPdfSaveToDrive, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kPdfSaveToDrive, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Enables the survey for saving PDF to Google Drive.
+ BASE_FEATURE(kPdfSaveToDriveSurvey, base::FEATURE_DISABLED_BY_DEFAULT);

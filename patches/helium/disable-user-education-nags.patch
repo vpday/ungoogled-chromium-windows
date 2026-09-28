@@ -1,18 +1,58 @@
 --- a/chrome/browser/user_education/user_education_service_factory.cc
 +++ b/chrome/browser/user_education/user_education_service_factory.cc
-@@ -122,8 +122,7 @@ bool UserEducationServiceFactory::Profil
-   // In order to do user education, the browser must have a UI and not be an
-   // "off-the-record" or in a demo or guest mode.
- 
+@@ -115,47 +115,6 @@
+ bool UserEducationServiceFactory::ProfileAllowsUserEducation(Profile* profile) {
+-#if BUILDFLAG(CHROME_FOR_TESTING)
+-  if (!chrome_for_testing::IsEnableUserEducationUI()) {
+-    return false;
+-  }
+-#endif
+-
+-  // In order to do user education, the browser must have a UI and not be an
+-  // "off-the-record" or in a demo or guest mode.
+-
 -  if (profile->IsIncognitoProfile() || profile->IsGuestSession() ||
 -      profiles::IsDemoSession() || profiles::IsChromeAppKioskSession()) {
-+  if ((true)) {
-     return false;
-   }
+-    return false;
+-  }
+-
+-#if BUILDFLAG(IS_CHROMEOS)
+-  if (chromeos::IsManagedGuestSession()) {
+-    return false;
+-  }
+-#endif
+-
+-  if (headless::IsHeadlessMode()) {
+-    return false;
+-  }
+-
+-  // If `--no-first-run` is enabled and we have not put IPH into test mode, User
+-  // Education is not eligible. (No FRE implies no startup bubbles, which
+-  // precludes any IPH that might show, as it may be used for performance
+-  // testing.)
+-  //
+-  // If IPH is in test mode (all features blocked, or all but a specific feature
+-  // is blocked) then zero or more IPH are under test and all other IPH are
+-  // already blocked. Since tests are no-FRE, not making this additional check
+-  // would break all IPH tests.
+-  const bool no_first_run =
+-      base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kNoFirstRun);
+-  const bool in_feature_test_mode =
+-      feature_engagement::TrackerFactory::GetForBrowserContext(profile)
+-          ->IsInFeatureTestMode();
+-  if (no_first_run && !in_feature_test_mode) {
+-    return false;
+-  }
+-
+-  return true;
++  (void)profile;
++  return false;
+ }
  
+ std::unique_ptr<KeyedService>
 --- a/components/user_education/common/tutorial/tutorial_registry.cc
 +++ b/components/user_education/common/tutorial/tutorial_registry.cc
-@@ -25,7 +25,6 @@ bool TutorialRegistry::IsTutorialRegiste
+@@ -25,7 +25,6 @@
  
  const TutorialDescription* TutorialRegistry::GetTutorialDescription(
      TutorialIdentifier id) const {

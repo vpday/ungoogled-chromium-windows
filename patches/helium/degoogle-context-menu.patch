@@ -1,6 +1,6 @@
 --- a/chrome/browser/renderer_context_menu/render_view_context_menu.cc
 +++ b/chrome/browser/renderer_context_menu/render_view_context_menu.cc
-@@ -1037,16 +1037,7 @@ bool RenderViewContextMenu::IsDevToolsUR
+@@ -1036,16 +1036,7 @@
  }
  
  // static
@@ -18,10 +18,12 @@
  
  DEFINE_CLASS_ELEMENT_IDENTIFIER_VALUE(RenderViewContextMenu,
                                        kExitFullscreenMenuItem);
-@@ -1346,17 +1337,6 @@ void RenderViewContextMenu::InitMenu() {
-     AppendSpellingAndSearchSuggestionItems();
-   }
+@@ -1343,17 +1334,6 @@
  
+   if (editable) {
+     AppendSpellingAndSearchSuggestionItems();
+-  }
+-
 -  if (content_type_->SupportsGroup(
 -          ContextMenuContentType::ITEM_GROUP_AUTOFILL)) {
 -    // Add a separator if the previous item is not already a separator.
@@ -31,12 +33,10 @@
 -      menu_model_.AddSeparator(ui::NORMAL_SEPARATOR);
 -    }
 -    autofill_context_menu_manager_.AppendItems();
--  }
--
-   if (editable) {
-     AppendOtherEditableItems();
    }
-@@ -2566,55 +2546,6 @@ void RenderViewContextMenu::AppendPageIt
+ 
+   if (editable) {
+@@ -2565,55 +2545,6 @@
                                      IDS_CONTENT_CONTEXT_SAVEPAGEAS);
      menu_model_.AddItemWithStringId(IDC_PRINT, IDS_CONTENT_CONTEXT_PRINT);
  
@@ -92,7 +92,7 @@
      menu_model_.AddSeparator(ui::NORMAL_SEPARATOR);
      return;
    }
-@@ -2632,7 +2563,6 @@ void RenderViewContextMenu::AppendPageIt
+@@ -2631,7 +2562,6 @@
                                    IDS_CONTENT_CONTEXT_SAVEPAGEAS);
    menu_model_.AddItemWithStringId(IDC_PRINT, IDS_CONTENT_CONTEXT_PRINT);
    AppendLiveCaptionItem();
@@ -100,16 +100,49 @@
  
    if (features::IsReadAnythingMenuShuffleExperimentEnabled()) {
      // This will be set to false in AppendRegionSearchItem() if it is called.
-@@ -2860,7 +2790,7 @@ void RenderViewContextMenu::AppendReadAn
+@@ -2850,40 +2780,7 @@
    }
+ }
  
-   // Show Read Anything option if it's not already open in the side panel.
+-void RenderViewContextMenu::AppendReadAnythingItem() {
+-  const bool is_menu_simplification_enabled =
+-      features::IsMenuSimplificationEnabled();
+-  if (is_menu_simplification_enabled && params_.is_editable) {
+-    return;
+-  }
+-
+-  // Show Read Anything option if it's not already open in the side panel.
 -  if (IsNormalBrowser() && !IsReadAnythingEntryShowing(GetBrowser())) {
-+  if ((false)) {
-     menu_model_.AddItemWithStringId(IDC_CONTENT_CONTEXT_OPEN_IN_READING_MODE,
-                                     IDS_CONTENT_CONTEXT_READING_MODE);
- 
-@@ -4275,26 +4205,7 @@ void RenderViewContextMenu::AddSpellChec
+-    menu_model_.AddItemWithStringId(IDC_CONTENT_CONTEXT_OPEN_IN_READING_MODE,
+-                                    IDS_CONTENT_CONTEXT_READING_MODE);
+-
+-    if (is_menu_simplification_enabled) {
+-      menu_model_.SetIconForCommandId(
+-          IDC_CONTENT_CONTEXT_OPEN_IN_READING_MODE,
+-          ui::ImageModel::FromVectorIcon(features::IsRoundedIconsEnabled()
+-                                             ? kMenuBookIcon
+-                                             : kMenuBookChromeRefreshOldIcon,
+-                                         ui::kColorMenuIcon, kTabMenuIconSize));
+-    }
+-
+-    if (features::IsReadAnythingImprovedUiEnabled()) {
+-      menu_model_.AddItemWithStringId(IDC_CONTENT_CONTEXT_LISTEN_TO_THIS_PAGE,
+-                                      IDS_CONTENT_CONTEXT_LISTEN_TO_THIS_PAGE);
+-      if (is_menu_simplification_enabled) {
+-        menu_model_.SetIconForCommandId(
+-            IDC_CONTENT_CONTEXT_LISTEN_TO_THIS_PAGE,
+-            ui::ImageModel::FromVectorIcon(kPlayCircleIcon, ui::kColorMenuIcon,
+-                                           kTabMenuIconSize));
+-      }
+-    }
+-  }
+-}
+-
++void RenderViewContextMenu::AppendReadAnythingItem() {}
+ void RenderViewContextMenu::AppendSaveToMemoryBanksItem() {
+   if (base::FeatureList::IsEnabled(context_hub::features::kMemoryBanks)) {
+     menu_model_.AddItemWithStringId(IDC_CONTENT_CONTEXT_SAVE_TO_MEMORY_BANKS,
+@@ -4273,26 +4170,7 @@
    AddSpellCheckServiceItem(&menu_model_, is_checked);
  }
  
@@ -137,16 +170,57 @@
  
  // static
  void RenderViewContextMenu::RegisterMenuShownCallbackForTesting(
-@@ -4676,7 +4587,7 @@ bool RenderViewContextMenu::AppendQRCode
-     return false;
-   }
- 
+@@ -4670,43 +4548,12 @@
+     bool draw_icon,
+     bool add_separator,
+     bool ignore_simplification) {
+-  if (features::IsMenuSimplificationEnabled() && !ignore_simplification) {
+-    return false;
+-  }
+-
 -  if (!IsQRCodeGeneratorEnabled()) {
-+  if ((true)) {
-     return false;
-   }
- 
-@@ -5828,19 +5739,11 @@ ToastController* RenderViewContextMenu::
+-    return false;
+-  }
+-
+-  if (add_separator) {
+-    menu_model_.AddSeparator(ui::NORMAL_SEPARATOR);
+-  }
+-
+-  auto string_id = for_image ? IDS_CONTEXT_MENU_GENERATE_QR_CODE_IMAGE
+-                             : IDS_CONTEXT_MENU_GENERATE_QR_CODE_PAGE;
+-#if BUILDFLAG(IS_MAC)
+-  draw_icon &= features::IsMenuSimplificationEnabled();
+-#endif
+-  if (draw_icon) {
+-    const gfx::VectorIcon* qr_code_icon = &kQrcodeGeneratorCustomIcon;
+-    if (features::IsMenuSimplificationEnabled()) {
+-      if (features::IsRoundedIconsEnabled()) {
+-        qr_code_icon = &kQrCodeIcon;
+-      } else {
+-        qr_code_icon = &kQrCodeChromeRefreshOldIcon;
+-      }
+-    }
+-    menu_model_.AddItemWithStringIdAndIcon(
+-        IDC_CONTENT_CONTEXT_GENERATE_QR_CODE, string_id,
+-        ui::ImageModel::FromVectorIcon(*qr_code_icon));
+-  } else {
+-    menu_model_.AddItemWithStringId(IDC_CONTENT_CONTEXT_GENERATE_QR_CODE,
+-                                    string_id);
+-  }
+-
+-  return true;
+-}
+-
++  (void)for_image;
++  (void)draw_icon;
++  (void)add_separator;
++  (void)ignore_simplification;
++  return false;
++}
+ void RenderViewContextMenu::AppendSendTabToSelfItem(bool add_separator) {
+   if (!embedder_web_contents_) {
+     return;
+@@ -5826,19 +5673,11 @@
  }
  
  bool RenderViewContextMenu::CanTranslate(bool menu_logging) {
@@ -170,7 +244,7 @@
  void RenderViewContextMenu::MaybePrepareForLensQuery() {
 --- a/chrome/browser/ui/browser_tab_strip_model_delegate.cc
 +++ b/chrome/browser/ui/browser_tab_strip_model_delegate.cc
-@@ -346,7 +346,7 @@ void BrowserTabStripModelDelegate::AddTo
+@@ -346,7 +346,7 @@
  }
  
  bool BrowserTabStripModelDelegate::SupportsReadLater() {
