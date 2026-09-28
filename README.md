@@ -2,13 +2,11 @@
 
 This repository cross-compiles Windows binaries of [ungoogled-chromium](https://github.com/Eloston/ungoogled-chromium) on Linux.
 
-It also integrates curated patches from **[Brave](https://github.com/brave/brave-core)**, **[Helium](https://github.com/imputnet/helium)** and **[Cromite](https://github.com/uazo/cromite)** — creating a feature-rich, tuned Frankenstein build.
+It also integrates curated patches from [Brave](https://github.com/brave/brave-core), [Cromite](https://github.com/uazo/cromite) and [Helium](https://github.com/imputnet/helium) — creating a feature-rich, tuned Frankenstein build.
 
 ## Downloads
 
 Download pre-built Windows packages (portable `.zip` and installer `.exe` for `x64`, `x86`, and `arm64`) from the [GitHub Releases](https://github.com/vpday/ungoogled-chromium-windows/releases) page.
-
-Use a tag when building a release. The `master` branch is for development and may be unstable.
 
 ## Quick Start
 
