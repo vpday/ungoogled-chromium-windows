@@ -1,6 +1,6 @@
 --- a/chrome/tools/build/win/FILES.cfg
 +++ b/chrome/tools/build/win/FILES.cfg
-@@ -361,7 +361,7 @@ FILES = [
+@@ -367,7 +367,7 @@
    },
    # ANGLE files:
    {

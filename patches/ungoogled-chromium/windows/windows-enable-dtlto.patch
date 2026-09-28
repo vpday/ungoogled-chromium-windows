@@ -1,6 +1,7 @@
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
-@@ -1301,3 +1301,13 @@
+@@ -1288,6 +1288,16 @@ config("thinlto_optimize_default") {
+       ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
      }
  
 +    if (is_win) {
@@ -14,7 +15,10 @@
 +    }
 +
      if (toolchain_supports_rust_thin_lto) {
-@@ -1361,3 +1371,13 @@
+       # We always point Rust to a linker that performs LTO, so we don't want
+       # Rust to preemptively do so during compilation too or they conflict. But
+@@ -1323,6 +1333,16 @@ config("thinlto_optimize_max") {
+       ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
      }
  
 +    if (is_win) {
@@ -28,6 +32,8 @@
 +    }
 +
      if (toolchain_supports_rust_thin_lto) {
+       # We always point Rust to a linker that performs LTO, so we don't want
+       # Rust to preemptively do so during compilation too or they conflict. But
 --- /dev/null
 +++ b/tools/dtlto/local_parallel.py
 @@ -0,0 +1,47 @@
