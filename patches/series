@@ -65,6 +65,7 @@ cromite/Keep-disabled-CpuPerformance.patch
 cromite/Keep-disabled-FetchLaterAPI.patch
 brave/crashpad-prune-win-environment-block.patch
 brave/consolidated-features-overrides.patch
+ungoogled-chromium/windows/windows-additional-feature-overrides.patch
 brave/disable-history-embeddings.patch
 brave/kill-profile-reset-report-uploader.patch
 brave/disable-global-signin-promos.patch

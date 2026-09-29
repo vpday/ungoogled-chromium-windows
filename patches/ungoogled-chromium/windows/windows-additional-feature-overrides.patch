@@ -1,0 +1,850 @@
+--- a/chrome/browser/browser_features.cc
++++ b/chrome/browser/browser_features.cc
+@@ -27,7 +27,7 @@
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // This flag is used for enabling BookmarkBar triggered preconnect.
+-BASE_FEATURE(kBookmarkTriggerForPreconnect, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kBookmarkTriggerForPreconnect, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // This flag is used for enabling BookmarkBar triggered prefetch.  See
+ // crbug.com/413259638 for more details of Bookmark triggered prefetching.
+@@ -176,7 +176,7 @@
+ 
+ // Enables runtime detection of USB devices which provide a WebUSB landing page
+ // descriptor.
+-BASE_FEATURE(kWebUsbDeviceDetection, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kWebUsbDeviceDetection, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ #if BUILDFLAG(IS_WIN)
+ // Disable dynamic code using ACG. Prevents the browser process from generating
+--- a/chrome/browser/devtools/features.cc
++++ b/chrome/browser/devtools/features.cc
+@@ -168,7 +168,7 @@
+ 
+ // Whether the DevTools AI generated annotation labels in timeline are enabled.
+ BASE_FEATURE(kDevToolsAiGeneratedTimelineLabels,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Whether the DevTools AI generated annotation labels in timeline are enabled.
+ BASE_FEATURE(kDevToolsNewPermissionDialog, base::FEATURE_DISABLED_BY_DEFAULT);
+--- a/chrome/browser/metrics/critical_user_journeys/features.cc
++++ b/chrome/browser/metrics/critical_user_journeys/features.cc
+@@ -8,7 +8,7 @@
+ 
+ namespace metrics {
+ 
+-BASE_FEATURE(kCriticalUserJourneyService, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kCriticalUserJourneyService, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // These can be toggled by default as needed.
+ BASE_FEATURE(kClearBrowsingHistoryJourney, base::FEATURE_ENABLED_BY_DEFAULT);
+--- a/chrome/browser/password_manager/password_change/features.cc
++++ b/chrome/browser/password_manager/password_change/features.cc
+@@ -18,7 +18,7 @@
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kRecordDiscardedFormsToModelQualityLogs,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kRecheckFormsExponentiallyInChangePasswordFormWaiter,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+--- a/chrome/browser/predictors/predictors_features.cc
++++ b/chrome/browser/predictors/predictors_features.cc
+@@ -18,11 +18,11 @@
+ }  // namespace
+ 
+ // Whether to update the predictor database asynchronously.
+-BASE_FEATURE(kAsyncPredictorDbUpdate, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kAsyncPredictorDbUpdate, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Whether local predictions should be used to make preconnect predictions.
+ BASE_FEATURE(kLoadingPredictorUseLocalPredictions,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Modifies loading predictor so that it only learns about subresources and
+ // origins that are high priority.
+@@ -45,7 +45,7 @@
+ // Modifies loading predictor so that it can also use predictions coming from
+ // the optimization guide.
+ BASE_FEATURE(kLoadingPredictorUseOptimizationGuide,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ constexpr base::FeatureState kLoadingPredictorPrefetchDefaultFeatureState =
+     kFeatureEnabledOnlyOnAndroid;
+--- a/chrome/browser/ui/ui_features.cc
++++ b/chrome/browser/ui/ui_features.cc
+@@ -170,7 +170,7 @@
+ 
+ // Preloads a WebContents with a Top Chrome WebUI on BrowserView initialization,
+ // so that it can be shown instantly at a later time when necessary.
+-BASE_FEATURE(kPreloadTopChromeWebUI, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kPreloadTopChromeWebUI, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // An experiment to reduce the number of navigations when preloading WebUIs.
+ BASE_FEATURE(kPreloadTopChromeWebUILessNavigations,
+--- a/chrome/common/chrome_features.cc
++++ b/chrome/common/chrome_features.cc
+@@ -200,7 +200,7 @@
+ }
+ 
+ // Controls the enablement of structured metrics on Windows, Linux, and Mac.
+-BASE_FEATURE(kChromeStructuredMetrics, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kChromeStructuredMetrics, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kDeferSpellcheckInitialization, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+@@ -269,7 +269,7 @@
+                                                     ""};
+ 
+ // Controls whether the actor component of Glic is enabled.
+-BASE_FEATURE(kGlicActor, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kGlicActor, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kGlicActorApcComparison, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+@@ -584,14 +584,7 @@
+ // IMPORTANT: this feature should never be expired! It is used as the main
+ // kill-switch for Glic and can be used in the future to handle unsupported
+ // Chrome versions.
+-BASE_FEATURE(kGlic,
+-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+-    BUILDFLAG(IS_ANDROID)
+-             base::FEATURE_ENABLED_BY_DEFAULT
+-#else
+-             base::FEATURE_DISABLED_BY_DEFAULT
+-#endif
+-);
++BASE_FEATURE(kGlic, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kGlicBackgroundActuation, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+@@ -1137,7 +1130,7 @@
+ 
+ // Controls whether the Google Search AI Mode Workspace link (Connected Apps) is
+ // shown in AI Settings. Acts as a killswitch.
+-BASE_FEATURE(kGoogleSearchAiModeWorkspace, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kGoogleSearchAiModeWorkspace, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Force Privacy Guide to be available even if it would be unavailable
+ // otherwise. This is meant for development and test purposes only.
+@@ -1159,7 +1152,7 @@
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kHappinessTrackingSurveysConfiguration,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ const base::FeatureParam<std::string> kHappinessTrackingSurveysHostedUrl{
+     &kHappinessTrackingSurveysConfiguration, "custom-url",
+@@ -1264,7 +1257,7 @@
+ 
+ // Enables or disables the Happiness Tracking System for Chrome What's New.
+ BASE_FEATURE(kHappinessTrackingSurveysForDesktopWhatsNew,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ const base::FeatureParam<base::TimeDelta>
+     kHappinessTrackingSurveysForDesktopWhatsNewTime{
+         &kHappinessTrackingSurveysForDesktopWhatsNew, "whats-new-time",
+@@ -1822,7 +1815,7 @@
+ #if !BUILDFLAG(IS_ANDROID)
+ // Enables the second version of the sentiment survey for users of Trust &
+ // Safety features, using HaTS.
+-BASE_FEATURE(kTrustSafetySentimentSurveyV2, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kTrustSafetySentimentSurveyV2, base::FEATURE_DISABLED_BY_DEFAULT);
+ // The minimum and maximum time after a user has interacted with a Trust and
+ // Safety feature that they are eligible to be surveyed.
+ const base::FeatureParam<base::TimeDelta>
+--- a/components/actor/core/actor_features.cc
++++ b/components/actor/core/actor_features.cc
+@@ -177,8 +177,8 @@
+ 
+ BASE_FEATURE(kActorFormScriptToolInterrupt, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kActorObserveScreenshotDefault, base::FEATURE_ENABLED_BY_DEFAULT);
+-BASE_FEATURE(kActorObservePageContentDefault, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kActorObserveScreenshotDefault, base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kActorObservePageContentDefault, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kActorScriptToolSkipScreenshot, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kActorScriptToolSkipPageContent,
+--- a/components/attribution_reporting/features.cc
++++ b/components/attribution_reporting/features.cc
+@@ -9,6 +9,6 @@
+ namespace attribution_reporting::features {
+ 
+ // Controls whether the Conversion Measurement API infrastructure is enabled.
+-BASE_FEATURE(kConversionMeasurement, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kConversionMeasurement, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ }  // namespace attribution_reporting::features
+--- a/components/autofill/core/common/autofill_debug_features.cc
++++ b/components/autofill/core/common/autofill_debug_features.cc
+@@ -135,7 +135,7 @@
+ // autofill server API url up to the parent "directory" of the "query" and
+ // "upload" resources.
+ // i.e., https://other.autofill.server:port/tbproxy/af/
+-BASE_FEATURE(kAutofillServerCommunication, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kAutofillServerCommunication, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // When set to a non-zero value, the value is attached as an experiment ID to
+ // all predictions requests to the Autofill server, as if it were an active GWS
+--- a/components/autofill/core/common/autofill_features.cc
++++ b/components/autofill/core/common/autofill_features.cc
+@@ -69,7 +69,7 @@
+ // Kill switch: If enabled, `ChromeAutofillClient` may enter the actor mode,
+ // changing how the UI, parsing and the server predictions work. For more
+ // context see: go/autofill-actor-mode-implementation
+-BASE_FEATURE(kAutofillActorMode, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kAutofillActorMode, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // This parameter configures a preamble which is returned in the
+ // extra_information attribute of the return value of attempt_form_filling. It
+@@ -991,11 +991,11 @@
+ // Enables querying the server for predictions before the form has been parsed
+ // locally.
+ BASE_FEATURE(kAutofillServerQueryPredictionsEarly,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Enables uploading of more data to the Autofill server to use for computing
+ // signatures: go/autofill-signatures-more-data.
+-BASE_FEATURE(kAutofillServerUploadMoreData, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kAutofillServerUploadMoreData, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Kill switch: If enabled, the focus check in AutofillPopupControllerImpl and
+ // AutofillKeyboardAccessoryControllerImpl is simplified.
+--- a/components/enterprise/browser/reporting/reporting_features.cc
++++ b/components/enterprise/browser/reporting/reporting_features.cc
+@@ -16,7 +16,7 @@
+ #endif
+ );
+ 
+-BASE_FEATURE(kGeminiInChromeUsageReporting, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kGeminiInChromeUsageReporting, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kBrowserLaunchMetadataReporting,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+--- a/components/history/core/browser/features.cc
++++ b/components/history/core/browser/features.cc
+@@ -128,7 +128,7 @@
+ // in history entry grouping and filtering. Enabled by default on Android as
+ // actor code are gated by the kGlic feature.
+ BASE_FEATURE(kBrowsingHistoryActorIntegrationM3,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ #endif  // !BUILDFLAG(IS_IOS)
+ 
+ // If enabled, the WebHistoryService will use a new API for querying browsing
+--- a/components/lens/lens_features.cc
++++ b/components/lens/lens_features.cc
+@@ -16,17 +16,11 @@
+ 
+ namespace lens::features {
+ 
+-BASE_FEATURE(kLensStandalone, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kLensStandalone, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kShowContextualTasksMenuIcon, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kLensOverlay,
+-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+-             base::FEATURE_DISABLED_BY_DEFAULT
+-#else
+-             base::FEATURE_ENABLED_BY_DEFAULT
+-#endif
+-);
++BASE_FEATURE(kLensOverlay, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kLensOverlayAndroid, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+@@ -35,7 +29,7 @@
+ BASE_FEATURE(kLensOverlayTranslateLanguages, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kLensOverlayImageContextMenuActions,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kLensOverlayContextualSearchbox, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+--- a/components/metrics/metrics_features.cc
++++ b/components/metrics/metrics_features.cc
+@@ -12,7 +12,7 @@
+ 
+ BASE_FEATURE(kStructuredMetrics,
+              "EnableStructuredMetrics",
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kFlushPersistentSystemProfileOnWrite,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+--- a/components/omnibox/common/omnibox_features.cc
++++ b/components/omnibox/common/omnibox_features.cc
+@@ -58,7 +58,7 @@
+ // suggestions.
+ BASE_FEATURE(kFocusTriggersWebAndSRPZeroSuggest,
+              "OmniboxFocusTriggersWebAndSRPZeroSuggest",
+-             ENABLED);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Enables on-clobber suggestions on iOS.
+ BASE_FEATURE(kOnClobberSuggestIOS, ENABLED);
+@@ -119,7 +119,7 @@
+              ENABLED);
+ BASE_FEATURE(kOnDeviceHeadProviderNonIncognito,
+              "OmniboxOnDeviceHeadProviderNonIncognito",
+-             ENABLED);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kOnDeviceTailModel,
+              "OmniboxOnDeviceTailModel",
+              enable_if(IS_ANDROID || IS_IOS));
+@@ -128,7 +128,7 @@
+              ENABLED);
+ 
+ // Feature used to fetch document suggestions.
+-BASE_FEATURE(kDocumentProvider, "OmniboxDocumentProvider", enable_if(!IS_IOS));
++BASE_FEATURE(kDocumentProvider, "OmniboxDocumentProvider", base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // If enabled, the authentication requirement for Drive suggestions is based on
+ // whether the primary account is available, i.e., the user is signed into
+@@ -403,7 +403,7 @@
+ BASE_FEATURE(kOmniboxMobileParityUpdateV2, ENABLED);
+ 
+ // If enabled, the X-Geo header will include permission granularity.
+-BASE_FEATURE(kOmniboxXGeoPermissionGranularity, ENABLED);
++BASE_FEATURE(kOmniboxXGeoPermissionGranularity, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // When the first suggestion is a url, the favicon is shown in the status view.
+ BASE_FEATURE(kExactMatchFavicons, DISABLED);
+@@ -442,7 +442,7 @@
+ BASE_FEATURE(kUseAgentspace25Logo, ENABLED);
+ 
+ // Enables preconnecting to omnibox suggestions that are not only Search types.
+-BASE_FEATURE(kPreconnectNonSearchOmniboxSuggestions, ENABLED);
++BASE_FEATURE(kPreconnectNonSearchOmniboxSuggestions, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Controls whether the composebox
+ BASE_FEATURE(kComposeboxUsesChromeComposeClient, ENABLED);
+--- a/components/optimization_guide/core/model_execution/model_execution_features.cc
++++ b/components/optimization_guide/core/model_execution/model_execution_features.cc
+@@ -37,8 +37,8 @@
+ 
+ // Note: ComposeGraduated is enabled by default because the feature is
+ // country-restricted at runtime.
+-BASE_FEATURE(kComposeGraduated, base::FEATURE_ENABLED_BY_DEFAULT);
+-BASE_FEATURE(kWallpaperSearchGraduated, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kComposeGraduated, base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kWallpaperSearchGraduated, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kFindsGraduated, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kModelExecutionCapabilityDisable,
+--- a/components/optimization_guide/core/optimization_guide_features.cc
++++ b/components/optimization_guide/core/optimization_guide_features.cc
+@@ -60,7 +60,7 @@
+ BASE_FEATURE(kOptimizationHints, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Enables the prediction of optimization targets.
+-BASE_FEATURE(kOptimizationTargetPrediction, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kOptimizationTargetPrediction, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // This feature flag does not turn off any behavior, it is only used for
+ // experiment parameters.
+@@ -85,7 +85,7 @@
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Kill switch for disabling model quality logging.
+-BASE_FEATURE(kModelQualityLogging, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kModelQualityLogging, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // An emergency kill switch feature to stop serving certain model versions per
+ // optimization target. This is useful in exceptional situations when a bad
+--- a/components/page_content_annotations/core/page_content_annotations_features.cc
++++ b/components/page_content_annotations/core/page_content_annotations_features.cc
+@@ -106,7 +106,7 @@
+              enabled_by_default_non_ios);
+ 
+ BASE_FEATURE(kExtractRelatedSearchesFromPrefetchedZPSResponse,
+-             enabled_by_default_desktop_only);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kAnnotatedPageContentExtraction,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+@@ -124,13 +124,13 @@
+     &kAnnotatedPageContentNonSalientFiltering, "exclude_ad_related", true};
+ 
+ BASE_FEATURE(kAnnotatedPageContentPDFTextExtraction,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ const base::FeatureParam<size_t> kMaxPDFTextExtractionByteSizeParam{
+     &kAnnotatedPageContentPDFTextExtraction, "max_text_byte_size",
+     1048576};  // 1MB
+ 
+-BASE_FEATURE(kOnDeviceCategoryClassifier, enabled_by_default_desktop_only);
++BASE_FEATURE(kOnDeviceCategoryClassifier, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kPageContentCache, enabled_by_default_ios_only);
+ 
+--- a/components/passage_embeddings/core/passage_embeddings_features.cc
++++ b/components/passage_embeddings/core/passage_embeddings_features.cc
+@@ -23,7 +23,7 @@
+ 
+ BASE_FEATURE(kPassageEmbedder, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kPDFEmbeddingsGeneration, enabled_by_default_desktop_only);
++BASE_FEATURE(kPDFEmbeddingsGeneration, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ #if BUILDFLAG(IS_ANDROID)
+ const base::FeatureParam<int> kPassageEmbedderMinRequiredRamMb(
+--- a/components/password_manager/core/browser/features/password_features.cc
++++ b/components/password_manager/core/browser/features/password_features.cc
+@@ -11,7 +11,7 @@
+ 
+ namespace password_manager::features {
+ #if !BUILDFLAG(IS_IOS)  // Desktop and Android
+-BASE_FEATURE(kActorLogin, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kActorLogin, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kActorLoginConflictingPermissionCleanup,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ BASE_FEATURE(kActorLoginLocalClassificationModel,
+@@ -36,7 +36,7 @@
+ #endif
+ 
+ #if !BUILDFLAG(IS_IOS)
+-BASE_FEATURE(kActorLoginQualityLogs, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kActorLoginQualityLogs, base::FEATURE_DISABLED_BY_DEFAULT);
+ #endif  // !BUILDFLAG(IS_IOS)
+ 
+ BASE_FEATURE(kApplyClientsideModelPredictionsForPasswordTypes,
+--- a/components/payments/core/features.cc
++++ b/components/payments/core/features.cc
+@@ -37,7 +37,7 @@
+ 
+ BASE_FEATURE(kEnforceFullDelegation, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kGPayAppDynamicUpdate, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kGPayAppDynamicUpdate, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kSecurePaymentConfirmationCredentialDiscoveryMode,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+--- a/components/performance_manager/features.cc
++++ b/components/performance_manager/features.cc
+@@ -264,13 +264,7 @@
+ 
+ BASE_FEATURE(kThrottleUnimportantFrameRate, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kKeepDefaultSearchEngineRendererAlive,
+-#if BUILDFLAG(IS_ANDROID)
+-             base::FEATURE_DISABLED_BY_DEFAULT
+-#else
+-             base::FEATURE_ENABLED_BY_DEFAULT
+-#endif
+-);
++BASE_FEATURE(kKeepDefaultSearchEngineRendererAlive, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kBoostClosingTabs, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+--- a/components/personal_context/core/personal_context_features.cc
++++ b/components/personal_context/core/personal_context_features.cc
+@@ -8,7 +8,7 @@
+ 
+ namespace personal_context::features {
+ 
+-BASE_FEATURE(kPersonalContext, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kPersonalContext, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kPersonalContextLogNonEligibilityUma,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+--- a/components/safe_browsing/core/common/features.cc
++++ b/components/safe_browsing/core/common/features.cc
+@@ -240,7 +240,7 @@
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kCreateWarningShownClientSafeBrowsingReports,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kDelayedWarnings,
+              "SafeBrowsingDelayedWarnings",
+@@ -317,7 +317,7 @@
+ 
+ BASE_FEATURE(kExtensionTelemetrySearchHijackingSignal,
+              "SafeBrowsingExtensionTelemetrySearchHijackingSignal",
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ constexpr base::FeatureParam<int>
+     kExtensionTelemetrySearchHijackingSignalHeuristicCheckIntervalSeconds{
+         &kExtensionTelemetrySearchHijackingSignal,
+@@ -354,7 +354,7 @@
+ 
+ BASE_FEATURE(kHashPrefixRealTimeLookups,
+              "SafeBrowsingHashPrefixRealTimeLookups",
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ constexpr base::FeatureParam<std::string> kHashPrefixRealTimeLookupsRelayUrl{
+     &kHashPrefixRealTimeLookups,
+     "SafeBrowsingHashPrefixRealTimeLookupsRelayUrl",
+@@ -432,7 +432,7 @@
+ 
+ BASE_FEATURE(kNoticeQueueForEsb, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kNotificationTelemetry, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kNotificationTelemetry, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kProactivePasswordProtection, base::FEATURE_DISABLED_BY_DEFAULT);
+ const base::FeatureParam<double> kCsdProactivePasswordProtectionSampleRate{
+--- a/components/search/ntp_features.cc
++++ b/components/search/ntp_features.cc
+@@ -118,9 +118,7 @@
+ 
+ // If enabled, Google Drive module will be shown.
+ // This is a kill switch. Keep indefinitely.
+-BASE_FEATURE(kNtpDriveModule,
+-#if BUILDFLAG(IS_ANDROID)
+-             base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kNtpDriveModule, base::FEATURE_DISABLED_BY_DEFAULT);
+ #else
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ #endif
+@@ -145,7 +143,7 @@
+ 
+ // If enabled, middle slot promo will be shown.
+ // This is a kill switch. Keep indefinitely.
+-BASE_FEATURE(kNtpMiddleSlotPromo, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kNtpMiddleSlotPromo, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // If enabled, middle slot promo will be dismissed from New Tab Page until new
+ // promo message is populated
+@@ -180,9 +178,7 @@
+ 
+ // If enabled, OneGoogleBar will be shown. Disabled on Android to save memory.
+ // This is a kill switch. Keep indefinitely.
+-BASE_FEATURE(kNtpOneGoogleBar,
+-#if BUILDFLAG(IS_ANDROID)
+-             base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kNtpOneGoogleBar, base::FEATURE_DISABLED_BY_DEFAULT);
+ #else
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ #endif
+@@ -228,7 +224,7 @@
+ // If enabled, the Tab Resumption module will be allowed to fallback to the
+ // favicon server when fetching favicons for displayed continuation suggestions.
+ BASE_FEATURE(kNtpMostRelevantTabResumptionAllowFaviconServerFallback,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // If enabled, the Tab Resumption module will fallback to host url to find a
+ // favicon if there are none locally available.
+@@ -269,7 +265,7 @@
+ #endif
+ 
+ // If enabled, the features of NTP Next (AI action chips etc.) will be shown.
+-BASE_FEATURE(kNtpNextFeatures, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kNtpNextFeatures, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // If enabled, the Canvas action chip will be shown.
+ BASE_FEATURE(kNtpNextCanvasChip, base::FEATURE_DISABLED_BY_DEFAULT);
+@@ -319,13 +315,13 @@
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // If enabled, will support animated Doodles on the NTP.
+-BASE_FEATURE(kNtpAnimatedDoodles, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kNtpAnimatedDoodles, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // If enabled, will support Doodle Murals on the NTP.
+ BASE_FEATURE(kNtpDoodleMurals, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // If enabled, animates the AIM caret on the NTP.
+-BASE_FEATURE(kNtpAnimatedCaret, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kNtpAnimatedCaret, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // If enabled, adds a Whats New Page Edition for Next Features.
+ BASE_FEATURE(kLightningTakeoverEdition, base::FEATURE_ENABLED_BY_DEFAULT);
+--- a/components/signin/public/base/signin_switches.cc
++++ b/components/signin/public/base/signin_switches.cc
+@@ -430,13 +430,7 @@
+ 
+ #if BUILDFLAG(ENABLE_BOUND_SESSION_CREDENTIALS)
+ // Enable experimental binding session credentials to the device.
+-BASE_FEATURE(kEnableBoundSessionCredentials,
+-#if BUILDFLAG(IS_WIN)
+-             base::FEATURE_ENABLED_BY_DEFAULT
+-#else
+-             base::FEATURE_DISABLED_BY_DEFAULT
+-#endif
+-);
++BASE_FEATURE(kEnableBoundSessionCredentials, base::FEATURE_DISABLED_BY_DEFAULT);
+ bool IsBoundSessionCredentialsEnabled(const PrefService* profile_prefs) {
+   return base::FeatureList::IsEnabled(kEnableBoundSessionCredentials);
+ }
+@@ -450,13 +444,7 @@
+ 
+ #if BUILDFLAG(ENABLE_DICE_SUPPORT)
+ // Enables Chrome refresh tokens binding to a device.
+-BASE_FEATURE(kEnableChromeRefreshTokenBinding,
+-#if BUILDFLAG(IS_WIN)
+-             base::FEATURE_ENABLED_BY_DEFAULT
+-#else
+-             base::FEATURE_DISABLED_BY_DEFAULT
+-#endif
+-);
++BASE_FEATURE(kEnableChromeRefreshTokenBinding, base::FEATURE_DISABLED_BY_DEFAULT);
+ bool IsChromeRefreshTokenBindingEnabled(const PrefService* profile_prefs) {
+   return base::FeatureList::IsEnabled(kEnableChromeRefreshTokenBinding);
+ }
+@@ -868,11 +856,11 @@
+     2);
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+-BASE_FEATURE(kSignInPromoMaterialNextUI, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kSignInPromoMaterialNextUI, base::FEATURE_DISABLED_BY_DEFAULT);
+ #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+ 
+ #if BUILDFLAG(ENABLE_DICE_SUPPORT)
+-BASE_FEATURE(kSigninPromoOnAvatarPill, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kSigninPromoOnAvatarPill, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE_PARAM(base::TimeDelta,
+                    kSigninPromoOnAvatarPillStartupDelayForPromoShow,
+                    &kSigninPromoOnAvatarPill,
+--- a/components/skills/features.cc
++++ b/components/skills/features.cc
+@@ -7,14 +7,8 @@
+ 
+ namespace features {
+ 
+-BASE_FEATURE(kSkillsEnabled,
+-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+-             base::FEATURE_ENABLED_BY_DEFAULT
+-#else
+-             base::FEATURE_DISABLED_BY_DEFAULT
+-#endif
+-);
+-BASE_FEATURE(kSkillsMetricsProviderEnabled, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kSkillsEnabled, base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kSkillsMetricsProviderEnabled, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kSkillsRefinementEnabled, base::FEATURE_ENABLED_BY_DEFAULT);
+ BASE_FEATURE(kSkillsAutocomplete, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kSkills1PDisabledForNonEnLocales,
+@@ -22,7 +16,7 @@
+ BASE_FEATURE(kSkillsSubheadersEnabled, base::FEATURE_ENABLED_BY_DEFAULT);
+ BASE_FEATURE(kSkillsWebViewV2Enabled, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kSkillsServiceApi, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kSkillsServiceApi, base::FEATURE_DISABLED_BY_DEFAULT);
+ const base::FeatureParam<std::string> kSkillsServiceApiUrl{
+     &kSkillsServiceApi, "endpoint",
+     "https://chromeskills.pa.googleapis.com/v1/management/"
+--- a/components/subresource_filter/core/common/common_features.cc
++++ b/components/subresource_filter/core/common/common_features.cc
+@@ -6,7 +6,7 @@
+ 
+ namespace subresource_filter {
+ 
+-BASE_FEATURE(kAdTagging, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kAdTagging, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kSubresourceFilterPrewarm, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ }  // namespace subresource_filter
+--- a/content/browser/preloading/prefetch/prefetch_features.cc
++++ b/content/browser/preloading/prefetch/prefetch_features.cc
+@@ -21,7 +21,7 @@
+ 
+ BASE_FEATURE(kPrefetchNIKScope, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kPrefetchClientHints, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kPrefetchClientHints, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ constexpr base::FeatureParam<PrefetchClientHintsCrossSiteBehavior>::Option
+     kPrefetchClientHintsCrossSiteBehaviorOptions[] = {
+@@ -48,7 +48,7 @@
+ BASE_FEATURE(kPrefetchBumpNetworkPriorityAfterBeingServed,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kPrefetchServiceWorker, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kPrefetchServiceWorker, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ bool IsPrefetchServiceWorkerEnabled(content::BrowserContext* browser_context) {
+   return base::FeatureList::IsEnabled(kPrefetchServiceWorker) &&
+--- a/content/public/common/content_features.cc
++++ b/content/public/common/content_features.cc
+@@ -804,10 +804,10 @@
+ 
+ // Use code paths for prefetch/prerender integration.
+ // See also `kPrerender2FallbackPrefetchSpecRules`.
+-BASE_FEATURE(kPrefetchPrerenderIntegration, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kPrefetchPrerenderIntegration, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // If explicitly disabled, prefetch proxy is not used.
+-BASE_FEATURE(kPrefetchProxy, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kPrefetchProxy, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Make `PrefetchRequestStatusListener` notifications async.
+ // https://crbug.com/496807663
+@@ -823,7 +823,7 @@
+ //
+ // Enabled except for Android WebView.
+ BASE_FEATURE(kPrerender2FallbackPrefetchSpecRules,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // If enabled, the feature allows the prerender host to be reused for the
+ // future same-site page prerender if marked as reusable.
+@@ -1013,7 +1013,7 @@
+ // it doesn't require a developer opt-in.
+ //
+ // crbug.com/1472634 for more details.
+-BASE_FEATURE(kServiceWorkerAutoPreload, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kServiceWorkerAutoPreload, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Improve ServiceWorkerAutoPreload coverage by using more accurate web request
+ // proxy detection.
+@@ -1311,7 +1311,7 @@
+ BASE_FEATURE(kWebOtpBackendAuto, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // The JavaScript API for payments on the web.
+-BASE_FEATURE(kWebPayments, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kWebPayments, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Enables code caching for scripts used on WebUI pages.
+ BASE_FEATURE(kWebUICodeCache, base::FEATURE_DISABLED_BY_DEFAULT);
+@@ -1329,7 +1329,7 @@
+ // Previously, this was only supported on ChromeOS and Linux.
+ // Intentionally enabled by default and will be used as a kill switch in case
+ // of regressions.
+-BASE_FEATURE(kWebUIJSErrorReportingExtended, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kWebUIJSErrorReportingExtended, base::FEATURE_DISABLED_BY_DEFAULT);
+ #endif
+ 
+ // If enabled, WebUI will optimize resources loading by piping a dictionary of
+@@ -1343,7 +1343,7 @@
+ 
+ // Controls whether the WebUSB API is enabled:
+ // https://wicg.github.io/webusb
+-BASE_FEATURE(kWebUsb, "WebUSB", base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kWebUsb, "WebUSB", base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Apply `PrefetchPriority::kHighest` for Webview Prefetch API.
+ BASE_FEATURE(kWebViewPrefetchHighestPrefetchPriority,
+@@ -1357,7 +1357,7 @@
+         "WebViewPrefetchHighestPrefetchPriorityBurstLimit", 10};
+ 
+ // Controls whether the WebXR Device API is enabled.
+-BASE_FEATURE(kWebXr, "WebXR", base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kWebXr, "WebXR", base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ #if BUILDFLAG(IS_ANDROID)
+ // When enabled, will unconditionally poll the C++ cache to check Java node
+--- a/media/base/media_switches.cc
++++ b/media/base/media_switches.cc
+@@ -904,7 +904,7 @@
+ BASE_FEATURE(kRecordMediaEngagementScores, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // Enables Media Engagement Index recording for Web Audio playbacks.
+-BASE_FEATURE(kRecordWebAudioEngagement, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kRecordWebAudioEngagement, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Controls whether muted media stream audio should continue to render.
+ BASE_FEATURE(kRenderMutedAudio, base::FEATURE_ENABLED_BY_DEFAULT);
+--- a/net/base/features.cc
++++ b/net/base/features.cc
+@@ -221,7 +221,7 @@
+ BASE_FEATURE(kSearchEnginePreconnectInterval,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kSearchEnginePreconnect2, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kSearchEnginePreconnect2, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE_PARAM(int,
+                    kIdleTimeoutInSeconds,
+@@ -451,7 +451,7 @@
+ #endif  // BUILDFLAG(IS_APPLE)
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
+-BASE_FEATURE(kDeviceBoundSessions, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kDeviceBoundSessions, base::FEATURE_DISABLED_BY_DEFAULT);
+ #else
+ BASE_FEATURE(kDeviceBoundSessions, base::FEATURE_DISABLED_BY_DEFAULT);
+ #endif
+--- a/services/device/public/cpp/device_features.cc
++++ b/services/device/public/cpp/device_features.cc
+@@ -109,7 +109,7 @@
+ // the operating system's location API or our network-based provider
+ // as the source of location data for Geolocation API.
+ #if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+-BASE_FEATURE(kLocationProviderManager, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kLocationProviderManager, base::FEATURE_DISABLED_BY_DEFAULT);
+ #else
+ BASE_FEATURE(kLocationProviderManager, base::FEATURE_DISABLED_BY_DEFAULT);
+ #endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+--- a/services/network/public/cpp/features.cc
++++ b/services/network/public/cpp/features.cc
+@@ -44,9 +44,9 @@
+   return block_accept_ch && blocked_site->IsSameOriginWith(origin);
+ }
+ 
+-BASE_FEATURE(kNetworkErrorLogging, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kNetworkErrorLogging, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kReporting, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kReporting, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Based on the field trial parameters, this feature will override the value of
+ // the maximum number of delayable requests allowed in flight. The number of
+@@ -535,7 +535,7 @@
+                    /*default_value=*/base::MiB(350).InBytes());
+ 
+ BASE_FEATURE(kReportingApiEnableVariationsHeaders,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kNetworkContextDirectReceiver, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+--- a/third_party/blink/common/features.cc
++++ b/third_party/blink/common/features.cc
+@@ -1674,7 +1674,7 @@
+ // anchor element will be extracted and recorded.
+ // Note that the desktop roll out is being done separately from android. See
+ // https://crbug.com/40258405
+-BASE_FEATURE(kNavigationPredictor, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kNavigationPredictor, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE_PARAM(int,
+                    kPredictorTrafficClientEnabledPercent,
+                    &kNavigationPredictor,
+@@ -1790,14 +1790,7 @@
+ 
+ // Launch mouse hover feature only on Desktop. Note that Android Desktop mode is
+ // currently out of scope.
+-BASE_FEATURE(kPreloadingEagerHoverHeuristics,
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+-    BUILDFLAG(IS_CHROMEOS)
+-             base::FEATURE_ENABLED_BY_DEFAULT
+-#else
+-             base::FEATURE_DISABLED_BY_DEFAULT
+-#endif
+-);
++BASE_FEATURE(kPreloadingEagerHoverHeuristics, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE_PARAM(base::TimeDelta,
+                    kPreloadingEagerHoverHeuristicsDwellTime,
+                    &kPreloadingEagerHoverHeuristics,
+@@ -1820,7 +1813,7 @@
+ // non-immediate candidates on the renderer side (see the declaration in
+ // features.h for details).
+ BASE_FEATURE(kSpeculationRulesRendererSideHeuristics,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kPreloadingHeuristicsMLModel, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE_PARAM(int,
+@@ -2089,7 +2082,7 @@
+ BASE_FEATURE(kSpeculativeImageDecodes, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Enable service worker warming-up feature. (https://crbug.com/1431792)
+-BASE_FEATURE(kSpeculativeServiceWorkerWarmUp, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kSpeculativeServiceWorkerWarmUp, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // kSpeculativeServiceWorkerWarmUp warms up service workers up to this max
+ // count.
