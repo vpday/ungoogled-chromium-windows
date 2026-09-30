@@ -1,0 +1,21 @@
+--- a/services/network/cors/preflight_result.cc
++++ b/services/network/cors/preflight_result.cc
+@@ -37,7 +37,7 @@ constexpr base::TimeDelta kDefaultTimeout = base::Seconds(5);
+ // Maximum cache expiry time. Even if a CORS-preflight response contains
+ // Access-Control-Max-Age header that specifies a longer expiry time, this
+ // maximum time is applied.
+-constexpr base::TimeDelta kMaxTimeout = base::Hours(2);
++constexpr base::TimeDelta kMaxTimeout = base::Seconds(600);
+ 
+ // Holds TickClock instance to overwrite TimeTicks::Now() for testing.
+ const base::TickClock* tick_clock_for_testing = nullptr;
+--- a/services/network/network_context.cc
++++ b/services/network/network_context.cc
+@@ -1476,6 +1476,7 @@ void NetworkContext::ClearHttpCache(base::Time start_time,
+                                     base::Time end_time,
+                                     mojom::ClearDataFilterPtr filter,
+                                     ClearHttpCacheCallback callback) {
++  cors_preflight_controller_.ClearCorsPreflightCache(filter.Clone());
+   ClearHttpCacheInternal(start_time, end_time, std::move(filter),
+                          ClearHttpCacheMode::kPhysical, std::move(callback));
+ }

@@ -1,0 +1,11 @@
+--- a/components/renderer_context_menu/context_menu_content_type.cc
++++ b/components/renderer_context_menu/context_menu_content_type.cc
+@@ -98,7 +98,7 @@ bool ContextMenuContentType::SupportsGroupInternal(int group) {
+ 
+     case ITEM_GROUP_SEARCHWEBFORIMAGE:
+       // Image menu items imply search web for image item.
+-      return SupportsGroupInternal(ITEM_GROUP_MEDIA_IMAGE);
++      return false;
+ 
+     case ITEM_GROUP_GLICSHAREIMAGE:
+       // Image menu items imply glic share image item.

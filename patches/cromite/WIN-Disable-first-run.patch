@@ -1,0 +1,11 @@
+--- a/chrome/browser/ui/startup/first_run_service.cc
++++ b/chrome/browser/ui/startup/first_run_service.cc
+@@ -81,7 +81,7 @@ bool IsFirstRunMarkedFinishedInPrefs() {
+ 
+ // static
+ void FirstRunService::RegisterLocalStatePrefs(PrefRegistrySimple* registry) {
+-  registry->RegisterBooleanPref(prefs::kFirstRunFinished, false);
++  registry->RegisterBooleanPref(prefs::kFirstRunFinished, true);
+ }
+ 
+ FirstRunService::FirstRunService(Profile& profile,

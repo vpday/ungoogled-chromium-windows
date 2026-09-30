@@ -702,6 +702,11 @@
  
  // Improve ServiceWorkerAutoPreload coverage by using more accurate web request
  // proxy detection.
+@@ -1163,3 +1163,3 @@
+ // Controls whether site isolation should use origins instead of scheme and
+ // eTLD+1.
+-BASE_FEATURE(kStrictOriginIsolation, base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kStrictOriginIsolation, base::FEATURE_ENABLED_BY_DEFAULT);
 @@ -1311,7 +1311,7 @@
  BASE_FEATURE(kWebOtpBackendAuto, base::FEATURE_DISABLED_BY_DEFAULT);
  
@@ -848,3 +853,31 @@
  
  // kSpeculativeServiceWorkerWarmUp warms up service workers up to this max
  // count.
+--- a/sandbox/policy/features.cc
++++ b/sandbox/policy/features.cc
+@@ -18,3 +18,3 @@
+ // Enables network service sandbox.
+ // (Only causes an effect when feature kNetworkServiceInProcess is disabled.)
+-BASE_FEATURE(kNetworkServiceSandbox, base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kNetworkServiceSandbox, base::FEATURE_ENABLED_BY_DEFAULT);
+@@ -68,3 +68,3 @@
+ // NetworkServiceSandbox feature is disabled, or if using a component or ASAN
+ // build. See https://blogs.windows.com/blog/tag/code-integrity-guard/.
+-BASE_FEATURE(kNetworkServiceCodeIntegrity, base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kNetworkServiceCodeIntegrity, base::FEATURE_ENABLED_BY_DEFAULT);
+--- a/chrome/browser/net/system_network_context_manager.cc
++++ b/chrome/browser/net/system_network_context_manager.cc
+@@ -362,3 +362,3 @@
+ // will still result in sandbox being disabled for the lifetime of the running
+ // browser.
+-BASE_FEATURE(kPersistFailedLaunchState, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kPersistFailedLaunchState, base::FEATURE_DISABLED_BY_DEFAULT);
+--- a/storage/browser/quota/quota_features.cc
++++ b/storage/browser/quota/quota_features.cc
+@@ -43,5 +43,5 @@
+  BASE_FEATURE(kIncreaseIncognitoStorageQuota,
+               "IncreaseIncognitoStorageQuota",
+-             base::FEATURE_DISABLED_BY_DEFAULT);
++             base::FEATURE_ENABLED_BY_DEFAULT);
+  
+  }  // namespace features

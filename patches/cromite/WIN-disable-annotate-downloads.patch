@@ -1,0 +1,15 @@
+--- a/components/download/internal/common/download_file_impl.cc
++++ b/components/download/internal/common/download_file_impl.cc
+@@ -418,9 +418,9 @@ void DownloadFileImpl::RenameAndAnnotate(
+   std::unique_ptr<RenameParameters> parameters(new RenameParameters(
+       ANNOTATE_WITH_SOURCE_INFORMATION, full_path, std::move(callback)));
+   parameters->client_guid = client_guid;
+-  parameters->source_url = source_url;
+-  parameters->referrer_url = referrer_url;
+-  parameters->request_initiator = request_initiator;
++  parameters->source_url = GURL();
++  parameters->referrer_url = GURL();
++  parameters->request_initiator = std::nullopt;
+   parameters->remote_quarantine = std::move(remote_quarantine);
+   RenameWithRetryInternal(std::move(parameters));
+ }

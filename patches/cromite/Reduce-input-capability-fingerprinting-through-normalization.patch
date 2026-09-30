@@ -1,0 +1,49 @@
+--- a/ui/base/pointer/pointer_device_win.cc
++++ b/ui/base/pointer/pointer_device_win.cc
+@@ -18,9 +18,7 @@ namespace ui {
+ namespace {
+ 
+ bool IsTouchDevicePresent() {
+-  const int value = GetSystemMetrics(SM_DIGITIZER);
+-  return (value & NID_READY) &&
+-         ((value & NID_INTEGRATED_TOUCH) || (value & NID_EXTERNAL_TOUCH));
++  return false;
+ }
+ 
+ PointerDigitizerType ToPointerDigitizerType(
+@@ -48,32 +46,15 @@ PointerDevice ToPointerDevice(const POINTER_DEVICE_INFO& device) {
+ }  // namespace
+ 
+ std::pair<int, int> GetAvailablePointerAndHoverTypesImpl() {
+-  // `IsDeviceUsedAsATablet()` guarantees that the device has a touch screen and
+-  // has no keyboard connected. On Windows 10 it means that it has verified with
+-  // `GetSystemMetrics(SM_CONVERTIBLESLATEMODE)`.
+-  //
+-  // In this case we don't bother to call `GetSystemMetrics(SM_MOUSEPRESENT)`,
+-  // since it will rarely return 0 even if no external mouse is connected.
+-  if (base::win::IsDeviceUsedAsATablet(nullptr)) {
+-    return {POINTER_TYPE_COARSE, HOVER_TYPE_NONE};
+-  }
+-
+-  int pointer_types = IsTouchDevicePresent() ? POINTER_TYPE_COARSE : 0;
+-  int hover_types = HOVER_TYPE_NONE;
+-  if (GetSystemMetrics(SM_MOUSEPRESENT) != 0) {
+-    pointer_types |= POINTER_TYPE_FINE;
+-    hover_types = HOVER_TYPE_HOVER;
+-  }
+-  return {pointer_types ? pointer_types : POINTER_TYPE_NONE, hover_types};
++  return {POINTER_TYPE_FINE, HOVER_TYPE_HOVER};
+ }
+ 
+ TouchScreensAvailability GetTouchScreensAvailability() {
+-  return IsTouchDevicePresent() ? TouchScreensAvailability::ENABLED
+-                                : TouchScreensAvailability::NONE;
++  return TouchScreensAvailability::NONE;
+ }
+ 
+ int MaxTouchPoints() {
+-  return IsTouchDevicePresent() ? GetSystemMetrics(SM_MAXIMUMTOUCHES) : 0;
++  return 0;
+ }
+ 
+ std::optional<PointerDevice> GetPointerDevice(PointerDevice::Key key) {

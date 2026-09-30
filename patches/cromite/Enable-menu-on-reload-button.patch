@@ -1,0 +1,11 @@
+--- a/chrome/browser/ui/views/toolbar/toolbar_view.cc
++++ b/chrome/browser/ui/views/toolbar/toolbar_view.cc
+@@ -1193,7 +1193,7 @@ void ToolbarView::Update(WebContents* tab) {
+ 
+   if (ReloadControl* reload_control = GetReloadButton(); reload_control) {
+     reload_control->SetDevToolsStatus(
+-        chrome::IsDebuggerAttachedToCurrentTab(browser_));
++        true);
+   }
+ }
+ 

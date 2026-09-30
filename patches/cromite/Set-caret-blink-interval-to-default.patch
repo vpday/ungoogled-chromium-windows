@@ -1,0 +1,13 @@
+--- a/third_party/blink/renderer/core/exported/web_view_impl.cc
++++ b/third_party/blink/renderer/core/exported/web_view_impl.cc
+@@ -3803,9 +3803,7 @@ void WebViewImpl::UpdateRendererPreferences(
+   UpdateFontRenderingFromRendererPrefs();
+ 
+   blink::SetCaretBlinkInterval(
+-      renderer_preferences_.caret_blink_interval.has_value()
+-          ? renderer_preferences_.caret_blink_interval.value()
+-          : base::Milliseconds(
++          base::Milliseconds(
+                 mojom::blink::kDefaultCaretBlinkIntervalInMilliseconds));
+ 
+ #if defined(USE_AURA)

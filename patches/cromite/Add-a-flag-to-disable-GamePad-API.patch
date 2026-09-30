@@ -1,0 +1,63 @@
+--- a/device/gamepad/public/cpp/gamepad_features.cc
++++ b/device/gamepad/public/cpp/gamepad_features.cc
+@@ -64,4 +64,12 @@ bool IsGamepadMultitouchEnabled() {
+   return false;
+ }
+ 
++BASE_FEATURE(kRestrictGamepadAccess,
++             "RestrictGamepadAccess",
++             base::FEATURE_ENABLED_BY_DEFAULT);
++
++bool IsRestrictGamepadAccessEnabled() {
++  return base::FeatureList::IsEnabled(kRestrictGamepadAccess);
++}
++
+ }  // namespace features
+--- a/device/gamepad/public/cpp/gamepad_features.h
++++ b/device/gamepad/public/cpp/gamepad_features.h
+@@ -17,6 +17,7 @@ GAMEPAD_FEATURES_EXPORT BASE_DECLARE_FEATURE(
+ GAMEPAD_FEATURES_EXPORT BASE_DECLARE_FEATURE(kGamepadRawInputChangeEvent);
+ GAMEPAD_FEATURES_EXPORT BASE_DECLARE_FEATURE(
+     kClaimDuplicateGamepadsProductIdentifier);
++GAMEPAD_FEATURES_EXPORT BASE_DECLARE_FEATURE(kRestrictGamepadAccess);
+ 
+ #if BUILDFLAG(IS_WIN)
+ GAMEPAD_FEATURES_EXPORT BASE_DECLARE_FEATURE(kIgnorePS5GamepadsInWgi);
+@@ -39,6 +40,7 @@ GAMEPAD_FEATURES_EXPORT BASE_DECLARE_FEATURE(
+ #endif  // BUILDFLAG(IS_WIN)
+ 
+ GAMEPAD_FEATURES_EXPORT bool IsGamepadMultitouchEnabled();
++GAMEPAD_FEATURES_EXPORT bool IsRestrictGamepadAccessEnabled();
+ 
+ }  // namespace features
+ 
+--- a/third_party/blink/renderer/modules/gamepad/navigator_gamepad.cc
++++ b/third_party/blink/renderer/modules/gamepad/navigator_gamepad.cc
+@@ -28,6 +28,7 @@
+ #include "base/auto_reset.h"
+ #include "base/metrics/histogram_macros.h"
+ #include "device/gamepad/public/cpp/gamepads.h"
++#include "device/gamepad/public/cpp/gamepad_features.h"
+ #include "third_party/blink/public/mojom/frame/user_activation_notification_type.mojom-blink.h"
+ #include "third_party/blink/public/platform/task_type.h"
+ #include "third_party/blink/renderer/bindings/modules/v8/v8_gamepad_mapping_type.h"
+@@ -89,6 +90,9 @@ NavigatorGamepad& NavigatorGamepad::From(Navigator& navigator) {
+ HeapVector<Member<Gamepad>> NavigatorGamepad::getGamepads(
+     Navigator& navigator,
+     ExceptionState& exception_state) {
++  if (::features::IsRestrictGamepadAccessEnabled()) {
++    return HeapVector<Member<Gamepad>>();
++  }
+   if (!navigator.DomWindow()) {
+     // Using an existing NavigatorGamepad if one exists, but don't create one
+     // for a detached window, as its subclasses depend on a non-null window.
+@@ -440,6 +444,9 @@ void NavigatorGamepad::MaybeDispatchGamepadEvents(
+ void NavigatorGamepad::DispatchGamepadConnectionChangedEvent(
+     const AtomicString& event_name,
+     Gamepad* gamepad) {
++  if (::features::IsRestrictGamepadAccessEnabled()) {
++    return;
++  }
+   // Ensure that we're blocking re-entrancy.
+   DCHECK(processing_events_);
+   DCHECK(has_connection_event_listener_);
