@@ -499,18 +499,21 @@
  const base::FeatureParam<double> kCsdProactivePasswordProtectionSampleRate{
 --- a/components/search/ntp_features.cc
 +++ b/components/search/ntp_features.cc
-@@ -118,9 +118,7 @@
+@@ -118,12 +118,7 @@
  
  // If enabled, Google Drive module will be shown.
  // This is a kill switch. Keep indefinitely.
 -BASE_FEATURE(kNtpDriveModule,
 -#if BUILDFLAG(IS_ANDROID)
 -             base::FEATURE_DISABLED_BY_DEFAULT);
+-#else
+-             base::FEATURE_ENABLED_BY_DEFAULT);
+-#endif
 +BASE_FEATURE(kNtpDriveModule, base::FEATURE_DISABLED_BY_DEFAULT);
- #else
-              base::FEATURE_ENABLED_BY_DEFAULT);
- #endif
-@@ -145,7 +143,7 @@
+ 
+ // If enabled, the NTP Drive module does not require sync.
+ BASE_FEATURE(kNtpDriveModuleHistorySyncRequirement,
+@@ -145,7 +140,7 @@
  
  // If enabled, middle slot promo will be shown.
  // This is a kill switch. Keep indefinitely.
@@ -519,18 +522,21 @@
  
  // If enabled, middle slot promo will be dismissed from New Tab Page until new
  // promo message is populated
-@@ -180,9 +178,7 @@
+@@ -180,12 +175,7 @@
  
  // If enabled, OneGoogleBar will be shown. Disabled on Android to save memory.
  // This is a kill switch. Keep indefinitely.
 -BASE_FEATURE(kNtpOneGoogleBar,
 -#if BUILDFLAG(IS_ANDROID)
 -             base::FEATURE_DISABLED_BY_DEFAULT);
+-#else
+-             base::FEATURE_ENABLED_BY_DEFAULT);
+-#endif
 +BASE_FEATURE(kNtpOneGoogleBar, base::FEATURE_DISABLED_BY_DEFAULT);
- #else
-              base::FEATURE_ENABLED_BY_DEFAULT);
- #endif
-@@ -228,7 +224,7 @@
+ 
+ // If enabled, outlook calendar module will be shown.
+ BASE_FEATURE(kNtpOutlookCalendarModule,
+@@ -228,7 +218,7 @@
  // If enabled, the Tab Resumption module will be allowed to fallback to the
  // favicon server when fetching favicons for displayed continuation suggestions.
  BASE_FEATURE(kNtpMostRelevantTabResumptionAllowFaviconServerFallback,
@@ -539,7 +545,7 @@
  
  // If enabled, the Tab Resumption module will fallback to host url to find a
  // favicon if there are none locally available.
-@@ -269,7 +265,7 @@
+@@ -269,7 +259,7 @@
  #endif
  
  // If enabled, the features of NTP Next (AI action chips etc.) will be shown.
@@ -548,7 +554,7 @@
  
  // If enabled, the Canvas action chip will be shown.
  BASE_FEATURE(kNtpNextCanvasChip, base::FEATURE_DISABLED_BY_DEFAULT);
-@@ -319,13 +315,13 @@
+@@ -319,13 +309,13 @@
               base::FEATURE_ENABLED_BY_DEFAULT);
  
  // If enabled, will support animated Doodles on the NTP.
