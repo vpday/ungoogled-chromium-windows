@@ -323,10 +323,17 @@ async function run() {
 
         const timeoutArgs = ['-v', '-k', '5m', '-s', 'INT', buildTimeoutSeconds.toString(), 'python3', ...args];
 
+        const buildStartTime = Math.floor(Date.now() / 1000);
         const retCode = await exec.exec('timeout', timeoutArgs, {
             cwd: GITHUB_WORKSPACE,
             ignoreReturnCode: true
         });
+        const buildDurationSeconds = Math.floor(Date.now() / 1000) - buildStartTime;
+
+        // GNU timeout exits with 124 on SIGINT/SIGTERM timeout, and 137 (128 + 9) if killed by -k/SIGKILL.
+        // Accept 137 as a timeout only when execution duration reached the timeout window, guarding against early OOM kills.
+        const isTimedOut = (retCode === 124) || (retCode === 137 && buildDurationSeconds >= Math.max(0, buildTimeoutSeconds - 60));
+
         if (retCode === 0) {
             const globber = await glob.create(`${BUILD_DIR}/ungoogled-chromium*`, { matchDirectories: false });
             let packageList = await globber.glob();
@@ -334,8 +341,8 @@ async function run() {
             await uploadArtifactWithRetry(artifact, finalArtifactName, packageList, BUILD_DIR,
                 'Upload artifact failed');
             finishedOutput = true;
-        } else if (retCode === 124) {
-            console.log('Build safely timed out (124). Preparing cache artifact for the next runner...');
+        } else if (isTimedOut) {
+            console.log(`Build safely timed out (${retCode}, elapsed: ${buildDurationSeconds}s). Preparing cache artifact for the next runner...`);
             await sleep(5000);
 
             // Unmount ciopfs before archiving to avoid packing the FUSE mountpoint
@@ -369,7 +376,7 @@ async function run() {
             await uploadArtifactWithRetry(artifact, artifactName, [archivePath], GITHUB_WORKSPACE,
                 'Upload artifact failed');
         } else {
-            throw new Error(`Build failed with critical error code: ${retCode}`);
+            throw new Error(`Build failed with critical error code: ${retCode} (elapsed: ${buildDurationSeconds}s)`);
         }
     } finally {
         core.setOutput('finished', finishedOutput);

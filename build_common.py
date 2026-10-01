@@ -31,25 +31,25 @@ sys.path.pop(0)
 
 
 def _terminate_process_group(proc: subprocess.Popen, *, sigint_grace_seconds: int) -> None:
-    """Best-effort: terminate the whole child process group.
+    """Best-effort: terminate the child process or process group.
 
-    The build uses start_new_session=True, so the child runs in its own process group.
-    When the parent is interrupted, we need to explicitly reap that group to avoid
+    When the parent is interrupted, reap the child or process group to avoid
     leaving orphan processes (e.g. ciopfs/lld-link) holding FUSE mountpoints.
     """
 
     if proc.poll() is not None:
         return
 
-    # Preferred path on POSIX: kill the entire process group.
+    # Preferred path on POSIX: kill the child's process group if distinct from parent.
     pgid = None
+    my_pgid = os.getpgrp() if hasattr(os, "getpgrp") else None
     if hasattr(os, "getpgid"):
         try:
             pgid = os.getpgid(proc.pid)
         except ProcessLookupError:
             pgid = None
 
-    if pgid is not None and hasattr(os, "killpg"):
+    if pgid is not None and hasattr(os, "killpg") and (my_pgid is None or pgid != my_pgid):
         try:
             os.killpg(pgid, signal.SIGINT)
         except ProcessLookupError:
@@ -109,7 +109,7 @@ def run_build_process(*args, **kwargs):
 
     string_args = [str(a) for a in args]
     with subprocess.Popen(
-            string_args, encoding=ENCODING, start_new_session=True, **kwargs
+            string_args, encoding=ENCODING, **kwargs
     ) as proc:
         try:
             proc.wait()
@@ -132,7 +132,7 @@ def run_build_process_timeout(*args, timeout):
 
     string_args = [str(a) for a in args]
     with subprocess.Popen(
-            string_args, encoding=ENCODING, start_new_session=True
+            string_args, encoding=ENCODING
     ) as proc:
         try:
             proc.wait(timeout)
