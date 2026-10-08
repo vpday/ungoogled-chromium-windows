@@ -72,7 +72,6 @@ brave/disable-global-signin-promos.patch
 brave/hide-cookie-controls-location-bar-icon.patch
 brave/suppress-undo-tab-close-toast.patch
 cromite/WIN-disable-annotate-downloads.patch
-cromite/Remove-sideloading-of-version-dll.patch
 cromite/WIN-Disable-first-run.patch
 cromite/WIN-Fix-log-to-file.patch
 cromite/Reduce-input-capability-fingerprinting-through-normalization.patch
