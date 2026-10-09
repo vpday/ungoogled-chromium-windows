@@ -1,6 +1,6 @@
 --- a/third_party/blink/renderer/modules/webcodecs/video_decoder.cc
 +++ b/third_party/blink/renderer/modules/webcodecs/video_decoder.cc
-@@ -297,6 +297,6 @@ ScriptPromise<VideoDecoderSupport> VideoDecoder::isConfigSupported(
+@@ -298,7 +298,7 @@ ScriptPromise<VideoDecoderSupport> VideoDecoder::isConfigSupported(
    auto* config_copy = CopyConfig(*config);
  
    // Run the "Check Configuration Support" algorithm.
@@ -8,3 +8,4 @@
 +  HardwarePreference hw_pref = HardwarePreference::kPreferSoftware;
    VideoDecoderSupport* support = VideoDecoderSupport::Create();
    support->setConfig(config_copy);
+ 

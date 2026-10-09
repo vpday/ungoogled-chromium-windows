@@ -26,7 +26,7 @@
      worker_->Freeze();
      is_frozen_ = true;
    }
-@@ -1230,16 +1220,5 @@ void SharedWorkerHost::OnClientConnectionLost() {
+@@ -1234,17 +1224,6 @@ void SharedWorkerHost::OnClientConnectionLost() {
      // the freeze state to freeze the worker if no active clients remain.
      OnClientStateChanged();
    }
@@ -43,3 +43,4 @@
 -  }
    DestructIfNoClients();
  }
+ 

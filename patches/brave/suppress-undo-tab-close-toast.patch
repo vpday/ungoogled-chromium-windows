@@ -1,10 +1,10 @@
 --- a/chrome/browser/ui/browser_commands.cc
 +++ b/chrome/browser/ui/browser_commands.cc
-@@ -1513,44 +1513,7 @@ void CloseTab(BrowserWindowInterface* browser) {
+@@ -1484,44 +1484,7 @@ void CloseTab(BrowserWindowInterface* browser) {
    }
  #endif
  
--  ToastController* toast_controller = browser->GetFeatures().toast_controller();
+-  ToastController* toast_controller = ToastController::From(browser);
 -  if (!toast_controller) {
 -    CloseSelectedTabAndRecordTabCountMetric(browser);
 -    return;

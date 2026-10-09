@@ -1,6 +1,6 @@
 --- a/chrome/browser/user_education/user_education_service_factory.cc
 +++ b/chrome/browser/user_education/user_education_service_factory.cc
-@@ -115,47 +115,6 @@
+@@ -115,48 +115,6 @@
  bool UserEducationServiceFactory::ProfileAllowsUserEducation(Profile* profile) {
 -#if BUILDFLAG(CHROME_FOR_TESTING)
 -  if (!chrome_for_testing::IsEnableUserEducationUI()) {
@@ -11,8 +11,9 @@
 -  // In order to do user education, the browser must have a UI and not be an
 -  // "off-the-record" or in a demo or guest mode.
 -
--  if (profile->IsIncognitoProfile() || profile->IsGuestSession() ||
--      profiles::IsDemoSession() || profiles::IsChromeAppKioskSession()) {
+-  if (profile->IsPrimaryOTRProfileWithRegularParent() ||
+-      profile->IsGuestSession() || profiles::IsDemoSession() ||
+-      profiles::IsChromeAppKioskSession()) {
 -    return false;
 -  }
 -

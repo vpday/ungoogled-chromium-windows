@@ -1,28 +1,30 @@
 --- a/components/content_settings/browser/ui/cookie_controls_controller.cc
 +++ b/components/content_settings/browser/ui/cookie_controls_controller.cc
-@@ -384,23 +384,8 @@ void CookieControlsController::RecordActivationMetrics() {
+@@ -397,25 +397,8 @@
  
- bool CookieControlsController::ShouldUserBypassIconBeVisible(
+ CookieControlsState CookieControlsController::GetCookieControlsIconState(
      CookieControlsState controls_state) {
--  if (controls_state == CookieControlsState::kHidden) {
--    return false;
+-  if (controls_state != CookieControlsState::kBlocked3pc) {
+-    return controls_state;
 -  }
--  return show_icon_as_confirmation_ ||
--         controls_state == CookieControlsState::kAllowed3pc ||
--         // 3PC blocking prevents SameSite=None cookies from being sent when the
--         // top-level document is sandboxed without `allow-origin`. For instance
--         // when loaded with: `Content-Security-Policy: sandbox`. In that case,
--         // we render the UI to allow the user to opt into sending SameSite=None
--         // cookies again in those contexts.
--         HasOriginSandboxedTopLevelDocument() ||
--         // If no 3P sites have attempted to access site data, nor were any
--         // stateful bounces recorded, the icon should not be displayed. Take
--         // into account both allow and blocked counts, since the breakage might
--         // be related to storage partitioning. Partitioned site will be allowed
--         // to access partitioned storage.
--         SiteDataAccessAttempted();
+-  if (show_icon_as_confirmation_ ||
+-      // 3PC blocking prevents SameSite=None cookies from being sent when the
+-      // top-level document is sandboxed without `allow-origin`. For instance
+-      // when loaded with: `Content-Security-Policy: sandbox`. In that case,
+-      // we render the UI to allow the user to opt into sending SameSite=None
+-      // cookies again in those contexts.
+-      HasOriginSandboxedTopLevelDocument() ||
+-      // If no 3P sites have attempted to access site data, nor were any
+-      // stateful bounces recorded, the icon should not be displayed. Take
+-      // into account both allow and blocked counts, since the breakage might
+-      // be related to storage partitioning. Partitioned site will be allowed
+-      // to access partitioned storage.
+-      SiteDataAccessAttempted()) {
+-    return controls_state;
+-  }
+-  return CookieControlsState::kHidden;
 +  (void)controls_state;
-+  return false;
++  return CookieControlsState::kHidden;
  }
  
  bool CookieControlsController::SiteDataAccessAttempted() {

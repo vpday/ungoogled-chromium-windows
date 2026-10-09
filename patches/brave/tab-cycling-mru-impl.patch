@@ -95,10 +95,10 @@
  
 --- a/chrome/browser/ui/views/frame/browser_view.cc
 +++ b/chrome/browser/ui/views/frame/browser_view.cc
-@@ -330,7 +330,10 @@
- #include "ui/compositor/paint_recorder.h"
+@@ -336,7 +336,10 @@
  #include "ui/content_accelerators/accelerator_util.h"
  #include "ui/display/screen.h"
+ #include "ui/display/types/display_constants.h"
 +#include "ui/events/event.h"
 +#include "ui/events/event_handler.h"
  #include "ui/events/event_utils.h"

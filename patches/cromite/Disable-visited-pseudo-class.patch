@@ -80,7 +80,7 @@
  
 --- a/components/visitedlink/common/visitedlink_common.cc
 +++ b/components/visitedlink/common/visitedlink_common.cc
-@@ -76,34 +76,6 @@
+@@ -76,36 +76,8 @@ bool VisitedLinkCommon::IsVisited(const GURL& link_url,
  }
  
  bool VisitedLinkCommon::IsVisited(Fingerprint fingerprint) const {
@@ -117,3 +117,5 @@
 +  (void)fingerprint;
 +  return false;
  }
+ 
+ // Uses the top 64 bits of the MD5 sum of the canonical URL as the fingerprint,

@@ -14,6 +14,7 @@ import re
 import shutil
 import subprocess
 import sys
+import importlib.util
 from pathlib import Path
 
 from build_common import (
@@ -164,7 +165,7 @@ def _set_gn_target_args(windows_flags: str, target: WindowsTarget):
     return updated_flags
 
 
-def _generate_gn_flags(target: WindowsTarget, is_tarball: bool) -> str:
+def _generate_gn_flags(target: WindowsTarget, is_tarball: bool, source_tree: Path) -> str:
     """Combine base and windows GN flags, adjusting for target architecture and build mode."""
     gn_flags = (_ROOT_DIR / 'ungoogled-chromium' / 'flags.gn').read_text(encoding=ENCODING)
     gn_flags += '\n'
@@ -174,6 +175,19 @@ def _generate_gn_flags(target: WindowsTarget, is_tarball: bool) -> str:
         windows_flags += '\nchrome_pgo_phase=0\n'
     if target.id == 'x64':
         windows_flags += '\nv8_enable_wasm_simd256_revec=true\n'
+    elif target.id == 'x86':
+        windows_flags += '\nv8_enable_drumbrake=false\n'
+
+    # Point V8 metagen at the local libclang and Python cindex bindings
+    clang_spec = importlib.util.find_spec('clang')
+    if clang_spec is None or not clang_spec.submodule_search_locations:
+        get_logger().error('Python clang bindings not found. Install them with: pip install clang')
+        sys.exit(1)
+    libclang_so = source_tree / 'third_party' / 'llvm-build' / 'Release+Asserts' / 'lib' / 'libclang.so'
+    libclang_bindings_dir = Path(list(clang_spec.submodule_search_locations)[0]).parent
+    windows_flags += f'\nv8_metagen_libclang_so="{libclang_so.resolve().as_posix()}"\n'
+    windows_flags += f'v8_metagen_libclang_bindings_dir="{libclang_bindings_dir.resolve().as_posix()}"\n'
+
     gn_flags += windows_flags
     return gn_flags
 
@@ -478,7 +492,7 @@ def _step_write_gn_args(
     with build_step(source_tree, '.write_gn_args.stamp', 'writing GN args', ci_mode) as should_run:
         if should_run:
             out_dir.mkdir(parents=True, exist_ok=True)
-            gn_flags = _generate_gn_flags(target, is_tarball)
+            gn_flags = _generate_gn_flags(target, is_tarball, source_tree)
             (out_dir / 'args.gn').write_text(gn_flags, encoding=ENCODING)
 
 

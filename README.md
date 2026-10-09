@@ -210,10 +210,10 @@ All dependency versions are defined in `downloads.ini`. Dependencies are organiz
 
 ##### 7-Zip for Linux (`7zip-linux`)
 
-1. Check [7-Zip releases](https://www.7-zip.org/download.html) for Linux x64 builds
+1. Check [7-Zip releases](https://github.com/ip7z/7zip/releases/) for Linux x64 builds
 2. Download `7zVERSION-linux-x64.tar.xz`
 3. Get SHA-256 checksum and update `downloads.ini` section `[7zip-linux]`:
-   - `version = VERSION` (e.g., `2501` for 25.01)
+   - `version = VERSION`
    - `sha256 = CHECKSUM`
 
 ##### Node.js (`nodejs`)
@@ -226,7 +226,7 @@ All dependency versions are defined in `downloads.ini`. Dependencies are organiz
 
 1. Get `devtools_frontend_revision` from `build/src/DEPS`
 2. Visit `https://chromium.googlesource.com/devtools/devtools-frontend/+/REVISION/DEPS`
-3. Search for `third_party/esbuild` to get version (e.g., `version:3@0.25.1.chromium.2` → `0.25.1`)
+3. Search for `third_party/esbuild` to get version (e.g., `version:3@0.28.2.chromium.2` → `0.28.2`)
 4. Download from npm: `https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-VERSION.tgz`
 5. Update `downloads.ini` `[esbuild]` with version and SHA-256 checksum
 
@@ -282,9 +282,9 @@ grep RUST_REVISION build/src/tools/rust/update_rust.py
 ```
 
 2. Get commit date from `https://github.com/rust-lang/rust/commit/RUST_REVISION`
-   - Example: Revision `abc123...` corresponds to date `2026-06-17`
+   - Example: Revision `abc123...` corresponds to date `2026-09-09`
 
-3. Download `https://static.rust-lang.org/dist/2026-06-17/channel-rust-nightly.toml`. Use the matching `xz_hash` value from that manifest as the `sha256` you put in `downloads.ini`. That is the SHA-256 for the `.tar.xz` archive, so you do not need to download every Rust archive just to run `sha256sum`.
+3. Download `https://static.rust-lang.org/dist/2026-09-09/channel-rust-nightly.toml`. Use the matching `xz_hash` value from that manifest as the `sha256` you put in `downloads.ini`. That is the SHA-256 for the `.tar.xz` archive, so you do not need to download every Rust archive just to run `sha256sum`.
 
 Linux Rust archives:
 ```text
@@ -302,7 +302,7 @@ rust-std-nightly-aarch64-pc-windows-msvc.tar.xz -> [pkg.rust-std.target.aarch64-
 
 4. If you want to verify the nightly version string, download one Linux Rust archive and extract it:
 ```bash
-wget https://static.rust-lang.org/dist/2026-06-17/rust-nightly-x86_64-unknown-linux-gnu.tar.xz
+wget https://static.rust-lang.org/dist/2026-09-09/rust-nightly-x86_64-unknown-linux-gnu.tar.xz
 tar xf rust-nightly-x86_64-unknown-linux-gnu.tar.xz
 ./rust-nightly-x86_64-unknown-linux-gnu/rustc/bin/rustc -V
 # Output: rustc-1.95.0-nightly
@@ -342,18 +342,18 @@ Update `win_toolchain.json` when:
 ```json
 {
   "variables": {
-    "chromium_version": "154.0.8037.57",
+    "chromium_version": "155.0.8059.39",
     "sdk_version": "10.0.28000.0",
     "vs_version": "2026",
     "repo": "vpday/chromium-win-toolchain-builder"
   },
   "win-toolchain": {
-    "zip_filename": "acf4d73b86",
+    "zip_filename": "32f2c0f568",
     "sha512": "...",
     "files": []
   },
   "win-toolchain-noarm": {
-    "zip_filename": "2681c2f2e0",
+    "zip_filename": "7b55f8d4cb",
     "sha512": "...",
     "files": []
   }
@@ -386,13 +386,13 @@ Visit: `https://github.com/vpday/chromium-win-toolchain-builder/releases/tag/VER
 
 From the release page, collect:
 - Tar archives: `win_toolchain_chromium-VERSION_vs-YEAR_sdk-SDK.tar.001/002` (with ARM) or `...noarm.tar` (without ARM)
-- Zip filenames: `acf4d73b86.zip` (with ARM), `2681c2f2e0.zip` (without ARM)
+- Zip filenames: `32f2c0f568.zip` (with ARM), `7b55f8d4cb.zip` (without ARM)
 - SHA-256 and SHA-512 checksums for both tar and zip files
 
 3. Get zip information from the releases page.
 
 From the release page, copy:
-- Zip filename (e.g., `acf4d73b86.zip` for full toolchain, `2681c2f2e0.zip` for noarm)
+- Zip filename (e.g., `32f2c0f568.zip` for full toolchain, `7b55f8d4cb.zip` for noarm)
 - Zip SHA-512 checksum
 
 Use these values for the `zip_filename` and `sha512` fields in `win_toolchain.json`.
@@ -411,7 +411,7 @@ Update `variables` section:
 ```json
 {
   "variables": {
-    "chromium_version": "154.0.8037.57",
+    "chromium_version": "155.0.8059.39",
     "sdk_version": "10.0.28000.0",
     "vs_version": "2026"
   }

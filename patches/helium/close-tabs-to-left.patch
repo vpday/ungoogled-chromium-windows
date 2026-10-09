@@ -44,7 +44,7 @@
    } else {
 --- a/chrome/browser/ui/tabs/tab_strip_model.cc
 +++ b/chrome/browser/ui/tabs/tab_strip_model.cc
-@@ -2690,6 +2690,7 @@ bool TabStripModel::IsContextMenuCommand
+@@ -2674,6 +2674,7 @@ bool TabStripModel::IsContextMenuCommand
      }
  
      case CommandCloseOtherTabs:

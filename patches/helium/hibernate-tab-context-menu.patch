@@ -1,6 +1,6 @@
 --- a/chrome/app/generated_resources.grd
 +++ b/chrome/app/generated_resources.grd
-@@ -12139,6 +12139,12 @@ Check your passwords anytime in <ph name
+@@ -12182,6 +12182,12 @@ Check your passwords anytime in <ph name
          <message name="IDS_TAB_CXMENU_DUPLICATE" desc="The label of the 'Duplicate' Tab context menu item.">
            Duplicate
          </message>
@@ -13,7 +13,7 @@
          <message name="IDS_TAB_CXMENU_CLOSETAB" desc="The label of the tab context menu item for closing one or more tabs.">
            Close
          </message>
-@@ -12255,6 +12261,12 @@ Check your passwords anytime in <ph name
+@@ -12304,6 +12310,12 @@ Check your passwords anytime in <ph name
          <message name="IDS_TAB_CXMENU_DUPLICATE" desc="In Title Case: The label of the 'Duplicate' Tab context menu item.">
            Duplicate
          </message>
@@ -28,10 +28,10 @@
          </message>
 --- a/components/tabs/public/tab_context_menu_command.h
 +++ b/components/tabs/public/tab_context_menu_command.h
-@@ -38,6 +38,7 @@ enum TabContextMenuCommand {
-   CommandGlicCreateNewChat,
+@@ -39,6 +39,7 @@ enum TabContextMenuCommand {
    CommandGlicSwitchToRecentConversation,
    CommandGlicUnshare,
+   CommandToggleFocusGroup,
 +  CommandDiscard,
  };
  // LINT.ThenChange(//tools/metrics/histograms/metadata/tab/histograms.xml:TabContextMenuCommand)
@@ -63,14 +63,14 @@
  #include "chrome/browser/resource_coordinator/tab_helper.h"
  #include "chrome/browser/send_tab_to_self/send_tab_to_self_util.h"
  #include "chrome/browser/ui/bookmarks/bookmark_utils.h"
-@@ -88,6 +88,7 @@
+@@ -87,6 +90,7 @@
  #include "components/content_settings/core/common/content_settings.h"
  #include "components/content_settings/core/common/content_settings_types.h"
  #include "components/feature_engagement/public/feature_constants.h"
 +#include "components/performance_manager/public/performance_manager.h"
  #include "components/reading_list/core/reading_list_model.h"
+ #include "components/sessions/core/session_id.h"
  #include "components/split_tabs/split_tab_id.h"
- #include "components/split_tabs/split_tab_visual_data.h"
 @@ -167,6 +171,56 @@ bool ShouldForgetOpenersForTransition(ui
                                        ui::PAGE_TRANSITION_AUTO_TOPLEVEL);
  }

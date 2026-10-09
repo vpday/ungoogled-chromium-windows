@@ -274,7 +274,7 @@ async function run() {
         }
 
         const args = ['build.py', '--ci', '-j', '4', '--7z-path', '/usr/bin/7z', '--target', target];
-        await exec.exec('python3', ['-m', 'pip', 'install', 'httplib2==0.22.0'], {
+        await exec.exec('python3', ['-m', 'pip', 'install', 'httplib2==0.22.0', 'clang==21.1.7'], {
             cwd: GITHUB_WORKSPACE,
             ignoreReturnCode: true
         });
