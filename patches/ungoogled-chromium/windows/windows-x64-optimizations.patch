@@ -1,0 +1,46 @@
+--- a/build/config/compiler/BUILD.gn
++++ b/build/config/compiler/BUILD.gn
+@@ -998,6 +998,7 @@ config("compiler") {
+     "-Zexternal-clangrt",
+
+     "-Cllvm-args=-fp-contract=fast",
++    "-Ctarget-feature=-fast-gather,+prefer-no-gather,+prefer-no-scatter",
+   ]
+
+   if (!is_win || force_rustc_color_output) {
+--- a/build/config/win/BUILD.gn
++++ b/build/config/win/BUILD.gn
+@@ -121,9 +121,30 @@ config("compiler") {
+     # Chrome currently requires SSE3. Clang supports targeting any Intel
+     # microarchitecture. MSVC only supports a subset of architectures, and the
+     # next step after SSE2 will be AVX.
+-    if (current_cpu == "x86" || current_cpu == "x64") {
+-      cflags += [ "-msse3" ]
+-    }
++    if (current_cpu == "x64") {
++      cflags += [
++        "-msse3",
++        "-mssse3",
++        "-msse4.1",
++        "-msse4.2",
++        "-mavx",
++        "-mavx2",
++        "-mfma",
++        "-mf16c",
++        "-mlzcnt",
++        "-mbmi",
++        "-mbmi2",
++        "-mpopcnt",
++        "-mmovbe",
++        "-mcx16",
++        "-msahf",
++        "-mpclmul",
++        "-mxsave",
++        "-mxsaveopt",
++        "-mno-gather",
++        "-mno-scatter",
++      ]
++    }
+ 
+     # Enable ANSI escape codes if something emulating them is around (cmd.exe
+     # doesn't understand ANSI escape codes by default). Make sure to not enable
