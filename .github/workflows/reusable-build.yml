@@ -33,6 +33,7 @@ jobs:
 
   build-2:
     needs: build-1
+    if: needs.build-1.outputs.finished != 'true'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
@@ -54,6 +55,7 @@ jobs:
 
   build-3:
     needs: build-2
+    if: needs.build-2.outputs.finished != 'true'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
@@ -75,6 +77,7 @@ jobs:
 
   build-4:
     needs: build-3
+    if: needs.build-3.outputs.finished != 'true'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
@@ -96,6 +99,7 @@ jobs:
 
   build-5:
     needs: build-4
+    if: needs.build-4.outputs.finished != 'true'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
@@ -117,6 +121,7 @@ jobs:
 
   build-6:
     needs: build-5
+    if: needs.build-5.outputs.finished != 'true'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
@@ -138,6 +143,7 @@ jobs:
 
   build-7:
     needs: build-6
+    if: needs.build-6.outputs.finished != 'true'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
@@ -159,6 +165,7 @@ jobs:
 
   build-8:
     needs: build-7
+    if: needs.build-7.outputs.finished != 'true'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
@@ -179,12 +186,28 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
 
   complete:
-    needs: build-8
+    needs: [build-1, build-2, build-3, build-4, build-5, build-6, build-7, build-8]
+    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-26.04
     steps:
       - name: Ensure build finished
         run: |
-          if [ "${{ needs.build-8.outputs.finished }}" != "true" ]; then
-            echo "Build did not finish after 8 stages."
-            exit 1
-          fi
+          outputs=(
+            "${{ needs.build-1.outputs.finished }}"
+            "${{ needs.build-2.outputs.finished }}"
+            "${{ needs.build-3.outputs.finished }}"
+            "${{ needs.build-4.outputs.finished }}"
+            "${{ needs.build-5.outputs.finished }}"
+            "${{ needs.build-6.outputs.finished }}"
+            "${{ needs.build-7.outputs.finished }}"
+            "${{ needs.build-8.outputs.finished }}"
+          )
+          echo "Stage finished outputs: ${outputs[*]}"
+          for out in "${outputs[@]}"; do
+            if [ "$out" = "true" ]; then
+              echo "Build verified completed successfully."
+              exit 0
+            fi
+          done
+          echo "Error: Build did not finish after 8 stages."
+          exit 1

@@ -21,6 +21,24 @@ runs:
         preinstalled-runtimes: false
         swap-storage: false
 
+    - name: Configure Swap Space
+      shell: bash
+      run: |
+        sudo swapoff -a || true
+        sudo rm -f /swapfile /mnt/swapfile
+        SWAP_SIZE_GB=10
+        if ! sudo fallocate -l "${SWAP_SIZE_GB}G" /swapfile 2>/dev/null || ! sudo chmod 600 /swapfile || ! sudo mkswap /swapfile || ! sudo swapon /swapfile 2>/dev/null; then
+          echo "fallocate swap activation failed or unsupported; falling back to dd allocation..."
+          sudo swapoff /swapfile 2>/dev/null || true
+          sudo rm -f /swapfile
+          sudo dd if=/dev/zero of=/swapfile bs=1M count=$((SWAP_SIZE_GB * 1024)) status=progress
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+        fi
+        free -h
+        swapon --show
+
     - name: Install System Dependencies
       shell: bash
       run: |
