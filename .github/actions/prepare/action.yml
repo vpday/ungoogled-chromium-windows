@@ -22,6 +22,7 @@ runs:
         swap-storage: false
 
     - name: Deep Free Disk Space
+      shell: bash
       run: |
         deleted_count=0
         skipped_count=0
