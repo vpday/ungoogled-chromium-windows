@@ -7,21 +7,12 @@
 """
 Rust toolchain management for ungoogled-chromium Windows cross-compilation.
 
-This module orchestrates the complex setup of Rust toolchains for building
-Windows Chromium from a Linux host. It handles:
-
-1. Multi-architecture support: x86_64, i686, and aarch64 toolchains
-2. Component installation: rustc, cargo, rust-std, and optional tools
-3. Directory layout: Consolidates toolchains into a unified structure
-4. Host/target separation: Host tools at top level, target libs in subdirs
+Sets up a Linux x86_64 host Rust toolchain with the target Windows standard library.
 """
 
-import os
 import shutil
 import subprocess
 import sys
-from typing import List
-
 from pathlib import Path
 
 sys.path.insert(
@@ -33,218 +24,11 @@ sys.path.pop(0)
 
 from windows_target import WindowsTarget
 
-# Configuration for Rust toolchain components to install
-COMPONENTS_CONFIG = [
-    {"name": "rustc", "has_bin": True, "has_lib": True, "required": True},
-    {"name": "cargo", "has_bin": True, "has_lib": True, "required": True},
-    {"name": "rust-std-{target}", "has_bin": False, "has_lib": True, "required": True},
-    {
-        "name": "llvm-tools-preview",
-        "has_bin": False,
-        "has_lib": True,
-        "required": False,
-    },
-    {"name": "clippy-preview", "has_bin": True, "has_lib": True, "required": False},
-    {"name": "rustfmt-preview", "has_bin": True, "has_lib": True, "required": False},
-]
 
-
-def _get_rust_arch_configs(third_party: Path, target: WindowsTarget):
-    """Return the x86_64 host distribution and selected target distribution."""
-    configs = {
-        "x86_64": {
-            "source": third_party / "rust-toolchain-x64",
-            "target_subdir": "x86_64",
-            "is_host": True,
-            "rust_target": "x86_64-unknown-linux-gnu",
-        },
-    }
-    if target.linux_rust_arch != "x86_64":
-        toolchain_dir = target.rust_download_selector.replace(
-            "rust-", "rust-toolchain-", 1
-        )
-        configs[target.linux_rust_arch] = {
-            "source": third_party / toolchain_dir,
-            "target_subdir": target.linux_rust_arch,
-            "is_host": False,
-            "rust_target": target.linux_rust_target,
-        }
-    return configs
-
-
-def _get_windows_std_config(third_party: Path, target: WindowsTarget):
-    """Return the selected Windows Rust triple and extracted source directory."""
-    return target.windows_rust_target, third_party / target.windows_rust_std_selector
-
-
-def _smart_copy(src: Path, dst: Path):
-    """
-    Intelligently copy a file or symlink, preserving symlink semantics.
-
-    This function handles three cases:
-    1. Regular file: Direct copy with metadata preservation
-    2. Relative symlink: Recreate the symlink (stays relative)
-    3. Absolute symlink: Resolve and copy the target file
-
-    The destination is removed first if it exists to avoid conflicts.
-
-    Args:
-        src: Source file or symlink path
-        dst: Destination path
-
-    Note:
-        Relative symlinks are preserved because they maintain correct
-        references when the entire directory structure is copied together.
-        Absolute symlinks are resolved to avoid breaking references to
-        paths outside the toolchain directory.
-    """
-    # Clean up existing destination to avoid conflicts
-    if dst.exists() or dst.is_symlink():
-        try:
-            if dst.is_dir() and not dst.is_symlink():
-                shutil.rmtree(dst)
-            else:
-                dst.unlink()
-        except OSError as e:
-            get_logger().warning(f"Failed to remove existing destination {dst}: {e}")
-
-    # Handle source based on its type
-    if src.is_symlink():
-        link_target = os.readlink(str(src))
-        if not os.path.isabs(link_target):
-            # Preserve relative symlinks - they'll work in the new location
-            dst.symlink_to(link_target)
-            get_logger().debug("Created symlink: %s -> %s", dst, link_target)
-        else:
-            # Resolve absolute symlinks to avoid external dependencies
-            shutil.copy2(src, dst, follow_symlinks=True)
-            get_logger().debug("Copied (following symlink): %s -> %s", src, dst)
-    else:
-        # Regular file: copy with metadata
-        shutil.copy2(src, dst)
-        get_logger().debug("Copied: %s -> %s", src, dst)
-
-
-def _fix_top_level_libs(lib_dir: Path, host_arch: str):
-    """
-    Ensure top-level shared libraries match the host architecture.
-
-    When merging multiple Rust toolchains, the top-level lib/ directory may
-    contain shared libraries (.so files) from the wrong architecture if they
-    were overwritten during the merge process. This function verifies and
-    corrects the architecture of critical shared libraries.
-
-    The correct versions are copied from:
-        lib/rustlib/{host_arch}-unknown-linux-gnu/lib/*.so
-
-    This is necessary because:
-    1. The host's rustc/cargo binaries expect host-architecture libraries
-    2. Later architectures might overwrite host libraries during merge
-    3. Running mismatched libraries causes immediate crashes
-
-    Args:
-        lib_dir: Path to the top-level lib/ directory
-        host_arch: Host architecture ('x86_64', 'i686', or 'aarch64')
-    """
-    get_logger().info(
-        "Fixing top-level lib directory for host architecture: %s", host_arch
-    )
-
-    # Source: architecture-specific rustlib directory
-    rustlib_host_lib = lib_dir / "rustlib" / f"{host_arch}-unknown-linux-gnu" / "lib"
-    if not rustlib_host_lib.exists():
-        get_logger().warning("rustlib host lib not found: %s", rustlib_host_lib)
-        return
-
-    # Critical shared libraries that must match host architecture
-    lib_patterns = ["libLLVM*.so*", "libstd*.so*", "librustc_driver*.so*"]
-
-    for pattern in lib_patterns:
-        for lib_file in rustlib_host_lib.glob(pattern):
-            target_file = lib_dir / lib_file.name
-
-            # Verify existing file's architecture if present
-            if target_file.exists():
-                try:
-                    result = subprocess.run(
-                        ["file", str(target_file)],
-                        capture_output=True,
-                        text=True,
-                        timeout=5,
-                    )
-                    file_output = result.stdout.lower()
-
-                    # Architecture detection patterns for the 'file' command
-                    arch_matches = {
-                        "x86_64": "x86-64" in file_output or "x86_64" in file_output,
-                        "i686": "intel 80386" in file_output or "i386" in file_output or "i686" in file_output,
-                        "aarch64": "aarch64" in file_output or "arm64" in file_output,
-                    }
-
-                    if not arch_matches.get(host_arch, False):
-                        get_logger().warning(
-                            "Architecture mismatch for %s. Replacing with correct version.",
-                            target_file.name,
-                        )
-                        target_file.unlink()
-                    else:
-                        # Architecture matches, no need to replace
-                        continue
-                except Exception as e:
-                    get_logger().warning(
-                        "Failed to verify architecture for %s: %s", target_file, e
-                    )
-
-            # Copy the correct architecture version
-            _smart_copy(lib_file, target_file)
-
-
-def _merge_tree(src_dir: Path, dst_dir: Path):
-    """
-    Recursively merge a source directory tree into a destination directory.
-
-    Unlike shutil.copytree(), this function merges into an existing directory
-    rather than requiring the destination to be empty. Files with the same
-    name are overwritten. This is essential for combining multiple Rust
-    component directories (cargo, rustc, rust-std) into a single toolchain.
-
-    Args:
-        src_dir: Source directory to merge from
-        dst_dir: Destination directory to merge into (created if needed)
-
-    Note:
-        Directories are merged recursively, while files and symlinks are
-        copied using _smart_copy() to handle symlinks correctly.
-    """
-    if not dst_dir.exists():
-        dst_dir.mkdir(parents=True, exist_ok=True)
-
-    for item in src_dir.iterdir():
-        dst_item = dst_dir / item.name
-
-        if item.is_dir() and not item.is_symlink():
-            # Recurse into subdirectories to merge their contents
-            _merge_tree(item, dst_item)
-        else:
-            # Copy files and symlinks (symlinks are treated as files)
-            _smart_copy(item, dst_item)
-
-
-def _generate_version_file(rust_dir: Path, flag_file: Path, archs: List[str]):
-    """
-    Generate a version file to track the installed Rust toolchain.
-
-    Args:
-        rust_dir: Root directory of the consolidated Rust toolchain
-        flag_file: Path to write the version info (INSTALLED_VERSION)
-        archs: List of successfully processed architectures
-
-    Writes:
-        Either the rustc version string, or a fallback message listing
-        which architectures were processed if rustc isn't executable.
-    """
+def _generate_version_file(rust_dir: Path, flag_file: Path) -> None:
+    """Generate a version file to track the installed Rust toolchain."""
     rustc_path = rust_dir / "bin" / "rustc"
-    version_info = f'rustc not installed (processed: {", ".join(archs)})\n'
+    version_info = "rustc not installed\n"
 
     if rustc_path.exists():
         try:
@@ -271,207 +55,83 @@ def setup_rust_toolchain(
         ci_mode: bool = False,
 ) -> Path:
     """
-    Set up Rust toolchain with multi-architecture cross-compilation support.
+    Set up Rust toolchain for Windows cross-compilation.
 
-    This is the main entry point for Rust toolchain setup. It consolidates
-    multiple architecture-specific Rust distributions into a unified toolchain
-    layout suitable for cross-compiling Windows Chromium.
+    Deploys a single Linux x86_64 host rustc/cargo toolchain with the matching
+    Windows rust-std target library, and links LLVM libclang for bindgen.
 
     Args:
         source_tree: Path to the Chromium source tree root
-                     (expects third_party/rust-toolchain-{x64,x86,arm}/)
-        target: Windows target whose Rust tools and standard library are installed
+        target: Resolved Windows build target
         ci_mode: If True, skip setup if INSTALLED_VERSION file exists
-                 (optimization for CI/caching systems)
 
     Returns:
         Path to the consolidated rust-toolchain directory
-
-    Raises:
-        SystemExit: If no architectures can be processed successfully
     """
     third_party = source_tree / "third_party"
     rust_dir_dst = third_party / "rust-toolchain"
     rust_flag_file = rust_dir_dst / "INSTALLED_VERSION"
 
-    # CI mode optimization: Skip setup if already completed
-    # The INSTALLED_VERSION file acts as a stamp for CI caching
     if ci_mode and rust_flag_file.exists():
         return rust_dir_dst
 
-    get_logger().info("Setting up Rust toolchain with multi-architecture support...")
+    get_logger().info("Setting up Rust toolchain...")
 
-    # The build host is x86_64 Linux. Only the selected non-host distribution is added.
-    arch_configs = _get_rust_arch_configs(third_party, target)
-
-    # Determine which architecture is the host (only one should have is_host=True)
-    host_arch = next(
-        (arch for arch, cfg in arch_configs.items() if cfg["is_host"]), None
-    )
-    if not host_arch:
-        get_logger().error("Unable to determine host architecture")
+    host_toolchain_src = third_party / "rust-toolchain-x64"
+    if not host_toolchain_src.exists():
+        get_logger().error("Host Rust toolchain not found at %s", host_toolchain_src)
         sys.exit(1)
 
-    get_logger().info("Host architecture: %s", host_arch)
-
-    # Create the destination directory structure
     rust_dir_dst.mkdir(parents=True, exist_ok=True)
-    (rust_dir_dst / "bin").mkdir(exist_ok=True)
-    (rust_dir_dst / "lib").mkdir(exist_ok=True)
+    dst_bin = rust_dir_dst / "bin"
+    dst_lib = rust_dir_dst / "lib"
+    dst_bin.mkdir(exist_ok=True)
+    dst_lib.mkdir(exist_ok=True)
 
-    # Track which architectures were successfully processed for diagnostics
-    successful_archs = []
-
-    # Process each architecture: merge its components into the consolidated layout
-    for arch, config in arch_configs.items():
-        src_root = config["source"]
-        target_subdir = config["target_subdir"]
-        rust_target = config["rust_target"]
-        is_host = config["is_host"]
-
-        # Skip this architecture if its source directory doesn't exist
-        # (e.g., if downloads.ini only includes some architectures)
-        if not src_root.exists():
-            get_logger().warning(
-                "Source directory not found: %s, skipping %s", src_root, arch
-            )
+    # Copy host components (rustc, cargo, rustfmt, rust-std for x86_64-unknown-linux-gnu)
+    host_components = [
+        "rustc",
+        "cargo",
+        "rustfmt-preview",
+        "rust-std-x86_64-unknown-linux-gnu",
+    ]
+    for comp in host_components:
+        comp_dir = host_toolchain_src / comp
+        if not comp_dir.exists():
+            get_logger().warning("Component %s not found in %s", comp, host_toolchain_src)
             continue
+        comp_bin = comp_dir / "bin"
+        if comp_bin.exists():
+            shutil.copytree(comp_bin, dst_bin, dirs_exist_ok=True, symlinks=True)
+        comp_lib = comp_dir / "lib"
+        if comp_lib.exists():
+            shutil.copytree(comp_lib, dst_lib, dirs_exist_ok=True, symlinks=True)
 
-        get_logger().info("Processing %s architecture...", arch)
-
-        bin_install_targets = []
-        lib_install_targets = [rust_dir_dst]
-
-        if is_host:
-            bin_install_targets.append(rust_dir_dst)
-        else:
-            arch_dir = rust_dir_dst / target_subdir
-            arch_dir.mkdir(parents=True, exist_ok=True)
-            bin_install_targets.append(arch_dir)
-
-        # Track which components are successfully installed
-        components_found = []
-
-        # Install each component from COMPONENTS_CONFIG
-        for comp in COMPONENTS_CONFIG:
-            # Replace {target} placeholder with actual target triple
-            # e.g., "rust-std-{target}" → "rust-std-x86_64-unknown-linux-gnu"
-            comp_dir_name = comp["name"].format(target=rust_target)
-            comp_src_path = src_root / comp_dir_name
-
-            # Check if this component exists in the source distribution
-            if not comp_src_path.exists():
-                if comp["required"]:
-                    get_logger().warning(
-                        "Required component %s not found in %s", comp_dir_name, src_root
-                    )
-                continue
-
-            components_found.append(comp_dir_name)
-
-            # Merge bin/ and lib/ subdirectories if they exist for this component
-            for sub in ["bin", "lib"]:
-                # Skip subdirectories that this component doesn't provide
-                if sub == "bin" and not comp["has_bin"]:
-                    continue
-                if sub == "lib" and not comp["has_lib"]:
-                    continue
-
-                sub_src = comp_src_path / sub
-                if not sub_src.exists():
-                    continue
-
-                # Choose appropriate installation targets based on subdirectory type
-                install_targets = (
-                    lib_install_targets if sub == "lib" else bin_install_targets
-                )
-
-                # Merge into all installation targets
-                for install_root in install_targets:
-                    sub_dst = install_root / sub
-                    get_logger().debug("Merging %s -> %s", sub_src, sub_dst)
-                    _merge_tree(sub_src, sub_dst)
-
-        get_logger().info(
-            "Installed components for %s: %s", arch, ", ".join(components_found)
-        )
-
-        # Create subdirectory with symlinks for consistent interface
-        # All architectures get a subdirectory with lib symlink to top-level
-        arch_subdir = rust_dir_dst / target_subdir
-        arch_subdir.mkdir(parents=True, exist_ok=True)
-
-        if is_host:
-            # Host architecture: both bin and lib are symlinks to top-level
-            symlink_dirs = ["bin", "lib"]
-        else:
-            # Non-host architecture: only lib is symlink (bin is real directory)
-            # bin was already installed to arch_subdir, so we only symlink lib
-            symlink_dirs = ["lib"]
-
-        for sub in symlink_dirs:
-            link_path = arch_subdir / sub
-            target_path = Path("..") / sub  # Relative symlink: ../bin or ../lib
-
-            # Remove existing directory/symlink if present
-            if link_path.exists() or link_path.is_symlink():
-                if link_path.is_dir() and not link_path.is_symlink():
-                    shutil.rmtree(link_path)
-                else:
-                    link_path.unlink()
-
-            # Create relative symlink for portability
-            link_path.symlink_to(target_path)
-            get_logger().info(
-                "Created symlink for %s: %s -> %s", arch, link_path, target_path
-            )
-
-        successful_archs.append(arch)
-
-    # Verify at least one architecture was successfully processed
-    # If all architectures failed, the build cannot continue
-    if not successful_archs:
-        get_logger().error("Failed to process any architecture.")
-        sys.exit(1)
-
-    # Fix top-level shared libraries after all architectures are merged
-    # This ensures the top-level .so files match the host architecture
-    # Must happen after all architectures are processed to avoid being overwritten
-    get_logger().info("Fixing top-level shared libraries for host architecture...")
-    _fix_top_level_libs(rust_dir_dst / "lib", host_arch)
-
-    # Install Windows target standard libraries for cross-compilation
-    get_logger().info("Installing Windows target standard libraries...")
-    target_triple, src_dir = _get_windows_std_config(third_party, target)
-    if not src_dir.exists():
-        get_logger().warning(
-            "Windows std source not found: %s (skipping %s)",
-            src_dir,
-            target_triple,
-        )
+    # Deploy target Windows standard library
+    target_std_dir = (third_party / target.windows_rust_std_selector / f"rust-std-{target.windows_rust_target}" / "lib")
+    if target_std_dir.exists():
+        get_logger().info("Deploying Windows std for %s: %s -> %s", target.windows_rust_target, target_std_dir, dst_lib)
+        shutil.copytree(target_std_dir, dst_lib, dirs_exist_ok=True, symlinks=True)
     else:
-        # The std component directory structure is: rust-std-{target}/lib/
-        std_comp_dir = src_dir / f"rust-std-{target_triple}"
-        if not std_comp_dir.exists():
-            get_logger().warning(
-                "Expected component directory not found: %s", std_comp_dir
-            )
-        else:
-            std_lib_src = std_comp_dir / "lib"
-            if std_lib_src.exists():
-                std_lib_dst = rust_dir_dst / "lib"
-                get_logger().info(
-                    "Merging Windows std for %s: %s -> %s",
-                    target_triple,
-                    std_lib_src,
-                    std_lib_dst,
-                )
-                _merge_tree(std_lib_src, std_lib_dst)
-            else:
-                get_logger().warning("lib directory not found in %s", std_comp_dir)
+        get_logger().warning("Windows std source not found at %s", target_std_dir)
 
-    # Generate version file for CI caching and diagnostics
-    _generate_version_file(rust_dir_dst, rust_flag_file, successful_archs)
+    # Provide libclang shared libraries in rust-toolchain/lib for bindgen
+    llvm_lib_dir = third_party / "llvm-build" / "Release+Asserts" / "lib"
+    if llvm_lib_dir.exists():
+        for item in llvm_lib_dir.glob("libclang.so*"):
+            dst_link = dst_lib / item.name
+            if dst_link.is_symlink() or dst_link.exists():
+                if dst_link.is_dir() and not dst_link.is_symlink():
+                    shutil.rmtree(dst_link)
+                else:
+                    dst_link.unlink()
+            try:
+                dst_link.symlink_to(item)
+            except OSError:
+                shutil.copy2(item, dst_link)
+
+    # Generate version stamp
+    _generate_version_file(rust_dir_dst, rust_flag_file)
 
     get_logger().info("Rust toolchain setup completed")
     return rust_dir_dst

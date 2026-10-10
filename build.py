@@ -141,11 +141,8 @@ def _get_windows_components(target: WindowsTarget):
         'directx-headers',
         'webauthn',
         'rust-x64',
-        'rust-windows-create',
         target.windows_rust_std_selector,
     ]
-    if target.id != 'x64':
-        components.append(target.rust_download_selector)
     if target.id == 'arm64':
         components.append('go-arm64')
     return components
@@ -362,6 +359,19 @@ def _step_unpack_windows_downloads(
             downloads.unpack_downloads(download_info_win, downloads_cache, win_components, source_tree, extractors)
 
 
+def _ensure_symlink(link_path: Path, target_path: Path | str, description: str = "") -> None:
+    """Ensure link_path is a symlink pointing to target_path, replacing existing files/links if necessary."""
+    link_path.parent.mkdir(parents=True, exist_ok=True)
+    if link_path.is_symlink() or link_path.exists():
+        if link_path.is_dir() and not link_path.is_symlink():
+            shutil.rmtree(link_path)
+        else:
+            link_path.unlink()
+    link_path.symlink_to(target_path)
+    label = f" ({description})" if description else ""
+    get_logger().info("Created symlink%s: %s -> %s", label, link_path, target_path)
+
+
 def _step_setup_symlinks(source_tree: Path, ci_mode: bool) -> None:
     # Setup 7z symlink (7za -> 7zz)
     with build_step(source_tree, '.setup_7z_symlink.stamp', 'setting up 7z symlink', ci_mode) as should_run:
@@ -371,10 +381,7 @@ def _step_setup_symlinks(source_tree: Path, ci_mode: bool) -> None:
             target_7zz = lzma_bin_dir / '7zz'
 
             if target_7zz.exists():
-                if symlink_7za.exists() or symlink_7za.is_symlink():
-                    symlink_7za.unlink()
-                symlink_7za.symlink_to('7zz')
-                get_logger().info('Created symlink: 7za -> 7zz')
+                _ensure_symlink(symlink_7za, '7zz', description='7za -> 7zz')
             else:
                 get_logger().warning('7zz binary not found at %s, skipping symlink creation', target_7zz)
 
@@ -384,15 +391,8 @@ def _step_setup_symlinks(source_tree: Path, ci_mode: bool) -> None:
             system_gperf_path = shutil.which('gperf')
             if system_gperf_path:
                 system_gperf = Path(system_gperf_path)
-                gperf_bin_dir = source_tree / 'third_party' / 'gperf' / 'cipd' / 'bin'
-                symlink_gperf = gperf_bin_dir / 'gperf'
-
-                gperf_bin_dir.mkdir(parents=True, exist_ok=True)
-                if symlink_gperf.exists() or symlink_gperf.is_symlink():
-                    symlink_gperf.unlink()
-
-                symlink_gperf.symlink_to(system_gperf)
-                get_logger().info('Created symlink: %s -> %s', symlink_gperf, system_gperf)
+                symlink_gperf = source_tree / 'third_party' / 'gperf' / 'cipd' / 'bin' / 'gperf'
+                _ensure_symlink(symlink_gperf, system_gperf, description='gperf')
             else:
                 raise RuntimeError('System gperf not found.')
 
@@ -404,10 +404,7 @@ def _step_setup_symlinks(source_tree: Path, ci_mode: bool) -> None:
             symlink_esbuild = esbuild_dir / 'esbuild'
 
             if esbuild_bin.exists():
-                if symlink_esbuild.exists() or symlink_esbuild.is_symlink():
-                    symlink_esbuild.unlink()
-                symlink_esbuild.symlink_to('bin/esbuild')
-                get_logger().info('Created symlink: %s -> bin/esbuild', symlink_esbuild)
+                _ensure_symlink(symlink_esbuild, 'bin/esbuild', description='esbuild')
             else:
                 get_logger().warning('esbuild binary not found at %s, skipping symlink creation', esbuild_bin)
 
@@ -454,7 +451,7 @@ def _step_apply_domain_substitution(source_tree: Path, is_tarball: bool, ci_mode
             )
 
 
-def _step_setup_toolchains(source_tree: Path, target: WindowsTarget, disable_ssl: bool, ci_mode: bool) -> None:
+def _step_setup_toolchains(source_tree: Path, target: WindowsTarget, ci_mode: bool) -> None:
     # Set up Rust toolchain
     rust_dir_dst = setup_rust_toolchain(source_tree, target, ci_mode=ci_mode)
 
@@ -591,7 +588,7 @@ def run_build_pipeline(args: argparse.Namespace) -> None:
     _step_setup_symlinks(source_tree, args.ci)
     _step_apply_patches(source_tree, target, args.ci)
     _step_apply_domain_substitution(source_tree, args.tarball, args.ci)
-    _step_setup_toolchains(source_tree, target, args.disable_ssl_verification, args.ci)
+    _step_setup_toolchains(source_tree, target, args.ci)
     _step_write_gn_args(source_tree, out_dir, target, args.tarball, args.ci)
     _step_setup_out_dir_symlinks(source_tree, out_dir)
     _step_run_gn(source_tree, out_dir, args.ci)

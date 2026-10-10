@@ -12486,9 +12486,6 @@ third_party/rust/chromium_crates_io/vendor/jxl-v0_7/tests/testdata/zero_length_s
 third_party/rust/chromium_crates_io/vendor/resb-v0_1/examples/data/zoneinfo64.res
 third_party/rust/chromium_crates_io/vendor/unicode-ident-v1/tests/fst/xid_continue.fst
 third_party/rust/chromium_crates_io/vendor/unicode-ident-v1/tests/fst/xid_start.fst
-third_party/rust/chromium_crates_io/vendor/windows_aarch64_msvc-v0_52/lib/windows.0.52.0.lib
-third_party/rust/chromium_crates_io/vendor/windows_i686_msvc-v0_52/lib/windows.0.52.0.lib
-third_party/rust/chromium_crates_io/vendor/windows_x86_64_msvc-v0_52/lib/windows.0.52.0.lib
 third_party/skia/modules/canvaskit/tests/assets/Roboto-Regular.otf
 third_party/skia/modules/canvaskit/tests/assets/red_line.skp
 third_party/skia/modules/canvaskit/tests/assets/test.ttc

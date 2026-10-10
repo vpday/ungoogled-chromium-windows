@@ -264,15 +264,14 @@ Used by `tools/typescript/ts_library.gni` for compiling WebUI and DevTools front
 #### Rust Toolchain
 
 The Rust toolchain consists of:
-- Linux Rust archives: `rust-x64`, `rust-x86`, `rust-arm`
+- Linux Host Rust archive: `rust-x64` (Linux x86_64 host toolchain used across all targets)
 - Windows targets: `rust-std-windows-x64`, `rust-std-windows-x86`, `rust-std-windows-arm` (for cross-compilation)
-- Windows crate: `rust-windows-create` (system API bindings)
+- Host bindgen tool: Built from source via Chromium's `tools/rust/build_bindgen.py` during toolchain setup, or detected and symlinked from the host environment if `bindgen` exists in `PATH`.
 
-The build does not download all of them for every target:
-
-- Target `x64`: `rust-x64`, `rust-std-windows-x64`, `rust-windows-create`
-- Target `x86`: `rust-x64`, `rust-x86`, `rust-std-windows-x86`, `rust-windows-create`
-- Target `arm64`: `rust-x64`, `rust-arm`, `rust-std-windows-arm`, `rust-windows-create`
+The build downloads:
+- Target `x64`: `rust-x64`, `rust-std-windows-x64`
+- Target `x86`: `rust-x64`, `rust-std-windows-x86`
+- Target `arm64`: `rust-x64`, `rust-std-windows-arm`
 
 ##### Rust update process
 
@@ -286,11 +285,9 @@ grep RUST_REVISION build/src/tools/rust/update_rust.py
 
 3. Download `https://static.rust-lang.org/dist/2026-09-09/channel-rust-nightly.toml`. Use the matching `xz_hash` value from that manifest as the `sha256` you put in `downloads.ini`. That is the SHA-256 for the `.tar.xz` archive, so you do not need to download every Rust archive just to run `sha256sum`.
 
-Linux Rust archives:
+Linux Rust host archive:
 ```text
 rust-nightly-x86_64-unknown-linux-gnu.tar.xz -> [pkg.rust.target.x86_64-unknown-linux-gnu].xz_hash
-rust-nightly-i686-unknown-linux-gnu.tar.xz -> [pkg.rust.target.i686-unknown-linux-gnu].xz_hash
-rust-nightly-aarch64-unknown-linux-gnu.tar.xz -> [pkg.rust.target.aarch64-unknown-linux-gnu].xz_hash
 ```
 
 Windows targets for cross-compilation:
@@ -309,25 +306,12 @@ tar xf rust-nightly-x86_64-unknown-linux-gnu.tar.xz
 ```
 
 5. Update `downloads.ini` sections:
-   - `[rust-x64]`, `[rust-x86]`, `[rust-arm]`: Update `version` and `sha256`
+   - `[rust-x64]`: Update `version` and `sha256`
    - `[rust-std-windows-x64]`, `[rust-std-windows-x86]`, `[rust-std-windows-arm]`: Update `version` and `sha256`
 
 6. Update `patches/ungoogled-chromium/windows/windows-fix-building-with-rust.patch`:
    - Replace the `rustc_version` string with the nightly version string for that toolchain
    - Example: Change `rustc_version = ""` to `rustc_version = "rustc-1.95.0-nightly"`
-
-##### Windows Rust crate (`rust-windows-create`)
-
-1. Check version in `build/src/third_party/rust/windows_x86_64_msvc/`
-2. Download from GitHub: `https://github.com/microsoft/windows-rs/archive/refs/tags/VERSION.zip`
-3. Get SHA-512 checksum:
-```bash
-sha512sum windows-rs-VERSION.zip
-```
-4. Update `downloads.ini` section `[rust-windows-create]`:
-   - `version = VERSION`
-   - `sha512 = CHECKSUM`
-5. If version changed, update `patches/ungoogled-chromium/windows/windows-fix-building-with-rust.patch` accordingly
 
 ### Updating Windows Toolchain
 

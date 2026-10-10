@@ -11,7 +11,7 @@
  chromium_toolchain_supports_platform = !is_wasm
 --- a/tools/rust/build_bindgen.py
 +++ b/tools/rust/build_bindgen.py
-@@ -226,7 +226,7 @@
+@@ -234,7 +234,7 @@
          ]
          + cargo_shared_args
      )

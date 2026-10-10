@@ -9,9 +9,6 @@ class WindowsTarget:
     clone_platform: str
     gn_target_cpu: str
     sysroot_arch: str
-    linux_rust_arch: str
-    linux_rust_target: str
-    rust_download_selector: str
     windows_rust_target: str
     windows_rust_std_selector: str
     package_filter: str
@@ -26,9 +23,6 @@ _TARGETS = {
         clone_platform="win64",
         gn_target_cpu="x64",
         sysroot_arch="amd64",
-        linux_rust_arch="x86_64",
-        linux_rust_target="x86_64-unknown-linux-gnu",
-        rust_download_selector="rust-x64",
         windows_rust_target="x86_64-pc-windows-msvc",
         windows_rust_std_selector="rust-std-windows-x64",
         package_filter="64bit",
@@ -39,9 +33,6 @@ _TARGETS = {
         clone_platform="win32",
         gn_target_cpu="x86",
         sysroot_arch="i386",
-        linux_rust_arch="i686",
-        linux_rust_target="i686-unknown-linux-gnu",
-        rust_download_selector="rust-x86",
         windows_rust_target="i686-pc-windows-msvc",
         windows_rust_std_selector="rust-std-windows-x86",
         package_filter="32bit",
@@ -52,9 +43,6 @@ _TARGETS = {
         clone_platform="win-arm64",
         gn_target_cpu="arm64",
         sysroot_arch="arm64",
-        linux_rust_arch="aarch64",
-        linux_rust_target="aarch64-unknown-linux-gnu",
-        rust_download_selector="rust-arm",
         windows_rust_target="aarch64-pc-windows-msvc",
         windows_rust_std_selector="rust-std-windows-arm",
         package_filter="arm",
