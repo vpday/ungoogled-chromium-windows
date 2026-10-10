@@ -21,12 +21,113 @@ runs:
         preinstalled-runtimes: false
         swap-storage: false
 
+    - name: Deep Free Disk Space
+      run: |
+        deleted_count=0
+        skipped_count=0
+
+        path_exists() {
+          local p="$1"
+          [ -e "$p" ] || [ -L "$p" ] || sudo test -e "$p" 2>/dev/null || sudo test -L "$p" 2>/dev/null
+        }
+
+        delete_path() {
+          local pattern="$1"
+          local matched=()
+          local old_ifs="$IFS"
+          IFS=$'\n'
+          for item in $pattern; do
+            if path_exists "$item"; then
+              matched+=("$item")
+            fi
+          done
+          IFS="$old_ifs"
+
+          if [ ${#matched[@]} -eq 0 ]; then
+            echo "  [SKIP] '$pattern' does not exist"
+            skipped_count=$((skipped_count + 1))
+          else
+            for item in "${matched[@]}"; do
+              echo "  [DELETE] Found '$item', deleting..."
+              sudo rm -rf -- "$item"
+              echo "  [DELETED] Successfully removed '$item'"
+              deleted_count=$((deleted_count + 1))
+            done
+          fi
+        }
+
+        delete_path "/home/packer"
+        delete_path "/opt/pipelinesagent-cache"
+        delete_path "/opt/microsoft/msedge"
+        delete_path "/opt/google/chrome"
+        delete_path "/usr/lib/firefox"
+        delete_path "/usr/local/share/chromium"
+        delete_path "/usr/local/share/edge_driver"
+        delete_path "/usr/local/share/chromedriver-linux64"
+        delete_path "/usr/local/share/gecko_driver"
+        delete_path "/usr/local/share/powershell"
+        delete_path "/opt/microsoft/powershell"
+        delete_path "/opt/az"
+        delete_path "/usr/share/az_*"
+        delete_path "/usr/local/bin/azcopy"
+        delete_path "/usr/local/bin/bicep"
+        delete_path "/usr/bin/kubectl*"
+        delete_path "/usr/local/bin/minikube"
+        delete_path "/usr/local/bin/packer"
+        delete_path "/usr/local/bin/helm"
+        delete_path "/usr/local/bin/kustomize"
+        delete_path "/usr/local/bin/kind"
+        delete_path "/usr/local/sessionmanagerplugin"
+        delete_path "/usr/local/bin/session-manager-plugin"
+        delete_path "/opt/pipx"
+        delete_path "/usr/local/aws-cli"
+        delete_path "/usr/local/aws-sam-cli"
+        delete_path "/usr/libexec/buildah"
+        delete_path "/usr/libexec/docker/cli-plugins"
+        delete_path "/usr/bin/podman"
+        delete_path "/usr/libexec/podman"
+        delete_path "/usr/bin/buildah"
+        delete_path "/usr/bin/skopeo"
+        delete_path "/usr/lib/podman"
+        delete_path "/home/linuxbrew"
+        delete_path "/usr/local/share/vcpkg"
+        delete_path "/usr/local/bin/stack"
+        delete_path "/usr/lib/jvm"
+        delete_path "/home/runner/.rustup"
+        delete_path "/etc/skel/.rustup"
+        delete_path "/home/runner/.cargo"
+        delete_path "/etc/skel/.cargo"
+        if [ -n "$HOME" ] && [ "$HOME" != "/home/runner" ] && [ "$HOME" != "/root" ]; then
+          delete_path "$HOME/.rustup"
+          delete_path "$HOME/.cargo"
+        fi
+        delete_path "/home/runner/.dotnet"
+        delete_path "/root/.dotnet"
+        delete_path "/etc/skel/.dotnet"
+        if [ -n "$HOME" ] && [ "$HOME" != "/home/runner" ] && [ "$HOME" != "/root" ]; then
+          delete_path "$HOME/.dotnet"
+        fi
+        delete_path "/usr/share/gradle-*"
+        delete_path "/usr/share/kotlinc"
+        delete_path "/usr/share/apache-maven-*"
+        delete_path "/usr/local/bin/cmake*"
+        delete_path "/usr/local/doc/cmake"
+        delete_path "/usr/local/share/cmake-*"
+        delete_path "/opt/hostedtoolcache/CodeQL"
+        delete_path "/opt/hostedtoolcache/Ruby"
+        delete_path "/opt/hostedtoolcache/copilot-cli"
+
+        df -h /
+
+        echo "Removed entries: $deleted_count"
+        echo "Skipped entries (not found): $skipped_count"
+
     - name: Configure Swap Space
       shell: bash
       run: |
         sudo swapoff -a || true
         sudo rm -f /swapfile /mnt/swapfile
-        SWAP_SIZE_GB=10
+        SWAP_SIZE_GB=30
         if ! sudo fallocate -l "${SWAP_SIZE_GB}G" /swapfile 2>/dev/null || ! sudo chmod 600 /swapfile || ! sudo mkswap /swapfile || ! sudo swapon /swapfile 2>/dev/null; then
           echo "fallocate swap activation failed or unsupported; falling back to dd allocation..."
           sudo swapoff /swapfile 2>/dev/null || true
