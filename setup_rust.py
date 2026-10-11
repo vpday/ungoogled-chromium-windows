@@ -115,6 +115,15 @@ def setup_rust_toolchain(
     else:
         get_logger().warning("Windows std source not found at %s", target_std_dir)
 
+    # Deploy target Linux standard library if needed
+    if target.linux_rust_std_selector and target.linux_rust_target:
+        linux_std_dir = (third_party / target.linux_rust_std_selector / f"rust-std-{target.linux_rust_target}" / "lib")
+        if linux_std_dir.exists():
+            get_logger().info("Deploying Linux std for %s: %s -> %s", target.linux_rust_target, linux_std_dir, dst_lib)
+            shutil.copytree(linux_std_dir, dst_lib, dirs_exist_ok=True, symlinks=True)
+        else:
+            get_logger().warning("Linux std source not found at %s", linux_std_dir)
+
     # Provide libclang shared libraries in rust-toolchain/lib for bindgen
     llvm_lib_dir = third_party / "llvm-build" / "Release+Asserts" / "lib"
     if llvm_lib_dir.exists():

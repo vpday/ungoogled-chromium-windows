@@ -1,6 +1,6 @@
 """Canonical Windows build target facts."""
 
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
@@ -13,6 +13,8 @@ class WindowsTarget:
     windows_rust_std_selector: str
     package_filter: str
     requires_arm_toolchain: bool
+    linux_rust_std_selector: str | None = None
+    linux_rust_target: str | None = None
 
 
 SUPPORTED_TARGET_IDS = ("x64", "x86", "arm64")
@@ -37,6 +39,8 @@ _TARGETS = {
         windows_rust_std_selector="rust-std-windows-x86",
         package_filter="32bit",
         requires_arm_toolchain=False,
+        linux_rust_std_selector="rust-std-linux-x86",
+        linux_rust_target="i686-unknown-linux-gnu",
     ),
     "arm64": WindowsTarget(
         id="arm64",
@@ -55,15 +59,22 @@ def _validate_targets():
     if tuple(_TARGETS) != SUPPORTED_TARGET_IDS:
         raise RuntimeError("Windows target registry does not match supported target IDs")
 
-    string_fields = tuple(
-        field.name for field in fields(WindowsTarget)
-        if field.name != "requires_arm_toolchain"
+    required_string_fields = (
+        "id",
+        "clone_platform",
+        "gn_target_cpu",
+        "sysroot_arch",
+        "windows_rust_target",
+        "windows_rust_std_selector",
+        "package_filter",
     )
     for target_id, target in _TARGETS.items():
         if target.id != target_id:
             raise RuntimeError(f"Windows target registry key mismatch: {target_id}")
-        if any(not getattr(target, field_name) for field_name in string_fields):
+        if any(not getattr(target, field_name) for field_name in required_string_fields):
             raise RuntimeError(f"Windows target row is incomplete: {target_id}")
+        if bool(target.linux_rust_std_selector) != bool(target.linux_rust_target):
+            raise RuntimeError(f"Windows target linux rust std configuration mismatch: {target_id}")
 
 
 _validate_targets()

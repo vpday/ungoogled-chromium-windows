@@ -143,6 +143,8 @@ def _get_windows_components(target: WindowsTarget):
         'rust-x64',
         target.windows_rust_std_selector,
     ]
+    if target.linux_rust_std_selector:
+        components.append(target.linux_rust_std_selector)
     if target.id == 'arm64':
         components.append('go-arm64')
     return components

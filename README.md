@@ -10,7 +10,7 @@ Download pre-built Windows packages (portable `.zip` and installer `.exe` for `x
 
 ## Quick Start
 
-This project builds Windows Chromium binaries on Linux. You need a Linux system (Ubuntu 26.04 recommended) with at least 80GB free disk space. Install the packages listed in [System Dependencies](#system-dependencies) first.
+This project builds Windows Chromium binaries on Linux. You need a Linux system (Ubuntu 26.04 recommended) with at least 80GB free disk space. Install the packages listed in [System Dependencies](#system-dependencies) and [Python Dependencies](#python-dependencies) first.
 
 ```bash
 # Clone repository
@@ -49,7 +49,7 @@ sudo apt-get update
 sudo apt-get install -y \
     curl 7zip pkg-config libglib2.0-dev libfuse2t64 \
     libnss3-dev libcups2-dev libpci-dev libdrm-dev \
-    libxkbcommon-dev gperf libkrb5-dev python3 git
+    libxkbcommon-dev gperf libkrb5-dev python3 python3-pip git
 ```
 
 The prebuilt LLVM toolchain requires `libicui18n.so.70`. Newer Ubuntu releases (such as Ubuntu 26.04) ship with newer ICU libraries and do not provide `libicu70` in their default package repositories. On Ubuntu 26.04, install `libicu70` manually:
@@ -72,6 +72,17 @@ sudo apt-get install -y libc6-dev-i386 linux-libc-dev:i386 \
     libnspr4:i386 libatk1.0-0t64:i386 libatk-bridge2.0-0t64:i386 \
     libcups2t64:i386 libdrm2:i386 libdbus-1-3:i386 libexpat1:i386
 ```
+
+### Python Dependencies
+
+The build pipeline and GN argument generator require specific Python packages. Install them using `pip` before building (matching `.github/actions/stage/index.js` in CI):
+
+```bash
+python3 -m pip install httplib2==0.22.0 clang==21.1.7
+```
+
+- `clang==21.1.7`: Provides Python Clang bindings (`clang.cindex`) required by `build.py` to configure V8 metagen bindings (`v8_metagen_libclang_bindings_dir`) during GN flag generation.
+- `httplib2==0.22.0`: Required by upstream network helper scripts and telemetry utilities.
 
 ## Building
 
@@ -150,7 +161,7 @@ That split exists to support GitHub Actions multi-stage builds, where the VS too
 6. Apply core ungoogled-chromium patches, Windows platform fixes, curated patches (Brave, Helium, Cromite), and any target-specific optimization patches.
 7. Replace Google domains with non-tracking alternatives using domain substitution lists.
 8. Set up Rust and Windows SDK toolchains, download the cross-compilation `rc` binary, and configure LLVM build environment variables.
-9. Generate `args.gn` by combining base and Windows flags, setting `target_cpu`, and injecting architecture-specific options (e.g., Wasm SIMD256 re-vectorization for `x64`, or `chrome_pgo_phase=0` for tarball builds).
+9. Generate `args.gn` by combining base and Windows flags, setting `target_cpu`, and injecting architecture-specific options (e.g., Wasm SIMD256 re-vectorization for `x64`, disabling Drumbrake for `x86`, or `chrome_pgo_phase=0` for tarball builds).
 10. Create a `third_party` symlink for out-of-tree GN output directories if required.
 11. Bootstrap the GN binary, create the `buildtools` discovery symlink, and generate Ninja build files (`gn gen`).
 12. Compile `chrome`, `chromedriver`, and `mini_installer` using Ninja.
@@ -179,6 +190,7 @@ For the complete CI setup and workflow definitions, see:
 - `.github/workflows/reusable-build.yml`
 - `.github/workflows/publish-release.yml`
 - `.github/actions/prepare/action.yml`
+- `.github/actions/stage/index.js`
 
 ## Developer Guide
 
@@ -266,11 +278,12 @@ Used by `tools/typescript/ts_library.gni` for compiling WebUI and DevTools front
 The Rust toolchain consists of:
 - Linux Host Rust archive: `rust-x64` (Linux x86_64 host toolchain used across all targets)
 - Windows targets: `rust-std-windows-x64`, `rust-std-windows-x86`, `rust-std-windows-arm` (for cross-compilation)
-- Host bindgen tool: Built from source via Chromium's `tools/rust/build_bindgen.py` during toolchain setup, or detected and symlinked from the host environment if `bindgen` exists in `PATH`.
+- Linux target standard library: `rust-std-linux-x86` (for 32-bit Linux host snapshot toolchain `clang_x86` when building target `x86`)
+- Host bindgen tool: Built from source via Chromium's `tools/rust/build_bindgen.py` during toolchain setup, linked with LLVM `libclang` from the prebuilt LLVM toolchain.
 
 The build downloads:
 - Target `x64`: `rust-x64`, `rust-std-windows-x64`
-- Target `x86`: `rust-x64`, `rust-std-windows-x86`
+- Target `x86`: `rust-x64`, `rust-std-windows-x86`, `rust-std-linux-x86`
 - Target `arm64`: `rust-x64`, `rust-std-windows-arm`
 
 ##### Rust update process
@@ -297,6 +310,11 @@ rust-std-nightly-i686-pc-windows-msvc.tar.xz -> [pkg.rust-std.target.i686-pc-win
 rust-std-nightly-aarch64-pc-windows-msvc.tar.xz -> [pkg.rust-std.target.aarch64-pc-windows-msvc].xz_hash
 ```
 
+Linux target standard library (for 32-bit snapshot toolchain in target `x86`):
+```text
+rust-std-nightly-i686-unknown-linux-gnu.tar.xz -> [pkg.rust-std.target.i686-unknown-linux-gnu].xz_hash
+```
+
 4. If you want to verify the nightly version string, download one Linux Rust archive and extract it:
 ```bash
 wget https://static.rust-lang.org/dist/2026-09-09/rust-nightly-x86_64-unknown-linux-gnu.tar.xz
@@ -307,7 +325,7 @@ tar xf rust-nightly-x86_64-unknown-linux-gnu.tar.xz
 
 5. Update `downloads.ini` sections:
    - `[rust-x64]`: Update `version` and `sha256`
-   - `[rust-std-windows-x64]`, `[rust-std-windows-x86]`, `[rust-std-windows-arm]`: Update `version` and `sha256`
+   - `[rust-std-windows-x64]`, `[rust-std-windows-x86]`, `[rust-std-windows-arm]`, `[rust-std-linux-x86]`: Update `version` and `sha256`
 
 6. Update `patches/ungoogled-chromium/windows/windows-fix-building-with-rust.patch`:
    - Replace the `rustc_version` string with the nightly version string for that toolchain
@@ -429,6 +447,7 @@ Incorporates selected patches from other browser projects:
 - [Brave](https://github.com/brave/brave-core): [`patches/brave/`](patches/brave/).
 - [Helium](https://github.com/imputnet/helium): [`patches/helium/`](patches/helium/).
 - [Cromite](https://github.com/uazo/cromite): [`patches/cromite/`](patches/cromite/).
+- [Chromium_Clang](https://github.com/RobRich999/Chromium_Clang): [`windows-common-optimizations.patch`](patches/ungoogled-chromium/windows/windows-common-optimizations.patch) [`windows-x64-optimizations.patch`](patches/ungoogled-chromium/windows/windows-x64-optimizations.patch).
 
 ## License
 
