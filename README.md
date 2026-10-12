@@ -150,21 +150,22 @@ python3 build.py
 
 ## Build Process Overview
 
-The `build.py` script runs these steps in order. In `--ci` mode, step state is stored in `build/src/.stamps`. The Windows toolchain extraction stamp `.vs_toolchain_updated_{target_arch}.stamp` persists in `build/src/.stamps`, allowing multi-stage GitHub Actions workflows to seamlessly remount the `ciopfs` filesystem via `ensure_vs_toolchain_mounted()` re-downloading or re-extracting the toolchain.
+The `build.py` script runs these steps in order. In `--ci` mode, step state is stored in `build/src/.stamps`. The Windows toolchain extraction stamp `.vs_toolchain_updated_{target_arch}.stamp` persists in `build/src/.stamps`, allowing multi-stage GitHub Actions workflows to seamlessly remount the `ciopfs` filesystem via `ensure_vs_toolchain_mounted()` without re-downloading or re-extracting the toolchain.
 
-1. Clone Chromium source (including the `v8` submodule and V8 Builtins PGO profiles) or extract a pre-packaged tarball.
+1. Clone Chromium source (including the `v8` submodule) or extract a pre-packaged tarball.
 2. Download target-specific Windows dependencies and build tools from `downloads.ini`.
 3. Prune unnecessary pre-built binaries according to `pruning.list`.
-4. Extract downloaded archives and toolchain packages into the source tree.
+4. Extract downloaded archives and toolchain packages into the source tree (accelerated via multi-threaded `XZ_OPT`).
 5. Create required build tool symlinks (`7za` → `7zz`, system `gperf`, and `esbuild`).
 6. Apply core ungoogled-chromium patches, Windows platform fixes, curated patches (Brave, Helium, Cromite), and any target-specific optimization patches.
 7. Replace Google domains with non-tracking alternatives using domain substitution lists.
-8. Set up Rust and Windows SDK toolchains, download the cross-compilation `rc` binary, and configure LLVM build environment variables.
-9. Generate `args.gn` by combining base and Windows flags, setting `target_cpu`, and injecting architecture-specific options (e.g., Wasm SIMD256 re-vectorization for `x64`, disabling Drumbrake for `x86`, or `chrome_pgo_phase=0` for tarball builds).
-10. Create a `third_party` symlink for out-of-tree GN output directories if required.
-11. Bootstrap the GN binary, create the `buildtools` discovery symlink, and generate Ninja build files (`gn gen`).
-12. Compile `chrome`, `chromedriver`, and `mini_installer` using Ninja.
-13. In CI mode, run `package.py` automatically to produce portable zip archives and NSIS installers (run manually for local builds).
+8. Set up Rust and Windows SDK toolchains (`ciopfs` mount), download the cross-compilation `rc` binary, and configure LLVM build environment variables.
+9. Download V8 Builtins PGO profiles for optimization (skipped in tarball mode).
+10. Generate `args.gn` by combining base and Windows flags, setting `target_cpu`, and injecting architecture-specific options (e.g., Wasm SIMD256 re-vectorization for `x64`, disabling Drumbrake for `x86`, or `chrome_pgo_phase=0` for tarball builds).
+11. Create a `third_party` symlink for out-of-tree GN output directories if required.
+12. Bootstrap the GN binary, create the `buildtools` discovery symlink, and generate Ninja build files (`gn gen`).
+13. Compile `chrome`, `chromedriver`, and `mini_installer` using Ninja.
+14. In CI mode, run `package.py` automatically to produce portable zip archives and NSIS installers (run manually for local builds).
 
 Most of these steps can be skipped when their stamp file already exists, which makes recovery much faster after a failed build.
 

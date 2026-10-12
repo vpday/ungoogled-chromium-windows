@@ -199,10 +199,10 @@ def _compute_build_environment(source_tree: Path, target: WindowsTarget, rust_di
     rust_lib_path = str(rust_dir_dst / 'lib')
 
     current_ld = os.environ.get('LD_LIBRARY_PATH', '')
-    new_ld_paths = [rust_lib_path, str(llvm_lib), str(llvm_lib_x64)]
-    if current_ld:
-        new_ld_paths.append(current_ld)
-    os.environ['LD_LIBRARY_PATH'] = os.pathsep.join(new_ld_paths)
+    for p in [rust_lib_path, str(llvm_lib), str(llvm_lib_x64)]:
+        if p not in current_ld:
+            current_ld = f"{p}:{current_ld}" if current_ld else p
+    os.environ['LD_LIBRARY_PATH'] = current_ld
 
     os.environ['CC'] = str(clang_bin / 'clang')
     os.environ['CXX'] = str(clang_bin / 'clang++')
@@ -223,7 +223,11 @@ def _compute_build_environment(source_tree: Path, target: WindowsTarget, rust_di
     )
 
     ninja_dir = source_tree / 'third_party' / 'ninja'
-    os.environ['PATH'] = f"{os.environ.get('PATH', '')}:{ninja_dir}:{clang_bin_str}"
+    current_path = os.environ.get('PATH', '')
+    for entry in (str(ninja_dir), clang_bin_str):
+        if entry not in current_path:
+            current_path = f"{current_path}:{entry}" if current_path else entry
+    os.environ['PATH'] = current_path
 
     resource_dir = subprocess.check_output(
         [os.environ['CC'], '--print-resource-dir'],
@@ -233,7 +237,8 @@ def _compute_build_environment(source_tree: Path, target: WindowsTarget, rust_di
     flags_to_append = f' -resource-dir={resource_dir} -B{clang_bin_str}'
     for flag_name in ('CXXFLAGS', 'CPPFLAGS', 'CFLAGS'):
         current_flags = os.environ.get(flag_name, '')
-        os.environ[flag_name] = current_flags + flags_to_append
+        if flags_to_append.strip() not in current_flags:
+            os.environ[flag_name] = current_flags + flags_to_append
 
     return os.environ
 
@@ -294,10 +299,6 @@ def _step_prepare_sources(
                         cwd=source_tree,
                     )
                     get_logger().info("v8 submodule initialized successfully")
-
-                # Download V8 Builtins PGO profiles (V8-specific optimization data)
-                get_logger().info("Downloading V8 Builtins PGO profiles...")
-                download_v8_builtins_pgo_profiles(source_tree, disable_ssl)
 
 
 def _step_download_windows_dependencies(
@@ -478,6 +479,23 @@ def _step_setup_toolchains(source_tree: Path, target: WindowsTarget, ci_mode: bo
     _compute_build_environment(source_tree, target, rust_dir_dst)
 
 
+def _step_setup_v8_pgo(
+        source_tree: Path,
+        is_tarball: bool,
+        ci_mode: bool,
+        disable_ssl: bool = False,
+) -> None:
+    """Download V8 Builtins PGO profiles for optimization."""
+    with build_step(source_tree, '.setup_v8_pgo.stamp', 'setting up V8 Builtins PGO profiles',
+                    ci_mode) as should_run:
+        if should_run:
+            if not is_tarball:
+                get_logger().info('Downloading V8 Builtins PGO profiles...')
+                download_v8_builtins_pgo_profiles(source_tree, disable_ssl)
+            else:
+                get_logger().info('PGO is disabled in tarball mode, skipping V8 PGO profiles')
+
+
 def _step_write_gn_args(
         source_tree: Path,
         out_dir: Path,
@@ -500,8 +518,8 @@ def _step_setup_out_dir_symlinks(source_tree: Path, out_dir: Path) -> None:
     gn_parent = out_dir.parent.parent
     if gn_parent.resolve() != source_tree.resolve():
         third_party_link = gn_parent / 'third_party'
-        if gn_parent.exists() and not third_party_link.exists():
-            third_party_link.symlink_to(source_tree / 'third_party')
+        if gn_parent.exists():
+            _ensure_symlink(third_party_link, source_tree / 'third_party', description='out_dir third_party')
 
 
 def _step_run_gn(source_tree: Path, out_dir: Path, ci_mode: bool) -> None:
@@ -520,11 +538,7 @@ def _step_run_gn(source_tree: Path, out_dir: Path, ci_mode: bool) -> None:
     gn_binary = out_dir / 'gn'
     buildtools_gn = source_tree / 'buildtools' / 'linux64' / 'gn'
     if gn_binary.exists():
-        buildtools_gn.parent.mkdir(parents=True, exist_ok=True)
-        if not buildtools_gn.exists() or buildtools_gn.is_symlink():
-            if buildtools_gn.is_symlink():
-                buildtools_gn.unlink()
-            buildtools_gn.symlink_to(gn_binary)
+        _ensure_symlink(buildtools_gn, gn_binary, description='buildtools gn')
 
     # Run gn gen
     with build_step(source_tree, '.gn_gen.stamp', 'running GN gen', ci_mode) as should_run:
@@ -590,6 +604,7 @@ def run_build_pipeline(args: argparse.Namespace) -> None:
     _step_apply_patches(source_tree, target, args.ci)
     _step_apply_domain_substitution(source_tree, args.tarball, args.ci)
     _step_setup_toolchains(source_tree, target, args.ci)
+    _step_setup_v8_pgo(source_tree, args.tarball, args.ci, disable_ssl=args.disable_ssl_verification)
     _step_write_gn_args(source_tree, out_dir, target, args.tarball, args.ci)
     _step_setup_out_dir_symlinks(source_tree, out_dir)
     _step_run_gn(source_tree, out_dir, args.ci)
