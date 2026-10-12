@@ -321,8 +321,8 @@ def setup_sysroot(source_tree, target: WindowsTarget, ci_mode=False):
         f"--arch={host_sysroot_arch}",
     )
 
-    # Install target architecture sysroot if different from host
-    if target.id != host_arch:
+    # Install target architecture sysroot (only x86 needs 32-bit host snapshot sysroot)
+    if target.id == 'x86':
         get_logger().info("Installing target sysroot: %s", target.sysroot_arch)
         run_build_process(
             sys.executable,

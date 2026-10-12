@@ -42,7 +42,7 @@ from _common import ENCODING, USE_REGISTRY, ExtractorEnum, get_logger
 sys.path.pop(0)
 
 _ROOT_DIR = Path(__file__).resolve().parent
-_PATCH_BIN_RELPATH = Path('/usr/bin/patch')
+_PATCH_BIN_PATH = Path('/usr/bin/patch')
 
 # Target-specific optimization patches
 _OPTIMIZATION_PATCHES_BY_TARGET: dict[str, tuple[str, ...]] = {
@@ -145,8 +145,6 @@ def _get_windows_components(target: WindowsTarget):
     ]
     if target.linux_rust_std_selector:
         components.append(target.linux_rust_std_selector)
-    if target.id == 'arm64':
-        components.append('go-arm64')
     return components
 
 
@@ -420,7 +418,7 @@ def _step_apply_patches(source_tree: Path, target: WindowsTarget, ci_mode: bool)
             patches.apply_patches(
                 patches.generate_patches_from_series(_ROOT_DIR / 'ungoogled-chromium' / 'patches', resolve=True),
                 source_tree,
-                patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
+                patch_bin_path=_PATCH_BIN_PATH
             )
             # Then Windows-specific patches
             get_logger().info('Applying Windows-specific patches...')
@@ -433,7 +431,7 @@ def _step_apply_patches(source_tree: Path, target: WindowsTarget, ci_mode: bool)
             patches.apply_patches(
                 _resolve_windows_patches(target),
                 source_tree,
-                patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
+                patch_bin_path=_PATCH_BIN_PATH
             )
 
 

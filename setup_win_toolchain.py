@@ -149,7 +149,7 @@ def _compute_hash(file_path, algorithm="sha256"):
     """
     hasher = hashlib.new(algorithm)
     with open(file_path, "rb") as f:
-        while chunk := f.read(8192):
+        while chunk := f.read(1024 * 1024):
             hasher.update(chunk)
     return hasher.hexdigest()
 
