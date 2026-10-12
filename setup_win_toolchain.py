@@ -16,18 +16,19 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
 import urllib.request
-from typing import Dict, TypedDict
-
 from pathlib import Path
+from typing import Dict, TypedDict
 
 from build_common import (
     run_build_process,
     should_skip_step,
     mark_step_complete,
+    get_stamp_path,
 )
 from setup_utils import download_from_sha1
 from windows_target import WindowsTarget
@@ -623,7 +624,75 @@ def _extract_vs_toolchain_info(vs_toolchain_path):
     return result
 
 
-def setup_windows_toolchain(source_tree, target: WindowsTarget, ci_mode=False):
+def ensure_vs_toolchain_mounted(source_tree: Path) -> bool:
+    """
+    Ensure the ciopfs FUSE filesystem is mounted for vs_files across stages (~10ms).
+
+    Args:
+        source_tree: Path object of the source directory (build/src)
+
+    Returns:
+        bool: True if toolchain was already mounted or successfully remounted,
+              False if the underlying vs_files.ciopfs data directory does not exist yet.
+    """
+    toolchain_base = source_tree / "third_party" / "depot_tools" / "win_toolchain"
+    vs_files = toolchain_base / "vs_files"
+    vs_ciopfs = toolchain_base / "vs_files.ciopfs"
+
+    # If underlying data directory does not exist yet, initial extraction hasn't completed.
+    # Note: ciopfs strictly maps entries in the backing directory to lowercase ('vc'),
+    # while manual mocks or setups might use uppercase ('VC'). Support both.
+    has_vc = (vs_ciopfs / "VC").exists() or (vs_ciopfs / "vc").exists()
+    if not vs_ciopfs.exists() or not has_vc:
+        return False
+
+    if not os.path.ismount(vs_files):
+        # Clean up any potential deadlocks or orphan mount handles before accessing dir
+        try:
+            subprocess.run(["fusermount", "-u", str(vs_files)], stdin=subprocess.DEVNULL, capture_output=True)
+        except (FileNotFoundError, PermissionError, OSError):
+            pass
+
+        vs_files.mkdir(parents=True, exist_ok=True)
+
+        # Dynamically resolve ciopfs binary path (system PATH or Chromium built binary)
+        ciopfs_bin = shutil.which("ciopfs")
+        if not ciopfs_bin:
+            local_ciopfs = source_tree / "build" / "ciopfs"
+            if not local_ciopfs.exists() and (source_tree / "build" / "ciopfs.sha1").exists():
+                get_logger().info("Downloading ciopfs utility...")
+                download_from_sha1(
+                    sha1_file=source_tree / "build" / "ciopfs.sha1",
+                    output_file=local_ciopfs,
+                    bucket="chromium-browser-clang/ciopfs",
+                )
+            if not local_ciopfs.exists():
+                raise RuntimeError(f"ciopfs binary not found at {local_ciopfs}")
+            if hasattr(os, "access") and not os.access(local_ciopfs, os.X_OK):
+                try:
+                    local_ciopfs.chmod(0o755)
+                except OSError:
+                    pass
+            ciopfs_bin = str(local_ciopfs)
+
+        get_logger().info("Remounting ciopfs for vs_files (%s -> %s)...", vs_ciopfs, vs_files)
+        subprocess.run(
+            [
+                ciopfs_bin,
+                "-o",
+                "use_ino",
+                str(vs_ciopfs),
+                str(vs_files),
+            ],
+            stdin=subprocess.DEVNULL,
+            check=True,
+        )
+        get_logger().info("ciopfs successfully remounted")
+
+    return True
+
+
+def setup_windows_toolchain(source_tree: Path, target: WindowsTarget, ci_mode: bool = False) -> None:
     """
     Configure Windows Toolchain environment.
 
@@ -638,6 +707,21 @@ def setup_windows_toolchain(source_tree, target: WindowsTarget, ci_mode=False):
     """
     get_logger().info("Setting up Windows Toolchain for architecture: %s", target.id)
 
+    # Toolchain will be downloaded to build/download_cache/win_toolchain/
+    toolchain_dir = _ROOT_DIR / "build" / "download_cache" / "win_toolchain"
+    os.environ["DEPOT_TOOLS_WIN_TOOLCHAIN_BASE_URL"] = str(toolchain_dir)
+
+    extraction_stamp = f".vs_toolchain_updated_{target.id}.stamp"
+    if should_skip_step(source_tree, extraction_stamp, ci_mode):
+        if ensure_vs_toolchain_mounted(source_tree):
+            get_logger().info("Skipping VS toolchain download and extraction (already completed and mounted)")
+            get_logger().info("Windows Toolchain setup completed successfully")
+            return
+        get_logger().warning(
+            "Extraction stamp exists but vs_files.ciopfs is unmountable or corrupted. Invalidating stale stamp..."
+        )
+        get_stamp_path(source_tree, extraction_stamp).unlink(missing_ok=True)
+
     # Extract toolchain hash and SDK version from vs_toolchain.py
     # These are needed to identify the correct toolchain version to download
     vs_toolchain_path = source_tree / "build" / "vs_toolchain.py"
@@ -649,18 +733,16 @@ def setup_windows_toolchain(source_tree, target: WindowsTarget, ci_mode=False):
     # from win_toolchain.json based on target architecture
     toolchain_config = _read_toolchain_config(target)
 
-    # Toolchain will be downloaded to build/src/third_party/win_toolchain/
-    toolchain_dir = _ROOT_DIR / "build/src/third_party/win_toolchain"
-
     # Download VS toolchain from GitHub
     download_stamp = f".download_vs_toolchain_{target.id}.stamp"
-    if should_skip_step(source_tree, download_stamp, ci_mode):
+    zip_path = toolchain_dir / f"{toolchain_config['zip_filename']}.zip"
+    if should_skip_step(source_tree, download_stamp, ci_mode) and zip_path.exists():
         get_logger().info("Skipping VS toolchain download (already completed)")
     else:
         get_logger().info("Downloading VS toolchain from GitHub...")
 
         # Download ciopfs utility if not present (required for case-insensitive operations)
-        if not (source_tree / "build/ciopfs").exists():
+        if not (source_tree / "build" / "ciopfs").exists():
             get_logger().info("Downloading ciopfs utility...")
             download_from_sha1(
                 sha1_file=source_tree / "build" / "ciopfs.sha1",
@@ -682,9 +764,8 @@ def setup_windows_toolchain(source_tree, target: WindowsTarget, ci_mode=False):
         get_logger().info("VS toolchain download completed")
 
     # Extract and configure the toolchain using vs_toolchain.py
-    extraction_stamp = f".vs_toolchain_updated_{target.id}.stamp"
-    extraction_stamp_path = source_tree.parent
-    if should_skip_step(extraction_stamp_path, extraction_stamp, ci_mode):
+    extraction_stamp_path = source_tree
+    if should_skip_step(extraction_stamp_path, extraction_stamp, ci_mode) and ensure_vs_toolchain_mounted(source_tree):
         get_logger().info("Skipping VS toolchain extraction (already completed)")
     else:
         get_logger().info("Extracting and configuring VS toolchain...")

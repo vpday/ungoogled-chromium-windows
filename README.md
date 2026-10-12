@@ -150,8 +150,7 @@ python3 build.py
 
 ## Build Process Overview
 
-The `build.py` script runs these steps in order. In `--ci` mode, most step state is stored in `build/src/.stamps`. Windows toolchain extraction is the exception: it uses `build/.stamps/.vs_toolchain_updated_{target_arch}.stamp`.
-That split exists to support GitHub Actions multi-stage builds, where the VS toolchain setup may need to run at the start of each stage while the other steps usually only need to run once.
+The `build.py` script runs these steps in order. In `--ci` mode, step state is stored in `build/src/.stamps`. The Windows toolchain extraction stamp `.vs_toolchain_updated_{target_arch}.stamp` persists in `build/src/.stamps`, allowing multi-stage GitHub Actions workflows to seamlessly remount the `ciopfs` filesystem via `ensure_vs_toolchain_mounted()` re-downloading or re-extracting the toolchain.
 
 1. Clone Chromium source (including the `v8` submodule and V8 Builtins PGO profiles) or extract a pre-packaged tarball.
 2. Download target-specific Windows dependencies and build tools from `downloads.ini`.

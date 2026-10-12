@@ -9,12 +9,12 @@ ungoogled-chromium build script for Linux
 """
 
 import argparse
+import importlib.util
 import os
 import re
 import shutil
 import subprocess
 import sys
-import importlib.util
 from pathlib import Path
 
 from build_common import (
@@ -571,6 +571,7 @@ def run_build_pipeline(args: argparse.Namespace) -> None:
     out_dir = (args.out_dir if args.out_dir else source_tree / 'out' / 'Default').resolve()
 
     # Setup environment
+    os.environ['XZ_OPT'] = '-T0'
     source_tree.mkdir(parents=True, exist_ok=True)
     downloads_cache.mkdir(parents=True, exist_ok=True)
 
