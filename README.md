@@ -155,7 +155,7 @@ The `build.py` script runs these steps in order. In `--ci` mode, step state is s
 1. Clone Chromium source (including the `v8` submodule) or extract a pre-packaged tarball.
 2. Download target-specific Windows dependencies and build tools from `downloads.ini`.
 3. Prune unnecessary pre-built binaries according to `pruning.list`.
-4. Extract downloaded archives and toolchain packages into the source tree (accelerated via multi-threaded `XZ_OPT`).
+4. Extract downloaded archives and toolchain packages into the source tree.
 5. Create required build tool symlinks (`7za` → `7zz`, system `gperf`, and `esbuild`).
 6. Apply core ungoogled-chromium patches, Windows platform fixes, curated patches (Brave, Helium, Cromite), and any target-specific optimization patches.
 7. Replace Google domains with non-tracking alternatives using domain substitution lists.
@@ -242,12 +242,12 @@ All dependency versions are defined in `downloads.ini`. Dependencies are organiz
 4. Download from npm: `https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-VERSION.tgz`
 5. Update `downloads.ini` `[esbuild]` with version and SHA-256 checksum
 
-##### Go toolchain (`go-x64`, `go-arm64`)
+##### Go toolchain (`go-x64`)
 
 Used by `third_party/dawn/tools/generate-sources-gn.py` to generate Dawn Tint sources:
 1. Check `dawn_go_version` in `build/src/third_party/dawn/DEPS`
-2. Download official Go archive from `https://go.dev/dl/goVERSION.linux-amd64.tar.gz` (and `arm64` if targeting ARM64 Windows host builds)
-3. Compute SHA-256 checksum and update `downloads.ini` `[go-x64]` (and `[go-arm64]`):
+2. Download official Go archive from `https://go.dev/dl/goVERSION.linux-amd64.tar.gz`
+3. Compute SHA-256 checksum and update `downloads.ini` `[go-x64]`:
    - `version = VERSION`
    - `sha256 = CHECKSUM`
 

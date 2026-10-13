@@ -452,17 +452,17 @@ def _step_apply_domain_substitution(source_tree: Path, is_tarball: bool, ci_mode
             )
 
 
-def _step_setup_toolchains(source_tree: Path, target: WindowsTarget, ci_mode: bool) -> None:
+def _step_setup_toolchains(source_tree: Path, downloads_cache: Path, target: WindowsTarget, ci_mode: bool) -> None:
     # Set up Rust toolchain
-    rust_dir_dst = setup_rust_toolchain(source_tree, target, ci_mode=ci_mode)
+    rust_dir_dst = setup_rust_toolchain(source_tree, target, ci_mode)
 
     # Configure Windows Toolchain environment
-    setup_windows_toolchain(source_tree, target, ci_mode=ci_mode)
+    setup_windows_toolchain(source_tree, target, downloads_cache=downloads_cache, ci_mode=ci_mode)
 
     with build_step(source_tree, '.setup_toolchain.stamp', 'setting up toolchain', ci_mode) as should_run:
         if should_run:
             fix_tool_downloading(source_tree)
-            setup_toolchain(source_tree, target, ci_mode=ci_mode)
+            setup_toolchain(source_tree, target, ci_mode)
 
             # Download rc binary for cross-compilation
             rc_sha1_file = source_tree / 'build/toolchain/win/rc/linux64/rc.sha1'
@@ -585,7 +585,6 @@ def run_build_pipeline(args: argparse.Namespace) -> None:
     out_dir = (args.out_dir if args.out_dir else source_tree / 'out' / 'Default').resolve()
 
     # Setup environment
-    os.environ['XZ_OPT'] = '-T0'
     source_tree.mkdir(parents=True, exist_ok=True)
     downloads_cache.mkdir(parents=True, exist_ok=True)
 
@@ -603,7 +602,7 @@ def run_build_pipeline(args: argparse.Namespace) -> None:
     _step_setup_symlinks(source_tree, args.ci)
     _step_apply_patches(source_tree, target, args.ci)
     _step_apply_domain_substitution(source_tree, args.tarball, args.ci)
-    _step_setup_toolchains(source_tree, target, args.ci)
+    _step_setup_toolchains(source_tree, downloads_cache, target, args.ci)
     _step_setup_v8_pgo(source_tree, args.tarball, args.ci, disable_ssl=args.disable_ssl_verification)
     _step_write_gn_args(source_tree, out_dir, target, args.tarball, args.ci)
     _step_setup_out_dir_symlinks(source_tree, out_dir)
