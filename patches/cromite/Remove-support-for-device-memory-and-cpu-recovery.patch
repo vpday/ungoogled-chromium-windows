@@ -1,0 +1,47 @@
+--- a/third_party/blink/common/device_memory/approximated_device_memory.cc
++++ b/third_party/blink/common/device_memory/approximated_device_memory.cc
+@@ -15,3 +15,3 @@ namespace blink {
+ // static
+-float ApproximatedDeviceMemory::approximated_device_memory_gb_ = 0.0;
++float ApproximatedDeviceMemory::approximated_device_memory_gb_ = 8.0;
+ int64_t ApproximatedDeviceMemory::physical_memory_mb_ = 0;
+--- a/third_party/blink/renderer/core/frame/navigator_concurrent_hardware.cc
++++ b/third_party/blink/renderer/core/frame/navigator_concurrent_hardware.cc
+@@ -11,3 +11,3 @@ namespace blink {
+ unsigned NavigatorConcurrentHardware::hardwareConcurrency() const {
+-  return static_cast<unsigned>(base::SysInfo::NumberOfProcessors());
++  return static_cast<unsigned>(8);
+ }
+--- a/third_party/blink/renderer/core/timing/memory_info.cc
++++ b/third_party/blink/renderer/core/timing/memory_info.cc
+@@ -34,6 +34,7 @@
+ 
+ #include <limits>
+ 
++#include "base/rand_util.h"
+ #include "base/time/default_tick_clock.h"
+ #include "base/time/time.h"
+ #include "third_party/blink/renderer/core/frame/settings.h"
+@@ -43,13 +44,19 @@
+ 
+ static constexpr base::TimeDelta kTwentyMinutes = base::Minutes(20);
+ static constexpr base::TimeDelta kFiftyMs = base::Milliseconds(50);
++static constexpr int64_t heap_size_limit = 4294705152;
+ 
+ static void GetHeapSize(HeapInfo& info) {
+   v8::HeapStatistics heap_statistics;
+   v8::Isolate::GetCurrent()->GetHeapStatistics(&heap_statistics);
++  const double scale_factor =
++      1.0 + base::RandIntInclusive(-300, 300) / 10000.0;
+   info.used_js_heap_size =
+-      heap_statistics.used_heap_size() + heap_statistics.external_memory();
++      (heap_statistics.used_heap_size() + heap_statistics.external_memory()) *
++      scale_factor;
+   info.total_js_heap_size =
+-      heap_statistics.total_physical_size() + heap_statistics.external_memory();
+-  info.js_heap_size_limit = heap_statistics.heap_size_limit();
++      (heap_statistics.total_physical_size() +
++       heap_statistics.external_memory()) *
++      scale_factor;
++  info.js_heap_size_limit = heap_size_limit;
+ }

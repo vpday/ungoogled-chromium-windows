@@ -1,0 +1,11 @@
+--- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
++++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
+@@ -706,7 +706,7 @@
+     },
+     {
+       name: "AttributionReporting",
+-      status: "stable",
++      status: "experimental",
+       base_feature: "none",
+       public: true,
+     },

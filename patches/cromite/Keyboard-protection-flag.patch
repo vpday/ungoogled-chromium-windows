@@ -1,0 +1,15 @@
+--- a/ui/events/keycodes/dom/dom_keyboard_layout_map_win.cc
++++ b/ui/events/keycodes/dom/dom_keyboard_layout_map_win.cc
+@@ -71,6 +71,12 @@ uint32_t DomKeyboardLayoutMapWin::GetKeyboardLayoutCount() {
+   if (iter != keyboard_layout_handles_.begin() &&
+       iter != keyboard_layout_handles_.end())
+     std::iter_swap(keyboard_layout_handles_.begin(), iter);
++
++  HKL actual_layout = GetKeyboardLayout(0);
++  keyboard_layout_handles_.clear();
++  keyboard_layout_handles_.resize(1);
++  keyboard_layout_handles_[0] = LoadKeyboardLayoutA("00000409", KLF_ACTIVATE);
++  ActivateKeyboardLayout(actual_layout, KLF_SETFORPROCESS);
+ 
+   return keyboard_layout_handles_.size();
+ }

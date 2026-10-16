@@ -92,3 +92,14 @@ cromite/Override-the-MV2-deprecation.patch
 cromite/Enable-menu-on-reload-button.patch
 cromite/WIN-Disable-search-for-image.patch
 cromite/Disable-text-fragments-by-default.patch
+cromite/Disable-idle-detection.patch
+cromite/Disable-css-preferred-text-scale.patch
+cromite/Disable-Sticky-User-Activation-Across-Same-Origin-Navigation.patch
+cromite/Enable-Global-Privacy-Control.patch
+cromite/Disable-conversion-measurement-api.patch
+cromite/Disable-prefers-reduced-transparency-media-query.patch
+cromite/AudioBuffer-AnalyserNode-fp-mitigations.patch
+cromite/Remove-support-for-device-memory-and-cpu-recovery.patch
+cromite/Keyboard-protection-flag.patch
+cromite/WIN-Add-some-prefs-to-secure-preferences.patch
+cromite/Disable-requests-for-single-word-Omnibar-searches.patch

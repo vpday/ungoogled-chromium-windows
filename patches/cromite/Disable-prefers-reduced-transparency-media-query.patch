@@ -1,0 +1,47 @@
+--- a/third_party/blink/renderer/core/css/media_query_exp.cc
++++ b/third_party/blink/renderer/core/css/media_query_exp.cc
+@@ -136,7 +136,8 @@ static inline bool FeatureWithValidIdent(const String& media_feature,
+   }
+ 
+   if (media_feature ==
+-      media_feature_names::kPrefersReducedTransparencyMediaFeature) {
++      media_feature_names::kPrefersReducedTransparencyMediaFeature &&
++      RuntimeEnabledFeatures::PrefersReducedTransparencyEnabled()) {
+     return ident == CSSValueID::kNoPreference || ident == CSSValueID::kReduce;
+   }
+ 
+--- a/third_party/blink/renderer/core/css/parser/media_query_parser.cc
++++ b/third_party/blink/renderer/core/css/parser/media_query_parser.cc
+@@ -85,7 +85,8 @@ bool MediaQueryParser::MediaQueryFeatureSet::IsAllowedWithoutValue(
+          (feature == media_feature_names::kPrefersReducedDataMediaFeature &&
+           RuntimeEnabledFeatures::PrefersReducedDataEnabled()) ||
+          feature ==
+-             media_feature_names::kPrefersReducedTransparencyMediaFeature ||
++             media_feature_names::kPrefersReducedTransparencyMediaFeature &&
++          RuntimeEnabledFeatures::PrefersReducedTransparencyEnabled() ||
+          (feature == media_feature_names::kForcedColorsMediaFeature &&
+           RuntimeEnabledFeatures::ForcedColorsEnabled()) ||
+          (feature == media_feature_names::kNavigationControlsMediaFeature &&
+--- a/third_party/blink/renderer/core/preferences/preference_manager.idl
++++ b/third_party/blink/renderer/core/preferences/preference_manager.idl
+@@ -12,6 +12,6 @@ interface PreferenceManager {
+   readonly attribute PreferenceObject colorScheme;
+   readonly attribute PreferenceObject contrast;
+   readonly attribute PreferenceObject reducedMotion;
+-  readonly attribute PreferenceObject reducedTransparency;
++  [RuntimeEnabled=PrefersReducedTransparency] readonly attribute PreferenceObject reducedTransparency;
+   [RuntimeEnabled=PrefersReducedData] readonly attribute PreferenceObject reducedData;
+ };
+--- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
++++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
+@@ -4838,6 +4838,10 @@
+       name: "PrefersReducedData",
+       status: "experimental",
+     },
++    {
++      name: "PrefersReducedTransparency",
++      status: "experimental",
++    },
+     {
+       name: "PrefetchAndPrerenderActivationBeacon",
+       origin_trial_feature_name: "PrefetchAndPrerenderActivationBeacon",

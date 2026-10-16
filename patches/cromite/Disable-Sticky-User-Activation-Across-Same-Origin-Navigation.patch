@@ -1,0 +1,11 @@
+--- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
++++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
+@@ -6023,7 +6023,7 @@
+       // Preserves the sticky user activation state after a page navigates to
+       // another same-origin page. https://crbug.com/433729626
+       name: "StickyUserActivationAcrossSameOriginNavigation",
+-      status: "stable",
++      status: "experimental",
+     },
+     {
+       name: "StorageBuckets",

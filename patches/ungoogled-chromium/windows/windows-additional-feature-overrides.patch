@@ -317,6 +317,23 @@
  
  BASE_FEATURE(kLensOverlayContextualSearchbox, base::FEATURE_ENABLED_BY_DEFAULT);
  
+--- a/components/manta/features.cc
++++ b/components/manta/features.cc
+@@ -12,12 +12,12 @@ BASE_FEATURE(kAnchovyUseProdServer, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // Enables Orca Prod Server
+-BASE_FEATURE(kOrcaUseProdServer, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kOrcaUseProdServer, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Enables Scanner Prod Server
+ BASE_FEATURE(kScannerUseProdServer, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // Enables SeaPen Prod Server
+-BASE_FEATURE(kSeaPenUseProdServer, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kSeaPenUseProdServer, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Enables Mahi Prod Server
+ BASE_FEATURE(kMahiUseProdServer, base::FEATURE_ENABLED_BY_DEFAULT);
 --- a/components/metrics/metrics_features.cc
 +++ b/components/metrics/metrics_features.cc
 @@ -12,7 +12,7 @@ namespace metrics::features {
@@ -737,8 +754,26 @@
  
  bool IsPrefetchServiceWorkerEnabled(content::BrowserContext* browser_context) {
    return base::FeatureList::IsEnabled(kPrefetchServiceWorker) &&
+--- a/content/common/features.cc
++++ b/content/common/features.cc
+@@ -280,7 +280,7 @@ BASE_FEATURE(kProcessPerSiteUpToMainFrameNavThreshold,
+ // Enables installed windows app matching for getInstalledRelatedApps API.
+ // Note: This is enabled by default as a kill switch, since the functionality
+ // was already implemented but without a related feature flag.
+-BASE_FEATURE(kFilterInstalledAppsWinMatching, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kFilterInstalledAppsWinMatching, base::FEATURE_DISABLED_BY_DEFAULT);
+ #endif  // BUILDFLAG(IS_WIN)
+ 
+ #if BUILDFLAG(IS_ANDROID)
 --- a/content/public/common/content_features.cc
 +++ b/content/public/common/content_features.cc
+@@ -622,5 +622,5 @@ BASE_FEATURE(kInstalledApp, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // Allow Windows specific implementation for the GetInstalledRelatedApps API.
+-BASE_FEATURE(kInstalledAppProvider, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kInstalledAppProvider, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // When enabled, derives isolate priority from the more granular process
 @@ -800,10 +800,10 @@ const base::FeatureParam<bool>
  
  // Use code paths for prefetch/prerender integration.
@@ -891,6 +926,25 @@
  
  // Based on the field trial parameters, this feature will override the value of
  // the maximum number of delayable requests allowed in flight. The number of
+@@ -308,7 +308,7 @@ bool ShouldBlockAcceptClientHintsFor(const url::Origin& origin) {
+ //     true.
+ //   * The network service may register a HTTP response as a dictionary if the
+ //     response header contains a `use-as-dictionary` header.
+-BASE_FEATURE(kCompressionDictionaryTransport, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kCompressionDictionaryTransport, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // When this feature is enabled, preloaded dictionaries will not be used for
+ // network requests if the binary has not yet been preloaded.
+@@ -455,7 +455,7 @@ BASE_FEATURE(kCSPScriptSrcHashesInV1,
+              "ScriptSrcHashesV1",
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kCacheSharingForPervasiveResources,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kCacheSharingForPervasiveResources,
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kPervasiveSharedDictionaries, base::FEATURE_DISABLED_BY_DEFAULT);
 @@ -541,7 +541,7 @@ BASE_FEATURE_PARAM(int,
                     /*default_value=*/base::MiB(350).InBytes());
  

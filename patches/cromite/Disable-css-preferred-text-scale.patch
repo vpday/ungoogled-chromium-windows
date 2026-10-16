@@ -1,0 +1,50 @@
+--- a/third_party/blink/renderer/core/css/document_style_environment_variables.cc
++++ b/third_party/blink/renderer/core/css/document_style_environment_variables.cc
+@@ -95,6 +95,7 @@ void DocumentStyleEnvironmentVariables::RecordVariableUsage(
+ }
+ 
+ void DocumentStyleEnvironmentVariables::UpdatePreferredTextScaleFromDocument() {
++  if (!RuntimeEnabledFeatures::CSSPreferredTextScaleEnabled()) return;
+   double scale_factor;
+ 
+   Settings* settings = document_->GetSettings();
+--- a/third_party/blink/renderer/core/css/style_environment_variables.cc
++++ b/third_party/blink/renderer/core/css/style_environment_variables.cc
+@@ -50,7 +50,9 @@ void SetDefaultEnvironmentVariables(StyleEnvironmentVariables* instance) {
+   instance->SetVariable(UADefinedVariable::kKeyboardInsetHeight,
+                         kKeyboardInsetDefault);
+ 
+-  instance->SetVariable(UADefinedVariable::kPreferredTextScale, "1");
++  if (RuntimeEnabledFeatures::CSSPreferredTextScaleEnabled()) {
++    instance->SetVariable(UADefinedVariable::kPreferredTextScale, "1");
++  }
+ }
+ 
+ }  // namespace.
+--- a/third_party/blink/renderer/core/page/page.cc
++++ b/third_party/blink/renderer/core/page/page.cc
+@@ -1054,7 +1054,9 @@ void Page::SettingsChanged(ChangeType change_type) {
+       }
+       break;
+     case ChangeType::kFontScaleFactor:
+-
++      if (!RuntimeEnabledFeatures::CSSPreferredTextScaleEnabled()) {
++        break;
++      }
+       for (Frame* frame = MainFrame(); frame;
+            frame = frame->Tree().TraverseNext()) {
+         LocalFrame* local_frame = DynamicTo<LocalFrame>(frame);
+--- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
++++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
+@@ -1846,6 +1846,11 @@
+       name: "CSSPositionStickyStaticScrollPosition",
+       status: "test",
+     },
++    {
++      name: "CSSPreferredTextScale",
++      status: "test",
++      public: true,
++    },
+     {
+       // The @private rule declares lexically-scoped custom properties that are
+       // visible only within the enclosing style rule and the elements it

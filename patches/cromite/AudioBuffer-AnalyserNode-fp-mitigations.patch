@@ -1,0 +1,140 @@
+--- a/third_party/blink/renderer/modules/webaudio/audio_buffer.cc
++++ b/third_party/blink/renderer/modules/webaudio/audio_buffer.cc
+@@ -201,6 +201,20 @@ AudioBuffer::AudioBuffer(AudioBus* bus)
+   }
+ }
+ 
++void AudioBuffer::ShuffleAudioData() {
++  for (unsigned i = 0; i < channels_.size(); ++i) {
++    if (NotShared<DOMFloat32Array> array = getChannelData(i)) {
++      size_t len = array->length();
++      if (len > 0) {
++        base::span<float> destination = array->AsSpan();
++        for (unsigned j = 0; j < len; ++j) {
++          destination[j] = BaseAudioContext::ShuffleAudioData(destination[j], j);
++        }
++      }
++    }
++  }
++}
++
+ NotShared<DOMFloat32Array> AudioBuffer::getChannelData(
+     unsigned channel_index,
+     ExceptionState& exception_state) {
+--- a/third_party/blink/renderer/modules/webaudio/audio_buffer.h
++++ b/third_party/blink/renderer/modules/webaudio/audio_buffer.h
+@@ -117,6 +117,8 @@ class MODULES_EXPORT AudioBuffer final : public ScriptWrappable {
+ 
+   std::unique_ptr<SharedAudioBuffer> CreateSharedAudioBuffer();
+ 
++  void ShuffleAudioData();
++
+  private:
+   bool CreatedSuccessfully(unsigned desired_number_of_channels) const;
+ 
+--- a/third_party/blink/renderer/modules/webaudio/audio_context.cc
++++ b/third_party/blink/renderer/modules/webaudio/audio_context.cc
+@@ -1242,7 +1242,9 @@ double AudioContext::baseLatency() const {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(main_thread_sequence_checker_);
+   DCHECK(destinationNode());
+ 
+-  return base_latency_;
++  // Remove precision past two decimal digits.
++  int latency = base_latency_ * 100;
++  return static_cast<double>(latency) / 100;
+ }
+ 
+ double AudioContext::outputLatency() const {
+--- a/third_party/blink/renderer/modules/webaudio/base_audio_context.cc
++++ b/third_party/blink/renderer/modules/webaudio/base_audio_context.cc
+@@ -26,6 +26,7 @@
+ #include "third_party/blink/renderer/modules/webaudio/base_audio_context.h"
+ 
+ #include "base/metrics/histogram_functions.h"
++#include "base/rand_util.h"
+ #include "build/build_config.h"
+ #include "media/base/audio_bus.h"
+ #include "third_party/blink/public/mojom/devtools/console_message.mojom-blink.h"
+@@ -771,6 +772,13 @@ LocalDOMWindow* BaseAudioContext::GetWindow() const {
+   return To<LocalDOMWindow>(GetExecutionContext());
+ }
+ 
++/*static*/
++float BaseAudioContext::ShuffleAudioData(float data, unsigned index) {
++  float rnd = 1.0f + (base::RandDouble() / 10000.0) *
++                         (base::RandIntInclusive(0, 10) > 5 ? 1.f : -1.f);
++  return data * rnd;
++}
++
+ void BaseAudioContext::NotifySourceNodeStartedProcessing(AudioNode* node) {
+   DCHECK(IsMainThread());
+   DeferredTaskHandler::GraphAutoLocker locker(GetDeferredTaskHandler());
+--- a/third_party/blink/renderer/modules/webaudio/base_audio_context.h
++++ b/third_party/blink/renderer/modules/webaudio/base_audio_context.h
+@@ -327,6 +327,8 @@ class MODULES_EXPORT BaseAudioContext
+   // if the execution context does not exist.
+   bool CheckExecutionContextAndThrowIfNecessary(ExceptionState&);
+ 
++  static float ShuffleAudioData(float data, unsigned index);
++
+   wtf_size_t PendingPromiseResolverCountForTesting() const {
+     return pending_promise_resolvers_.size();
+   }
+--- a/third_party/blink/renderer/modules/webaudio/offline_audio_context.cc
++++ b/third_party/blink/renderer/modules/webaudio/offline_audio_context.cc
+@@ -436,6 +436,7 @@ void OfflineAudioContext::FireCompletionEvent() {
+     if (!rendered_buffer) {
+       return;
+     }
++    rendered_buffer->ShuffleAudioData();
+ 
+     // Call the offline rendering completion event listener and resolve the
+     // promise too.
+--- a/third_party/blink/renderer/modules/webaudio/realtime_analyser.cc
++++ b/third_party/blink/renderer/modules/webaudio/realtime_analyser.cc
+@@ -34,5 +34,6 @@
+ #include "base/compiler_specific.h"
+ #include "media/base/audio_bus.h"
++#include "third_party/blink/renderer/modules/webaudio/base_audio_context.h"
+ #include "third_party/blink/renderer/platform/audio/audio_bus.h"
+ #include "third_party/blink/renderer/platform/audio/audio_utilities.h"
+ #include "third_party/blink/renderer/platform/audio/vector_math.h"
+@@ -128,7 +129,8 @@ void RealtimeAnalyser::GetFloatFrequencyData(DOMFloat32Array* destination_array,
+     for (unsigned i = 0; i < len; ++i) {
+       const float linear_value = magnitude_buffer_[i];
+       const double db_mag = audio_utilities::LinearToDecibels(linear_value);
+-      destination[i] = static_cast<float>(db_mag);
++      auto v = static_cast<float>(db_mag);
++      destination[i] = BaseAudioContext::ShuffleAudioData(v, i);
+     }
+   }
+ }
+@@ -164,8 +166,9 @@ void RealtimeAnalyser::GetByteFrequencyData(DOMUint8Array* destination_array,
+ 
+       // The range m_minDecibels to m_maxDecibels will be scaled to byte values
+       // from 0 to UCHAR_MAX.
+-      const double scaled_value =
++      double scaled_value =
+           UCHAR_MAX * (db_mag - min_decibels) * range_scale_factor;
++      scaled_value = BaseAudioContext::ShuffleAudioData(scaled_value, i);
+ 
+       // Clip to valid range.
+       destination[i] =
+@@ -194,6 +197,7 @@ void RealtimeAnalyser::GetFloatTimeDomainData(
+       float value =
+           input_buffer_[(i + write_index - fft_size + kInputBufferSize) %
+                         kInputBufferSize];
++      value = BaseAudioContext::ShuffleAudioData(value, i);
+ 
+       destination[i] = value;
+     }
+@@ -218,7 +222,8 @@ void RealtimeAnalyser::GetByteTimeDomainData(DOMUint8Array* destination_array) {
+     for (unsigned i = 0; i < len; ++i) {
+       // Buffer access is protected due to modulo operation.
+-      const float value =
++      float value =
+           input_buffer_[(i + write_index - fft_size + kInputBufferSize) %
+                         kInputBufferSize];
++      value = BaseAudioContext::ShuffleAudioData(value, i);
+ 
+       // Scale from nominal -1 -> +1 to unsigned byte.

@@ -1,0 +1,25 @@
+--- a/third_party/blink/renderer/modules/idle/idle_detector.idl
++++ b/third_party/blink/renderer/modules/idle/idle_detector.idl
+@@ -17,7 +17,8 @@ enum ScreenIdleState {
+ [
+   SecureContext,
+   Exposed=(Window,DedicatedWorker),
+-  ActiveScriptWrappable
++  ActiveScriptWrappable,
++  RuntimeEnabled=IdleDetection
+ ] interface IdleDetector : EventTarget {
+   [CallWith=ScriptState] constructor();
+   readonly attribute UserIdleState? userState;
+--- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
++++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
+@@ -229,6 +229,10 @@
+       name: "AcceleratedSmallCanvases",
+       status: "stable",
+     },
++    {
++      name: "IdleDetection",
++      public: true,
++    },
+     {
+       // crbug.com/409809747
+       name: "AccessibilityCheckIfcInPreviousTextOnLine",
