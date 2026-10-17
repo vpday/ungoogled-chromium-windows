@@ -57,7 +57,6 @@ helium/disable-ink-ripple-effect.patch
 helium/dont-antialias-rects.patch
 helium/add-more-zoom-presets.patch
 helium/clean-omnibox-suggestions.patch
-helium/webrtc-default-handling-policy.patch
 helium/center-window-on-launch.patch
 helium/ridiculous-google-compat-exceptions.patch
 helium/add-low-power-framerate-flag.patch

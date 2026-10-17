@@ -1,13 +1,13 @@
 --- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
 +++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
-@@ -297,6 +297,7 @@
+@@ -296,6 +296,7 @@
      {
        // Interest Group JS API/runtimeflag.
        name: "AdInterestGroupAPI",
 +      base_feature_status: "disabled",
-       status: "stable",
-       origin_trial_feature_name: "AdInterestGroupAPI",
-       implied_by: ["Fledge", "Parakeet"],
+       public: true,
+     },
+     // Adjust the end of the next paragraph if the end position for the
 @@ -407,6 +408,7 @@
      },
      {

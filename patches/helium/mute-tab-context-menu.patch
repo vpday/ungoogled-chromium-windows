@@ -106,10 +106,11 @@
    bool WillContextMenuPin(int index);
 --- a/components/tabs/public/tab_context_menu_command.h
 +++ b/components/tabs/public/tab_context_menu_command.h
-@@ -41,5 +41,6 @@
-   CommandGlicSwitchToRecentConversation,
+@@ -41,6 +41,7 @@ enum TabContextMenuCommand {
    CommandGlicUnshare,
    CommandToggleFocusGroup,
+   CommandDiscard,
 +  CommandToggleTabMuted,
  };
  // LINT.ThenChange(//tools/metrics/histograms/metadata/tab/histograms.xml:TabContextMenuCommand)
+ 
