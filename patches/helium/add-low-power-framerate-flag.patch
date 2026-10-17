@@ -1,0 +1,63 @@
+--- a/chrome/browser/ungoogled_flag_choices.h
++++ b/chrome/browser/ungoogled_flag_choices.h
+@@ -68,3 +68,10 @@ const FeatureEntry::FeatureVariation kSpoofWebGLChoices[] = {
+     {"Qualcomm Adreno 610", kSpoofWebGL_Qualcomm, nullptr},
+ };
++const FeatureEntry::Choice kEnergySaverFrameRateChoices[] = {
++    {flags_ui::kGenericExperimentChoiceAutomatic, "", ""},
++    {"30", "energy-saver-fps-limit", "30"},
++    {"60", "energy-saver-fps-limit", "60"},
++    {"120", "energy-saver-fps-limit", "120"},
++    {"Disabled", "energy-saver-fps-limit", "9001"},
++};
+ #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_CHOICES_H_
+--- a/chrome/browser/ungoogled_flag_entries.h
++++ b/chrome/browser/ungoogled_flag_entries.h
+@@ -100,3 +100,7 @@
+      "If enabled, disables JIT too if the \"JavaScript optimization\" setting is turned off. ungoogled-chromium flag.",
+      kOsAll, SINGLE_VALUE_TYPE("disabling-javascript-optimization-disables-jit")},
++    {"energy-saver-fps-limit",
++     "Maximum frame rate for Energy Saver",
++     "Configures the frame rate the browser is throttled to when Energy Saver is enabled. ungoogled-chromium flag.",
++     kOsDesktop, MULTI_VALUE_TYPE(kEnergySaverFrameRateChoices)},
+ #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
+--- a/chrome/browser/performance_manager/user_tuning/battery_saver_mode_manager.cc
++++ b/chrome/browser/performance_manager/user_tuning/battery_saver_mode_manager.cc
+@@ -21,6 +21,7 @@
+ #include "base/process/process.h"
+ #include "base/run_loop.h"
+ #include "base/scoped_multi_source_observation.h"
++#include "base/strings/string_number_conversions.h"
+ #include "base/values.h"
+ #include "components/performance_manager/freezing/freezing_policy.h"
+ #include "components/performance_manager/performance_manager_impl.h"
+@@ -69,12 +70,28 @@ constexpr int kBatterySaverModeThresholdAdjustmentForDisplayLevel = 0;
+ constexpr int kBatterySaverModeThresholdAdjustmentForDisplayLevel = 0;
+ #endif  // BUILDFLAG(IS_CHROMEOS)
+ 
++int GetMaxRate() {
++  auto* command_line = base::CommandLine::ForCurrentProcess();
++  int fps;
++
++  if (command_line->HasSwitch("energy-saver-fps-limit") &&
++      base::StringToInt(command_line->GetSwitchValueASCII(
++        "energy-saver-fps-limit"), &fps) && fps > 0) {
++    return fps;
++  }
++
++  return 30;
++}
++
+ class FrameThrottlingDelegateImpl
+     : public performance_manager::user_tuning::BatterySaverModeManager::
+           FrameThrottlingDelegate {
+  public:
+   void StartThrottlingAllFrameSinks() override {
+-    content::StartThrottlingAllFrameSinks(base::Hertz(30));
++    static int max_rate = GetMaxRate();
++    if (max_rate < 9000) {
++      content::StartThrottlingAllFrameSinks(base::Hertz(max_rate));
++    }
+   }
+ 
+   void StopThrottlingAllFrameSinks() override {

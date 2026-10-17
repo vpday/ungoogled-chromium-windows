@@ -27,6 +27,7 @@ ungoogled-chromium/windows/windows-fix-files-cfg-case.patch
 ungoogled-chromium/windows/windows-fix-v8-snapshot-toolchain-linux-win-arm64.patch
 ungoogled-chromium/windows/windows-fix-rust-toolchain-compat.patch
 ungoogled-chromium/windows/windows-enable-dtlto.patch
+upstream-fixes/tab-restore-live-tabs.patch
 brave/tab-cycling-mru-impl.patch
 helium/memory-saving-by-default.patch
 helium/disable-history-clusters.patch
@@ -43,6 +44,7 @@ helium/tab-cycling-mru.patch
 helium/hibernate-tab-context-menu.patch
 helium/close-tabs-to-left.patch
 helium/copy-url-tab-context-menu.patch
+helium/mute-tab-context-menu.patch
 helium/simplify-context-menu.patch
 helium/disable-pdf-infobar.patch
 helium/force-paste-action.patch
@@ -52,6 +54,16 @@ helium/lazy-session-restore.patch
 helium/enable-fluent-scrollbar.patch
 helium/hide-pip-live-caption-button.patch
 helium/disable-ink-ripple-effect.patch
+helium/dont-antialias-rects.patch
+helium/add-more-zoom-presets.patch
+helium/clean-omnibox-suggestions.patch
+helium/webrtc-default-handling-policy.patch
+helium/center-window-on-launch.patch
+helium/ridiculous-google-compat-exceptions.patch
+helium/add-low-power-framerate-flag.patch
+helium/hide-page-actions-flag.patch
+helium/open-new-tabs-next-to-active-tab-option.patch
+helium/split-clienthello.patch
 cromite/Disable-support-for-pointer-device-id.patch
 cromite/Lock-Profile-Cookie-Database.patch
 cromite/Media-fingerprinting-mitigations.patch

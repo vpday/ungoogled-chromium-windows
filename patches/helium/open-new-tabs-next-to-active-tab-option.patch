@@ -1,0 +1,75 @@
+--- a/chrome/browser/ungoogled_flag_entries.h
++++ b/chrome/browser/ungoogled_flag_entries.h
+@@ -108,5 +108,9 @@
+     {"hide-page-actions",
+      "Hide all page actions",
+      "Hides all page actions at the end of address bar. This includes: bookmark star, page zoom, PWA install/open, local file access, and more. ungoogled-chromium flag.",
+      kOsDesktop, FEATURE_VALUE_TYPE(features::kHeliumHidePageActions)},
++    {"open-new-tabs-next-to-active",
++     "Open new tabs next to active tab",
++     "When enabled, newly created tabs will open next to the active tab instead of at the end of the tab strip. ungoogled-chromium flag.",
++     kOsDesktop, SINGLE_VALUE_TYPE("open-new-tabs-next-to-active")},
+ #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
+--- a/chrome/common/pref_names.h
++++ b/chrome/common/pref_names.h
+@@ -601,6 +601,11 @@ inline constexpr char
+ 
+ // A boolean pref set to true if a Home button to open the Home pages should be
+ // visible on the toolbar.
++// A boolean pref set to true if new tabs should be created to the next of
++// current active one, instead of tab strip end.
++inline constexpr char kNewTabNextToActive[] =
++    "browser.new_tab_next_to_active";
++
+ inline constexpr char kShowHomeButton[] = "browser.show_home_button";
+ 
+ // A boolean pref set to true if the Forward button should be visible on the
+--- a/chrome/browser/ui/browser_ui_prefs.cc
++++ b/chrome/browser/ui/browser_ui_prefs.cc
+@@ -122,6 +122,8 @@ void RegisterBrowserUserPrefs(user_prefs::PrefRegistrySyncable* registry) {
+   registry->RegisterIntegerPref(prefs::kSessionRestoreInfoBarTimesShown, 0);
+ #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+ 
++  registry->RegisterBooleanPref(prefs::kNewTabNextToActive, false);
++
+   registry->RegisterBooleanPref(prefs::kHomePageIsNewTabPage, true,
+                                 pref_registration_flags);
+   registry->RegisterBooleanPref(prefs::kShowHomeButton, false,
+--- a/chrome/browser/ui/tabs/tab_strip_model.cc
++++ b/chrome/browser/ui/tabs/tab_strip_model.cc
+@@ -80,7 +80,10 @@
+ #include "chrome/browser/web_applications/policy/web_app_policy_manager.h"
+ #include "chrome/browser/web_applications/web_app_provider.h"
+ #include "chrome/browser/web_applications/web_app_tab_helper.h"
++#include "base/command_line.h"
+ #include "chrome/common/chrome_features.h"
++#include "chrome/common/pref_names.h"
++#include "components/prefs/pref_service.h"
+ #include "chrome/common/webui_url_constants.h"
+ #include "components/commerce/core/commerce_utils.h"
+ #include "components/content_settings/core/browser/host_content_settings_map.h"
+@@ -1841,7 +1844,23 @@ void TabStripModel::AddTab(std::unique_ptr<tabs::TabModel> tab,
+     // For all other types, respect what was passed to us, normalizing -1s and
+     // values that are too large.
+     if (index < 0 || index > count()) {
+-      index = count();
++      const bool new_tab_next_to_active =
++          base::CommandLine::ForCurrentProcess()->HasSwitch(
++              "open-new-tabs-next-to-active") ||
++          (profile_ && profile_->GetPrefs() &&
++           profile_->GetPrefs()->GetBoolean(prefs::kNewTabNextToActive));
++      const auto opener_group = GetTabGroupForTab(active_index());
++
++      if (count() >= 1 && new_tab_next_to_active) {
++        if (group_model_ && opener_group && !(add_types & ADD_ACTIVE)) {
++          index = static_cast<int>(
++              group_model_->GetTabGroup(*opener_group)->ListTabs().end());
++        } else {
++          index = active_index() + 1;
++        }
++      } else {
++        index = count();
++      }
+     }
+   }
+ 

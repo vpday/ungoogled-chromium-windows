@@ -89,6 +89,16 @@
      kFeatureEnabledOnlyOnAndroid;
 --- a/chrome/browser/ui/ui_features.cc
 +++ b/chrome/browser/ui/ui_features.cc
+@@ -64,3 +64,3 @@
+ BASE_FEATURE(kTabStripDeclutter, base::FEATURE_DISABLED_BY_DEFAULT);
+-BASE_FEATURE(kToolbarGlowUp, base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kToolbarGlowUp, base::FEATURE_ENABLED_BY_DEFAULT);
+ BASE_FEATURE_PARAM(bool,
+@@ -82,3 +82,3 @@
+ BASE_FEATURE(kTabGroupColorRefresh, base::FEATURE_DISABLED_BY_DEFAULT);
+-BASE_FEATURE(kWebuiRefresh2026, base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kWebuiRefresh2026, base::FEATURE_ENABLED_BY_DEFAULT);
+ BASE_FEATURE(kAppMenuGlowUp, base::FEATURE_DISABLED_BY_DEFAULT);
 @@ -201,7 +201,7 @@ BASE_FEATURE_PARAM(int,
  
  // Preloads a WebContents with a Top Chrome WebUI on BrowserView initialization,
@@ -98,6 +108,20 @@
  
  // An experiment to reduce the number of navigations when preloading WebUIs.
  BASE_FEATURE(kPreloadTopChromeWebUILessNavigations,
+@@ -296,7 +296,3 @@
+ BASE_FEATURE(kSidePanelFlyoverAnimation,
+-#if BUILDFLAG(IS_MAC)
+-             base::FEATURE_DISABLED_BY_DEFAULT
+-#else
+-             base::FEATURE_ENABLED_BY_DEFAULT
+-#endif
++             base::FEATURE_DISABLED_BY_DEFAULT
+ );
+@@ -379,3 +375,3 @@
+ 
+-BASE_FEATURE(kNonMilestoneUpdateToast, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kNonMilestoneUpdateToast, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
 --- a/chrome/common/chrome_features.cc
 +++ b/chrome/common/chrome_features.cc
 @@ -180,7 +180,7 @@
@@ -633,6 +657,12 @@
  
  // If enabled, the Canvas action chip will be shown.
  BASE_FEATURE(kNtpNextCanvasChip, base::FEATURE_DISABLED_BY_DEFAULT);
+@@ -271,4 +261,4 @@
+ 
+ // If enabled, a footer will show on the NTP.
+-BASE_FEATURE(kNtpFooter, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kNtpFooter, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
 @@ -308,13 +298,13 @@ BASE_FEATURE(kNtpFeatureOptimizationDismissModulesRemoval,
               base::FEATURE_ENABLED_BY_DEFAULT);
  
@@ -999,3 +1029,19 @@
  
  // kSpeculativeServiceWorkerWarmUp warms up service workers up to this max
  // count.
+--- a/chrome/browser/ui/tabs/features.cc
++++ b/chrome/browser/ui/tabs/features.cc
+@@ -95,4 +95,4 @@
+ // Enables Back-to-Opener behavior, allowing users to press the back button in a
+ // newly opened tab to close that tab and return focus to the opener tab.
+-BASE_FEATURE(kBackToOpener, base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kBackToOpener, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+--- a/ui/base/ui_base_features.cc
++++ b/ui/base/ui_base_features.cc
+@@ -504,4 +504,4 @@
+ BASE_FEATURE_PARAM(bool, kGlassExpandOnHoverEnabled, &kGlassFrame, true);
+ 
+-BASE_FEATURE(kRoundedIcons, base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kRoundedIcons, base::FEATURE_ENABLED_BY_DEFAULT);
+ BASE_FEATURE(kWebUIRoundedIcons, base::FEATURE_DISABLED_BY_DEFAULT);

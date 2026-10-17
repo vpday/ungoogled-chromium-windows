@@ -1,0 +1,42 @@
+--- a/chrome/browser/ungoogled_flag_entries.h
++++ b/chrome/browser/ungoogled_flag_entries.h
+@@ -104,5 +104,9 @@
+     {"energy-saver-fps-limit",
+      "Maximum frame rate for Energy Saver",
+      "Configures the frame rate the browser is throttled to when Energy Saver is enabled. ungoogled-chromium flag.",
+      kOsDesktop, MULTI_VALUE_TYPE(kEnergySaverFrameRateChoices)},
++    {"hide-page-actions",
++     "Hide all page actions",
++     "Hides all page actions at the end of address bar. This includes: bookmark star, page zoom, PWA install/open, local file access, and more. ungoogled-chromium flag.",
++     kOsDesktop, FEATURE_VALUE_TYPE(features::kHeliumHidePageActions)},
+ #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
+--- a/chrome/browser/ui/ui_features.cc
++++ b/chrome/browser/ui/ui_features.cc
+@@ -34,4 +34,6 @@
+ BASE_FEATURE(kUseActionsForBrowserCommands, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
++BASE_FEATURE(kHeliumHidePageActions, base::FEATURE_DISABLED_BY_DEFAULT);
++
+ // Enables the use of WGC for the Eye Dropper screen capture.
+ BASE_FEATURE(kAllowEyeDropperWGCScreenCapture,
+--- a/chrome/browser/ui/ui_features.h
++++ b/chrome/browser/ui/ui_features.h
+@@ -21,5 +21,7 @@
+ 
+ BASE_DECLARE_FEATURE(kUseActionsForBrowserCommands);
+ bool ShouldUseActionsForBrowserCommands();
++
++BASE_DECLARE_FEATURE(kHeliumHidePageActions);
+ 
+ BASE_DECLARE_FEATURE(kAllowEyeDropperWGCScreenCapture);
+--- a/chrome/browser/ui/views/location_bar/location_bar_view.cc
++++ b/chrome/browser/ui/views/location_bar/location_bar_view.cc
+@@ -487,6 +487,8 @@ void LocationBarView::Init() {
+       AddChildView(std::make_unique<page_actions::PageActionContainerView>(
+           page_action_items, page_actions::PageActionPropertiesProvider(),
+           page_action_params));
++  page_action_container_->SetVisible(
++      !base::FeatureList::IsEnabled(features::kHeliumHidePageActions));
+ 
+   auto clear_all_button = views::CreateVectorImageButton(base::BindRepeating(
+       static_cast<void (OmniboxView::*)(const std::u16string&)>(
