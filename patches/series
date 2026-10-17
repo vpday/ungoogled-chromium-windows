@@ -27,7 +27,7 @@ ungoogled-chromium/windows/windows-fix-files-cfg-case.patch
 ungoogled-chromium/windows/windows-fix-v8-snapshot-toolchain-linux-win-arm64.patch
 ungoogled-chromium/windows/windows-fix-rust-toolchain-compat.patch
 ungoogled-chromium/windows/windows-enable-dtlto.patch
-upstream-fixes/tab-restore-live-tabs.patch
+helium/tab-restore-live-tabs.patch
 brave/tab-cycling-mru-impl.patch
 helium/memory-saving-by-default.patch
 helium/disable-history-clusters.patch
