@@ -1,0 +1,12 @@
+--- a/chrome/browser/ui/views/overlay/video_overlay_window_views.cc
++++ b/chrome/browser/ui/views/overlay/video_overlay_window_views.cc
+@@ -965,8 +965,7 @@ void VideoOverlayWindowViews::UpdateMaxSize(const gfx::Rect& work_area) {
+     return;
+   }
+ 
+-  auto new_max_size =
+-      gfx::Size(work_area.width() * 0.8, work_area.height() * 0.8);
++  auto new_max_size = work_area.size();
+ 
+   // Ensure |new_max_size| is not smaller than |min_size_|, or else we will
+   // crash.

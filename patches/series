@@ -85,6 +85,12 @@ brave/kill-profile-reset-report-uploader.patch
 brave/disable-global-signin-promos.patch
 brave/hide-cookie-controls-location-bar-icon.patch
 brave/suppress-undo-tab-close-toast.patch
+brave/tab-close-button-threshold.patch
+brave/pip-allow-full-window-size.patch
+brave/fsa-restrict-to-opfs.patch
+brave/disable-web-platform-ai.patch
+brave/defer-permission-prompts-to-load.patch
+brave/download-context-menu-actions.patch
 cromite/WIN-disable-annotate-downloads.patch
 cromite/WIN-Disable-first-run.patch
 cromite/WIN-Fix-log-to-file.patch

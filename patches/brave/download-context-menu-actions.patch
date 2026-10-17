@@ -1,0 +1,238 @@
+--- a/chrome/browser/download/download_commands.h
++++ b/chrome/browser/download/download_commands.h
+@@ -47,6 +47,9 @@ class DownloadCommands {
+     OPEN_WITH_MEDIA_APP = 21,  // Open file using the ChromeOS media app.
+     EDIT_WITH_MEDIA_APP = 22,  // Open file using the ChromeOS media app with
+                                // an editing hint.
++    REMOVE_FROM_LIST = 23,
++    DELETE_LOCAL_FILE = 24,
++    COPY_DOWNLOAD_LINK = 25,
+ 
+     kMaxValue = EDIT_WITH_MEDIA_APP,  // Keep last.
+   };
+--- a/chrome/browser/download/download_item_model.cc
++++ b/chrome/browser/download/download_item_model.cc
+@@ -9,3 +9,4 @@
+ #include "base/byte_size.h"
+ #include "base/functional/bind.h"
++#include "base/functional/callback_helpers.h"
+ #include "base/i18n/number_formatting.h"
+@@ -57,6 +58,7 @@
+ #include "ui/base/l10n/l10n_util.h"
+ #include "ui/base/l10n/time_format.h"
+ #include "ui/base/text/bytes_formatting.h"
++#include "ui/base/clipboard/scoped_clipboard_writer.h"
+ #include "ui/base/ui_base_features.h"
+ 
+ using download::DownloadItem;
+@@ -703,5 +705,12 @@ bool DownloadItemModel::IsCommandEnabled(
+ #endif
+     }
++    case DownloadCommands::DELETE_LOCAL_FILE:
++      return GetState() == download::DownloadItem::COMPLETE &&
++             !GetFileExternallyRemoved() && !GetFullPath().empty();
++    case DownloadCommands::REMOVE_FROM_LIST:
++      return true;
++    case DownloadCommands::COPY_DOWNLOAD_LINK:
++      return GetURL().is_valid();
+     case DownloadCommands::CANCEL:
+     case DownloadCommands::RESUME:
+     case DownloadCommands::COPY_TO_CLIPBOARD:
+@@ -868,7 +877,25 @@ void DownloadItemModel::ExecuteCommand(DownloadCommands* download_commands,
+     case DownloadCommands::OPEN_WITH_MEDIA_APP:
+     case DownloadCommands::EDIT_WITH_MEDIA_APP:
+       DownloadUIModel::ExecuteCommand(download_commands, command);
+       break;
++    case DownloadCommands::DELETE_LOCAL_FILE:
++      download_->DeleteFile(base::DoNothing());
++      break;
++    case DownloadCommands::REMOVE_FROM_LIST:
++      download_->Remove();
++      break;
++    case DownloadCommands::COPY_DOWNLOAD_LINK: {
++      auto url = GetURL();
++      if (url.is_valid()) {
++        ui::ScopedClipboardWriter clipboard_writer(
++            ui::ClipboardBuffer::kCopyPaste);
++        if (profile()->IsOffTheRecord()) {
++          clipboard_writer.MarkAsOffTheRecord();
++        }
++        clipboard_writer.WriteText(base::UTF8ToUTF16(url.spec()));
++      }
++      break;
++    }
+     case DownloadCommands::DEEP_SCAN: {
+ #if BUILDFLAG(SAFE_BROWSING_DOWNLOAD_PROTECTION) && !BUILDFLAG(IS_ANDROID)
+       // Deep scanning is not supported on Android.
+--- a/chrome/browser/download/download_ui_model.cc
++++ b/chrome/browser/download/download_ui_model.cc
+@@ -649,6 +649,9 @@ bool DownloadUIModel::IsCommandEnabled(
+     case DownloadCommands::ALWAYS_OPEN_TYPE:
+     case DownloadCommands::OPEN_WITH_MEDIA_APP:
+     case DownloadCommands::EDIT_WITH_MEDIA_APP:
++    case DownloadCommands::REMOVE_FROM_LIST:
++    case DownloadCommands::DELETE_LOCAL_FILE:
++    case DownloadCommands::COPY_DOWNLOAD_LINK:
+       NOTREACHED();
+     case DownloadCommands::CANCEL:
+       return !IsDone();
+@@ -713,6 +716,9 @@ bool DownloadUIModel::IsCommandChecked(
+     case DownloadCommands::CANCEL_DEEP_SCAN:
+     case DownloadCommands::OPEN_WITH_MEDIA_APP:
+     case DownloadCommands::EDIT_WITH_MEDIA_APP:
++    case DownloadCommands::REMOVE_FROM_LIST:
++    case DownloadCommands::DELETE_LOCAL_FILE:
++    case DownloadCommands::COPY_DOWNLOAD_LINK:
+       return false;
+   }
+   return false;
+@@ -787,8 +793,11 @@ void DownloadUIModel::ExecuteCommand(DownloadCommands* download_commands,
+     case DownloadCommands::RETRY:
+     case DownloadCommands::CANCEL_DEEP_SCAN:
+       break;
+     case DownloadCommands::OPEN_WITH_MEDIA_APP:
+     case DownloadCommands::EDIT_WITH_MEDIA_APP:
++    case DownloadCommands::REMOVE_FROM_LIST:
++    case DownloadCommands::DELETE_LOCAL_FILE:
++    case DownloadCommands::COPY_DOWNLOAD_LINK:
+ #if BUILDFLAG(IS_CHROMEOS)
+       OpenUsingMediaApp();
+       break;
+--- a/chrome/browser/download/offline_item_model.cc
++++ b/chrome/browser/download/offline_item_model.cc
+@@ -336,6 +336,9 @@ bool OfflineItemModel::IsCommandEnabled(
+     case DownloadCommands::ALWAYS_OPEN_TYPE:
+     case DownloadCommands::OPEN_WITH_MEDIA_APP:
+     case DownloadCommands::EDIT_WITH_MEDIA_APP:
++    case DownloadCommands::REMOVE_FROM_LIST:
++    case DownloadCommands::DELETE_LOCAL_FILE:
++    case DownloadCommands::COPY_DOWNLOAD_LINK:
+       NOTIMPLEMENTED();
+       return false;
+     case DownloadCommands::PAUSE:
+@@ -390,6 +393,9 @@ bool OfflineItemModel::IsCommandChecked(
+     case DownloadCommands::CANCEL_DEEP_SCAN:
+     case DownloadCommands::OPEN_WITH_MEDIA_APP:
+     case DownloadCommands::EDIT_WITH_MEDIA_APP:
++    case DownloadCommands::REMOVE_FROM_LIST:
++    case DownloadCommands::DELETE_LOCAL_FILE:
++    case DownloadCommands::COPY_DOWNLOAD_LINK:
+       return false;
+   }
+   return false;
+@@ -423,6 +429,9 @@ void OfflineItemModel::ExecuteCommand(DownloadCommands* download_commands,
+     case DownloadCommands::CANCEL_DEEP_SCAN:
+     case DownloadCommands::OPEN_WITH_MEDIA_APP:
+     case DownloadCommands::EDIT_WITH_MEDIA_APP:
++    case DownloadCommands::REMOVE_FROM_LIST:
++    case DownloadCommands::DELETE_LOCAL_FILE:
++    case DownloadCommands::COPY_DOWNLOAD_LINK:
+       DownloadUIModel::ExecuteCommand(download_commands, command);
+       break;
+   }
+--- a/chrome/browser/download/download_stats.cc
++++ b/chrome/browser/download/download_stats.cc
+@@ -168,6 +168,9 @@ DownloadUiContextMenuAction DownloadUiContextMenuActionFromCommand(
+     case DownloadCommands::Command::BYPASS_DEEP_SCANNING:
+     case DownloadCommands::Command::OPEN_WITH_MEDIA_APP:
+     case DownloadCommands::Command::EDIT_WITH_MEDIA_APP:
++    case DownloadCommands::Command::REMOVE_FROM_LIST:
++    case DownloadCommands::Command::DELETE_LOCAL_FILE:
++    case DownloadCommands::Command::COPY_DOWNLOAD_LINK:
+       NOTREACHED();
+   }
+ }
+--- a/chrome/browser/download/download_ui_context_menu.cc
++++ b/chrome/browser/download/download_ui_context_menu.cc
+@@ -204,6 +204,15 @@ std::u16string DownloadUiContextMenu::GetLabelForCommandId(
+     case DownloadCommands::OPEN_WITH_MEDIA_APP:
+     case DownloadCommands::EDIT_WITH_MEDIA_APP:
+       NOTREACHED();
++    case DownloadCommands::REMOVE_FROM_LIST:
++      id = IDS_DOWNLOAD_DELETE_FROM_HISTORY;
++      break;
++    case DownloadCommands::COPY_DOWNLOAD_LINK:
++      id = IDS_DOWNLOAD_COPY_DOWNLOAD_LINK;
++      break;
++    case DownloadCommands::DELETE_LOCAL_FILE:
++      id = IDS_DOWNLOAD_BUBBLE_DELETE;
++      break;
+   }
+   CHECK(id != -1);
+   return l10n_util::GetStringUTF16(id);
+@@ -314,5 +323,14 @@ ui::SimpleMenuModel* DownloadUiContextMenu::GetFinishedMenuModel(
+     finished_download_menu_model_->AddItem(
+         DownloadCommands::SHOW_IN_FOLDER,
+         GetLabelForCommandId(DownloadCommands::SHOW_IN_FOLDER));
++    finished_download_menu_model_->AddItem(
++        DownloadCommands::COPY_DOWNLOAD_LINK,
++        GetLabelForCommandId(DownloadCommands::COPY_DOWNLOAD_LINK));
++    finished_download_menu_model_->AddItem(
++        DownloadCommands::REMOVE_FROM_LIST,
++        GetLabelForCommandId(DownloadCommands::REMOVE_FROM_LIST));
++    finished_download_menu_model_->AddItem(
++        DownloadCommands::DELETE_LOCAL_FILE,
++        GetLabelForCommandId(DownloadCommands::DELETE_LOCAL_FILE));
+     finished_download_menu_model_->AddSeparator(ui::NORMAL_SEPARATOR);
+   }
+@@ -345,5 +363,11 @@ ui::SimpleMenuModel* DownloadUiContextMenu::GetInterruptedMenuModel(
+       GetLabelForCommandId(DownloadCommands::LEARN_MORE_INTERRUPTED));
+ #endif
+   interrupted_download_menu_model_->AddSeparator(ui::NORMAL_SEPARATOR);
++  interrupted_download_menu_model_->AddItem(
++      DownloadCommands::COPY_DOWNLOAD_LINK,
++      GetLabelForCommandId(DownloadCommands::COPY_DOWNLOAD_LINK));
++  interrupted_download_menu_model_->AddItem(
++      DownloadCommands::REMOVE_FROM_LIST,
++      GetLabelForCommandId(DownloadCommands::REMOVE_FROM_LIST));
+   interrupted_download_menu_model_->AddItem(
+       DownloadCommands::CANCEL, GetLabelForCommandId(DownloadCommands::CANCEL));
+--- a/chrome/browser/ui/download/download_bubble_info_utils.cc
++++ b/chrome/browser/ui/download/download_bubble_info_utils.cc
+@@ -374,6 +374,11 @@ std::vector<DownloadBubbleQuickAction> QuickActionsForDownload(
+         &(features::IsRoundedIconsEnabled()
+               ? vector_icons::kOpenInNewFlippableIcon
+               : vector_icons::kLaunchChromeRefreshOldIcon));
++    actions.emplace_back(
++        DownloadCommands::Command::DELETE_LOCAL_FILE,
++        l10n_util::GetStringUTF16(IDS_DOWNLOAD_BUBBLE_DELETE),
++        &(features::IsRoundedIconsEnabled() ? kDeleteIcon
++                                          : kTrashCanRefreshOldIcon));
+   }
+ 
+   return actions;
+--- a/chrome/browser/ui/views/download/bubble/download_bubble_row_view.cc
++++ b/chrome/browser/ui/views/download/bubble/download_bubble_row_view.cc
+@@ -451,5 +451,6 @@ DownloadBubbleRowView::DownloadBubbleRowView(
+   AddQuickAction(DownloadCommands::SHOW_IN_FOLDER);
+   AddQuickAction(DownloadCommands::CANCEL);
+   AddQuickAction(DownloadCommands::OPEN_WHEN_COMPLETE);
++  AddQuickAction(DownloadCommands::DELETE_LOCAL_FILE);
+   quick_action_holder_->SetVisible(false);
+   quick_action_holder_->SetProperty(views::kViewIgnoredByLayoutKey, true);
+@@ -865,7 +866,11 @@ std::u16string DownloadBubbleRowView::GetAccessibleNameForQuickAction(
+     case DownloadCommands::SHOW_IN_FOLDER:
+       return l10n_util::GetStringFUTF16(
+           IDS_DOWNLOAD_BUBBLE_SHOW_IN_FOLDER_QUICK_ACTION_ACCESSIBILITY,
+           info_->model()->GetFileNameToReportUser().LossyDisplayName());
++    case DownloadCommands::DELETE_LOCAL_FILE:
++      return l10n_util::GetStringFUTF16(
++          IDS_DOWNLOAD_BUBBLE_DELETE_MAIN_BUTTON_ACCESSIBILITY,
++          info_->model()->GetFileNameToReportUser().LossyDisplayName());
+     default:
+       NOTREACHED();
+   }
+--- a/chrome/browser/download/bubble/download_bubble_ui_controller.cc
++++ b/chrome/browser/download/bubble/download_bubble_ui_controller.cc
+@@ -271,3 +271,5 @@ void DownloadBubbleUIController::ProcessDownloadButtonPress(
+   DownloadCommands commands(model);
+-  base::UmaHistogramEnumeration("Download.Bubble.ProcessedCommand2", command);
++  if (command <= DownloadCommands::Command::kMaxValue) {
++    base::UmaHistogramEnumeration("Download.Bubble.ProcessedCommand2", command);
++  }
+   DownloadItemWarningData::WarningSurface warning_surface =
+@@ -350,3 +352,4 @@ void DownloadBubbleUIController::ProcessDownloadButtonPress(
+     case DownloadCommands::OPEN_SAFE_BROWSING_SETTING:
++    case DownloadCommands::DELETE_LOCAL_FILE:
+       commands.ExecuteCommand(command);
+       break;

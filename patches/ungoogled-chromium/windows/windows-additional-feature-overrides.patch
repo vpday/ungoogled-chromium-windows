@@ -99,6 +99,11 @@
 -BASE_FEATURE(kWebuiRefresh2026, base::FEATURE_DISABLED_BY_DEFAULT);
 +BASE_FEATURE(kWebuiRefresh2026, base::FEATURE_ENABLED_BY_DEFAULT);
  BASE_FEATURE(kAppMenuGlowUp, base::FEATURE_DISABLED_BY_DEFAULT);
+@@ -165,3 +165,3 @@
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+-BASE_FEATURE(kDseIntegrity, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kDseIntegrity, base::FEATURE_DISABLED_BY_DEFAULT);
+
 @@ -201,7 +201,7 @@ BASE_FEATURE_PARAM(int,
  
  // Preloads a WebContents with a Top Chrome WebUI on BrowserView initialization,
@@ -279,6 +284,12 @@
  
  // This parameter configures a preamble which is returned in the
  // extra_information attribute of the return value of attempt_form_filling. It
+@@ -275,4 +275,4 @@ BASE_FEATURE_PARAM(
+ // If enabled, the client may trigger the server model for AutofillAI type
+ // predictions.
+-DEFINE_FEATURE_WITH_MOBILE_COUNTRY_RESTRICTION(kAutofillAiServerModel);
++BASE_FEATURE(kAutofillAiServerModel, base::FEATURE_DISABLED_BY_DEFAULT);
+
 @@ -1000,7 +1000,7 @@ BASE_FEATURE(kAutofillServerExperimentalSignatures,
  
  // Enables uploading of more data to the Autofill server to use for computing
@@ -288,6 +299,52 @@
  
  // Kill switch: If enabled, the focus check in AutofillPopupControllerImpl and
  // AutofillKeyboardAccessoryControllerImpl is simplified.
+--- a/components/autofill/core/common/autofill_payments_features.cc
++++ b/components/autofill/core/common/autofill_payments_features.cc
+@@ -52,14 +52,8 @@ BASE_FEATURE(kAutofillEnableAiCardRecommendation,
+ 
+ // When enabled, Chrome will extract the checkout amount from the checkout page
+ // of the allowlisted merchant websites.
+-BASE_FEATURE(kAutofillEnableAmountExtraction,
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+-             base::FEATURE_ENABLED_BY_DEFAULT);
+-#else
+-             base::FEATURE_DISABLED_BY_DEFAULT);
+-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) ||
+-        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
++BASE_FEATURE(kAutofillEnableAmountExtraction,
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Enables testing of the result of checkout amount extraction on desktop.
+ // This flag will allow amount extraction to run on any website when a CC
+@@ -85,14 +79,8 @@ BASE_FEATURE(kAutofillEnableBottomSheetScanCardAndFill,
+ #endif
+ 
+ // When enabled, buy now pay later (BNPL) in Autofill will be offered.
+-BASE_FEATURE(kAutofillEnableBuyNowPayLater,
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+-             base::FEATURE_ENABLED_BY_DEFAULT);
+-#else
+-             base::FEATURE_DISABLED_BY_DEFAULT);
+-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) ||
+-        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
++BASE_FEATURE(kAutofillEnableBuyNowPayLater,
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // When enabled, additional steps are required to autofill buy now pay later
+ // (BNPL) issuers that are externally linked.
+--- a/components/commerce/core/commerce_feature_list.cc
++++ b/components/commerce/core/commerce_feature_list.cc
+@@ -224,6 +224,6 @@ BASE_FEATURE(kInStockNotification, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kShoppingPageTypes, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kRetailCoupons, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kRetailCoupons, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ const char kRetailCouponsWithCodeParam[] = "RetailCouponsWithCodeParam";
 --- a/components/enterprise/browser/reporting/reporting_features.cc
 +++ b/components/enterprise/browser/reporting/reporting_features.cc
 @@ -16,7 +16,7 @@ BASE_FEATURE(kSaasUsageReporting,
@@ -369,6 +426,27 @@
  
  BASE_FEATURE(kFlushPersistentSystemProfileOnWrite,
               base::FEATURE_DISABLED_BY_DEFAULT);
+--- a/components/ntp_tiles/features.cc
++++ b/components/ntp_tiles/features.cc
+@@ -20,7 +20,7 @@ BASE_FEATURE(kPopularSitesBakedInContentFeature,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kNtpMostLikelyFaviconsFromServerFeature,
+              "NTPMostLikelyFaviconsFromServer",
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kPopularSitesRefreshUs, base::FEATURE_DISABLED_BY_DEFAULT);
+--- a/components/omnibox/browser/aim_eligibility_service_features.cc
++++ b/components/omnibox/browser/aim_eligibility_service_features.cc
+@@ -8,6 +8,6 @@
+ 
+ namespace omnibox {
+ 
+-BASE_FEATURE(kAimEnabled, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kAimEnabled, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kAimServerEligibilityEnabled, base::FEATURE_ENABLED_BY_DEFAULT);
 --- a/components/omnibox/common/omnibox_features.cc
 +++ b/components/omnibox/common/omnibox_features.cc
 @@ -58,7 +58,7 @@ BASE_FEATURE(kDynamicMaxAutocomplete,
@@ -602,6 +680,25 @@
  const base::FeatureParam<double> kCsdProactivePasswordProtectionSampleRate{
 --- a/components/search/ntp_features.cc
 +++ b/components/search/ntp_features.cc
+@@ -78,16 +78,6 @@ BASE_FEATURE(kNtpBackgroundImageErrorDetection,
+ // If enabled, calendar module will be shown.
+-BASE_FEATURE(kNtpCalendarModule,
+-#if BUILDFLAG(IS_ANDROID)
+-             base::FEATURE_DISABLED_BY_DEFAULT);
+-#else
+-             base::FEATURE_ENABLED_BY_DEFAULT);
+-#endif
++BASE_FEATURE(kNtpCalendarModule, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // If enabled, chrome cart module will be shown.
+-BASE_FEATURE(kNtpChromeCartModule,
+-#if BUILDFLAG(IS_ANDROID)
+-             base::FEATURE_DISABLED_BY_DEFAULT);
+-#else
+-             base::FEATURE_ENABLED_BY_DEFAULT);
+-#endif
++BASE_FEATURE(kNtpChromeCartModule, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
 @@ -111,12 +111,7 @@ BASE_FEATURE(kNtpDummyModules, base::FEATURE_DISABLED_BY_DEFAULT);
  
  // If enabled, Google Drive module will be shown.
@@ -795,6 +892,16 @@
  #endif  // BUILDFLAG(IS_WIN)
  
  #if BUILDFLAG(IS_ANDROID)
+@@ -597,7 +597,7 @@ BASE_FEATURE(kPriorityOverridePendingViews, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // Enables exposure of the core milestone 1 (M1) APIs in the renderer without an
+ // origin trial token: Attribution Reporting, FLEDGE, Topics.
+-BASE_FEATURE(kPrivacySandboxAdsAPIsM1Override,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kPrivacySandboxAdsAPIsM1Override,
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ #if BUILDFLAG(IS_ANDROID)
 --- a/content/public/common/content_features.cc
 +++ b/content/public/common/content_features.cc
 @@ -622,5 +622,5 @@ BASE_FEATURE(kInstalledApp, base::FEATURE_ENABLED_BY_DEFAULT);
@@ -882,6 +989,14 @@
  // When enabled, will unconditionally poll the C++ cache to check Java node
 --- a/media/base/media_switches.cc
 +++ b/media/base/media_switches.cc
+@@ -551,6 +551,6 @@ BASE_FEATURE(kDocumentPictureInPictureReparenting,
+ BASE_FEATURE(kEnableRtcpReporting, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // Enables user control over muting tab audio from the tab strip.
+-BASE_FEATURE(kEnableTabMuting, base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kEnableTabMuting, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // Enables tracking the occlusion of HW secure encrypted video elements.
 @@ -904,7 +904,7 @@ BASE_FEATURE(kPreloadMediaEngagementData,
  BASE_FEATURE(kRecordMediaEngagementScores, base::FEATURE_ENABLED_BY_DEFAULT);
  
@@ -986,6 +1101,31 @@
  
 --- a/third_party/blink/common/features.cc
 +++ b/third_party/blink/common/features.cc
+@@ -125,6 +125,6 @@ BASE_FEATURE(kAllowDatapipeDrainedAsBytesConsumerInBFCache,
+ 
+ // Enables URN URLs like those produced by Protected Audience auctions to be
+ // displayed by iframes (instead of requiring fenced frames).
+-BASE_FEATURE(kAllowURNsInIframes, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kAllowURNsInIframes, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // A console warning is shown when the opaque url returned from Protected
+@@ -195,7 +195,7 @@ BASE_FEATURE_PARAM(std::string,
+ 
+ // Enable background resource fetch in Blink. See https://crbug.com/1379780 for
+ // more details.
+-BASE_FEATURE(kBackgroundResourceFetch, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kBackgroundResourceFetch, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE_PARAM(bool,
+                    kBackgroundFontResponseProcessor,
+                    &kBackgroundResourceFetch,
+@@ -638,6 +638,6 @@ BASE_FEATURE_PARAM(bool,
+ // this feature does not automatically expose this element to the web, it only
+ // allows the element to be enabled by the runtime enabled feature, for origin
+ // trials.
+-BASE_FEATURE(kFencedFrames, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kFencedFrames, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Enable sending event-level reports through reportEvent() in cross-origin
 @@ -1655,7 +1655,7 @@ BASE_FEATURE(kMoveResizeWindowToIPCs, base::FEATURE_ENABLED_BY_DEFAULT);
  // anchor element will be extracted and recorded.
  // Note that the desktop roll out is being done separately from android. See
@@ -1029,6 +1169,14 @@
  
  // kSpeculativeServiceWorkerWarmUp warms up service workers up to this max
  // count.
+@@ -2295,6 +2295,6 @@ BASE_FEATURE(kThrottleFullscreenVideoActiveTab,
+ 
+ // Changes behavior of User-Agent Client Hints to send blank headers when the
+ // User-Agent string is overridden, instead of disabling the headers altogether.
+-BASE_FEATURE(kUACHOverrideBlank, base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kUACHOverrideBlank, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // If enabled, the body of `EmulateLoadStartedForInspector` is executed only
 --- a/chrome/browser/ui/tabs/features.cc
 +++ b/chrome/browser/ui/tabs/features.cc
 @@ -95,4 +95,4 @@

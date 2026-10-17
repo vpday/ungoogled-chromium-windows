@@ -1,0 +1,26 @@
+--- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
++++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
+@@ -297,6 +297,7 @@
+     {
+       // Interest Group JS API/runtimeflag.
+       name: "AdInterestGroupAPI",
++      base_feature_status: "disabled",
+       status: "stable",
+       origin_trial_feature_name: "AdInterestGroupAPI",
+       implied_by: ["Fledge", "Parakeet"],
+@@ -407,6 +408,7 @@
+     },
+     {
+       name: "AIPromptAPI",
++      base_feature_status: "disabled",
+       public: true,
+       status: {
+         "Win": "stable",
+@@ -512,6 +514,7 @@
+     },
+     {
+       name: "AISummarizationAPI",
++      base_feature_status: "disabled",
+       status: {
+         "Win": "stable",
+         "Mac": "stable",
