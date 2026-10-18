@@ -2,11 +2,11 @@
 
 This repository cross-compiles Windows binaries of [ungoogled-chromium](https://github.com/Eloston/ungoogled-chromium) on Linux.
 
-It also integrates curated patches from [Brave](https://github.com/brave/brave-core), [Cromite](https://github.com/uazo/cromite) and [Helium](https://github.com/imputnet/helium) — creating a feature-rich, tuned Frankenstein build.
+It also integrates [curated privacy, performance, and usability patches](PATCHES.md) from [Brave](https://github.com/brave/brave-core), [Cromite](https://github.com/uazo/cromite), and [Helium](https://github.com/imputnet/helium) — creating a feature-rich, tuned Frankenstein build.
 
 ## Downloads
 
-Download pre-built Windows packages (portable `.zip` and installer `.exe` for `x64`, `x86`, and `arm64`) from the [GitHub Releases](https://github.com/vpday/ungoogled-chromium-windows/releases) page.
+Download pre-built Windows packages (portable `.zip` and installer `.exe` for `x64`, `x86`, and `arm64`) from [GitHub Releases](https://github.com/vpday/ungoogled-chromium-windows/releases).
 
 ## Quick Start
 
@@ -27,7 +27,7 @@ python3 build.py --target x64
 python3 package.py
 ```
 
-A zip archive and installer will be created under `build/`.
+A zip archive and installer are generated in `build/`.
 
 ## System Requirements
 
@@ -52,7 +52,7 @@ sudo apt-get install -y \
     libxkbcommon-dev gperf libkrb5-dev python3 python3-pip git
 ```
 
-The prebuilt LLVM toolchain requires `libicui18n.so.70`. Newer Ubuntu releases (such as Ubuntu 26.04) ship with newer ICU libraries and do not provide `libicu70` in their default package repositories. On Ubuntu 26.04, install `libicu70` manually:
+The prebuilt LLVM toolchain requires `libicui18n.so.70`. Newer Ubuntu releases (including Ubuntu 26.04) ship with newer ICU libraries and omit `libicu70` from their default package repositories. Install it manually on Ubuntu 26.04:
 
 ```bash
 if ! ldconfig -p 2>/dev/null | grep 'libicui18n\.so\.70' >/dev/null 2>&1; then
@@ -75,7 +75,7 @@ sudo apt-get install -y libc6-dev-i386 linux-libc-dev:i386 \
 
 ### Python Dependencies
 
-The build pipeline and GN argument generator require specific Python packages. Install them using `pip` before building (matching `.github/actions/stage/index.js` in CI):
+The build pipeline and GN argument generator require specific Python packages. Install them with `pip` before building (matching `.github/actions/stage/index.js` in CI):
 
 ```bash
 python3 -m pip install httplib2==0.22.0 clang==21.1.7
@@ -93,7 +93,7 @@ python3 build.py --target x64
 python3 package.py
 ```
 
-Packaging reads the authoritative target from `build/src/out/Default/args.gn` and derives both its file filter and output filename suffix from that value. Its optional `--cpu-arch` argument is only a compatibility assertion and must match the generated target.
+`package.py` reads the authoritative target from `build/src/out/Default/args.gn` and derives both its file filter and output filename suffix from that value. The optional `--cpu-arch` argument is a compatibility assertion that must match the generated target.
 
 ### Architecture-Specific Builds
 
@@ -123,7 +123,7 @@ python3 build.py --out-dir build/src/out/Default
 python3 build.py --disable-ssl-verification
 ```
 
-The `--ci` flag turns on stamp-based step skipping (`build/src/.stamps` and `build/.stamps`). Completed steps are skipped when their stamp file already exists, which is useful when resuming an interrupted build or continuing a multi-stage CI run. In `--ci` mode, `build.py` automatically executes `package.py` after compilation.
+The `--ci` flag enables stamp-based step skipping (`build/src/.stamps` and `build/.stamps`). Steps with an existing stamp file are skipped, allowing interrupted builds or multi-stage CI runs to resume without re-running finished work. In `--ci` mode, `build.py` automatically runs `package.py` after compilation.
 
 ### Build Recovery
 
@@ -140,7 +140,7 @@ rm -rf build/src
 python3 build.py
 ```
 
-This removes `build/src/.stamps` along with the source tree, which resets most build steps. `build/.stamps` is separate and only tracks Windows toolchain extraction state.
+This removes `build/src/.stamps` along with the source tree, resetting most build steps. `build/.stamps` is separate and only tracks Windows toolchain extraction state.
 
 For a full clean rebuild, run:
 ```bash
@@ -150,7 +150,7 @@ python3 build.py
 
 ## Build Process Overview
 
-The `build.py` script runs these steps in order. In `--ci` mode, step state is stored in `build/src/.stamps`. The Windows toolchain extraction stamp `.vs_toolchain_updated_{target_arch}.stamp` persists in `build/src/.stamps`, allowing multi-stage GitHub Actions workflows to seamlessly remount the `ciopfs` filesystem via `ensure_vs_toolchain_mounted()` without re-downloading or re-extracting the toolchain.
+`build.py` executes these steps in order. In `--ci` mode, step progress is tracked in `build/src/.stamps`. The Windows toolchain extraction stamp `.vs_toolchain_updated_{target_arch}.stamp` persists in `build/src/.stamps`, allowing multi-stage GitHub Actions workflows to remount the `ciopfs` filesystem via `ensure_vs_toolchain_mounted()` without re-downloading or re-extracting the toolchain.
 
 1. Clone Chromium source (including the `v8` submodule) or extract a pre-packaged tarball.
 2. Download target-specific Windows dependencies and build tools from `downloads.ini`.
@@ -167,7 +167,7 @@ The `build.py` script runs these steps in order. In `--ci` mode, step state is s
 13. Compile `chrome`, `chromedriver`, and `mini_installer` using Ninja.
 14. In CI mode, run `package.py` automatically to produce portable zip archives and NSIS installers (run manually for local builds).
 
-Most of these steps can be skipped when their stamp file already exists, which makes recovery much faster after a failed build.
+Steps with an existing stamp file are skipped in `--ci` mode, accelerating recovery after interrupted builds.
 
 ## CI Builds
 
@@ -178,19 +178,15 @@ The CI pipeline is split into four workflows:
 - `.github/workflows/build-arm.yml` - arm64 build
 - `.github/workflows/publish-release.yml` - release aggregation and publishing
 
-Each architecture workflow passes its canonical `x64`, `x86`, or `arm64` target through the reusable workflow and keeps the existing 8-stage recovery chain to work around the 6-hour GitHub Actions job timeout.
-A failed or retried target build only requires rerunning that target's workflow, while the release remains gated on all three targets being available for the same tag.
+Each architecture workflow passes its canonical `x64`, `x86`, or `arm64` target to a reusable workflow, running an 8-stage recovery chain to work around GitHub Actions' 6-hour job timeout.
+A failed or retried target build only requires rerunning that target's workflow; the final release remains gated until all three targets succeed for the tag.
 
-The publish workflow listens for successful architecture builds, finds the latest successful x64/x86/arm runs for the same tag, downloads their final `chromium`, `chromium-x86`, and `chromium-arm` artifacts, and publishes a single GitHub Release once all three are present. If one architecture is still missing, the publish workflow exits without creating a partial release.
+The publish workflow triggers on successful architecture builds, finds the latest successful x64/x86/arm runs for the tag, downloads their final `chromium`, `chromium-x86`, and `chromium-arm` artifacts, and publishes a single GitHub Release. If any architecture is missing, it exits without creating a partial release.
 
-For the complete CI setup and workflow definitions, see:
-- `.github/workflows/build-x64.yml`
-- `.github/workflows/build-x86.yml`
-- `.github/workflows/build-arm.yml`
-- `.github/workflows/reusable-build.yml`
-- `.github/workflows/publish-release.yml`
-- `.github/actions/prepare/action.yml`
-- `.github/actions/stage/index.js`
+Supporting workflow and action definitions:
+- `.github/workflows/reusable-build.yml` - reusable multi-stage build workflow
+- `.github/actions/prepare/action.yml` - environment and toolchain setup
+- `.github/actions/stage/index.js` - stage orchestration logic
 
 ## Developer Guide
 
@@ -231,8 +227,10 @@ All dependency versions are defined in `downloads.ini`. Dependencies are organiz
 ##### Node.js (`nodejs`)
 
 1. Get `NODE_VERSION` from `build/src/third_party/node/update_node_binaries`
-2. Download `node-vVERSION-linux-x64.tar.xz` from [NodeJS website](https://nodejs.org/dist/)
-3. Update `downloads.ini` `[nodejs]` with version and SHA-256 checksum
+2. Download `node-vVERSION-linux-x64.tar.xz` from [Node.js dist](https://nodejs.org/dist/)
+3. Compute SHA-256 checksum and update `downloads.ini` section `[nodejs]`:
+   - `version = VERSION`
+   - `sha256 = CHECKSUM`
 
 ##### esbuild (`esbuild`)
 
@@ -265,13 +263,13 @@ Used by `tools/typescript/ts_library.gni` for compiling WebUI and DevTools front
 
 ##### DirectX headers (`directx-headers`)
 
-1. Get commit hash from `build/src/DEPS` by searching for `src/third_party/microsoft_dxheaders/src`
-2. Update `downloads.ini` `[directx-headers]` with `version = COMMIT_HASH`
+1. Find the commit hash in `build/src/DEPS` under `src/third_party/microsoft_dxheaders/src`
+2. Update `downloads.ini` section `[directx-headers]` with `version = COMMIT_HASH`
 
 ##### WebAuthn headers (`webauthn`)
 
-1. Get commit hash from `build/src/DEPS` by searching for `src/third_party/microsoft_webauthn/src`
-2. Update `downloads.ini` `[webauthn]` with `version = COMMIT_HASH`
+1. Find the commit hash in `build/src/DEPS` under `src/third_party/microsoft_webauthn/src`
+2. Update `downloads.ini` section `[webauthn]` with `version = COMMIT_HASH`
 
 #### Rust Toolchain
 
@@ -296,7 +294,7 @@ grep RUST_REVISION build/src/tools/rust/update_rust.py
 2. Get commit date from `https://github.com/rust-lang/rust/commit/RUST_REVISION`
    - Example: Revision `abc123...` corresponds to date `2026-09-09`
 
-3. Download `https://static.rust-lang.org/dist/2026-09-09/channel-rust-nightly.toml`. Use the matching `xz_hash` value from that manifest as the `sha256` you put in `downloads.ini`. That is the SHA-256 for the `.tar.xz` archive, so you do not need to download every Rust archive just to run `sha256sum`.
+3. Download `https://static.rust-lang.org/dist/2026-09-09/channel-rust-nightly.toml`. Use the matching `xz_hash` value from that manifest as the `sha256` in `downloads.ini` (this is the `.tar.xz` SHA-256, avoiding downloading every archive just to run `sha256sum`).
 
 Linux Rust host archive:
 ```text
@@ -336,8 +334,8 @@ tar xf rust-nightly-x86_64-unknown-linux-gnu.tar.xz
 The Windows cross-compilation toolchain configuration lives in `win_toolchain.json`. It defines the Visual Studio and Windows SDK packages used for cross-compilation.
 
 Update `win_toolchain.json` when:
-- When Chromium version changes (update `chromium_version`)
-- When Visual Studio or Windows SDK version changes in Chromium upstream
+- The Chromium version changes (update `chromium_version`)
+- Visual Studio or Windows SDK versions change in upstream Chromium
 
 `win_toolchain.json` has the following fields:
 
@@ -374,42 +372,21 @@ Field descriptions:
 
 ##### Windows toolchain update process
 
-1. Check the current Chromium version.
-
+1. Check the current Chromium version:
 ```bash
 cat ungoogled-chromium/chromium_version.txt
 ```
-
 Update `variables.chromium_version` in `win_toolchain.json` to match this version.
 
-2. Check for new toolchain releases.
+2. Collect release filenames and checksums.
 
-Visit: `https://github.com/vpday/chromium-win-toolchain-builder/releases/tag/VERSION`
+Visit `https://github.com/vpday/chromium-win-toolchain-builder/releases/tag/VERSION` and retrieve:
+- Full toolchain (`win-toolchain`): split archives (`.tar.001`, `.tar.002`), zip filename (`32f2c0f568.zip`), zip SHA-512, and tar SHA-256 checksums
+- Lightweight toolchain (`win-toolchain-noarm`): single archive (`...noarm.tar`), zip filename (`7b55f8d4cb.zip`), zip SHA-512, and tar SHA-256 checksum
 
-From the release page, collect:
-- Tar archives: `win_toolchain_chromium-VERSION_vs-YEAR_sdk-SDK.tar.001/002` (with ARM) or `...noarm.tar` (without ARM)
-- Zip filenames: `32f2c0f568.zip` (with ARM), `7b55f8d4cb.zip` (without ARM)
-- SHA-256 and SHA-512 checksums for both tar and zip files
+3. Update `win_toolchain.json`.
 
-3. Get zip information from the releases page.
-
-From the release page, copy:
-- Zip filename (e.g., `32f2c0f568.zip` for full toolchain, `7b55f8d4cb.zip` for noarm)
-- Zip SHA-512 checksum
-
-Use these values for the `zip_filename` and `sha512` fields in `win_toolchain.json`.
-
-4. Get tar file checksums from the releases page.
-
-From the release page, copy SHA-256 checksums for each tar file:
-- Full toolchain: checksums for `.tar.001` and `.tar.002`
-- Noarm toolchain: checksum for `.tar`
-
-Use these values for the `sha256` field in the `files[]` array in `win_toolchain.json`.
-
-5. Update `win_toolchain.json`.
-
-Update `variables` section:
+Update the `variables` section:
 ```json
 {
   "variables": {
@@ -420,12 +397,10 @@ Update `variables` section:
 }
 ```
 
-Make sure `chromium_version` matches `ungoogled-chromium/chromium_version.txt`.
-
-Update `win-toolchain` and `win-toolchain-noarm` sections:
-- `zip_filename`: from step 3
-- `sha512`: from step 3
-- `files[].sha256`: from step 4
+Update the `win-toolchain` and `win-toolchain-noarm` sections:
+- `zip_filename`: zip filename from the release
+- `sha512`: zip SHA-512 checksum from the release
+- `files[].sha256`: SHA-256 checksum for each tar archive (`.tar.001` and `.tar.002` for `win-toolchain`; `.tar` for `win-toolchain-noarm`)
 
 ## Technical Details
 
@@ -433,21 +408,23 @@ Update `win-toolchain` and `win-toolchain-noarm` sections:
 
 This project downloads a complete Windows toolchain (LLVM, Windows SDK, Rust) and builds Windows binaries on Linux.
 
-The build works like this:
+Build workflow:
 1. Downloads Linux-native build tools (LLVM, Ninja, 7-Zip, Node.js, Go, esbuild, TypeScript) from `downloads.ini`
 2. Downloads Windows cross-compilation toolchain via `win_toolchain.json`
 3. Downloads Rust toolchain (Linux host + Windows targets)
 4. Configures GN with `target_os = "win"`, `is_clang = true`, and target-specific optimizations
-5. Builds using Clang/LLVM and Ninja within a case-insensitive CIOPFS mount
+5. Compiles using Clang/LLVM and Ninja within a case-insensitive CIOPFS mount
 
 ### Integrated Patchsets
 
-Incorporates selected patches from other browser projects:
+For a detailed specification of all native Windows optimizations, feature overrides, and curated patches, see [PATCHES.md](PATCHES.md).
 
-- [Brave](https://github.com/brave/brave-core): [`patches/brave/`](patches/brave/).
-- [Helium](https://github.com/imputnet/helium): [`patches/helium/`](patches/helium/).
-- [Cromite](https://github.com/uazo/cromite): [`patches/cromite/`](patches/cromite/).
-- [Chromium_Clang](https://github.com/RobRich999/Chromium_Clang): [`windows-common-optimizations.patch`](patches/ungoogled-chromium/windows/windows-common-optimizations.patch) [`windows-x64-optimizations.patch`](patches/ungoogled-chromium/windows/windows-x64-optimizations.patch).
+Selected patches from other browser projects:
+
+- [Brave](https://github.com/brave/brave-core): [`patches/brave/`](patches/brave/)
+- [Helium](https://github.com/imputnet/helium): [`patches/helium/`](patches/helium/)
+- [Cromite](https://github.com/uazo/cromite): [`patches/cromite/`](patches/cromite/)
+- [Chromium_Clang](https://github.com/RobRich999/Chromium_Clang): [`windows-common-optimizations.patch`](patches/ungoogled-chromium/windows/windows-common-optimizations.patch), [`windows-x64-optimizations.patch`](patches/ungoogled-chromium/windows/windows-x64-optimizations.patch)
 
 ## License
 
