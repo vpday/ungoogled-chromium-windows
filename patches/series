@@ -48,6 +48,7 @@ helium/mute-tab-context-menu.patch
 helium/simplify-context-menu.patch
 helium/disable-pdf-infobar.patch
 helium/force-paste-action.patch
+ungoogled-chromium/windows/windows-adaptive-search-context-menu.patch
 helium/shift-right-click-context-menu.patch
 helium/disable-non-standard-auth-features.patch
 helium/lazy-session-restore.patch

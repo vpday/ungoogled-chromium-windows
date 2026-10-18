@@ -1,0 +1,384 @@
+--- a/chrome/app/chrome_command_ids.h
++++ b/chrome/app/chrome_command_ids.h
+@@ -507,6 +507,10 @@
+ #define IDC_DEBUG_PRINT_LAYER_HIERARCHY 52514
+ // Please leave a gap here for new debug commands.
+ 
++// Search with search engines context menu items
++#define IDC_CONTENT_CONTEXT_SEARCHWEB_START 52600
++#define IDC_CONTENT_CONTEXT_SEARCHWEB_SUBMENU 52660
++
+ // Autofill feedback.
+ #define IDC_CONTENT_CONTEXT_AUTOFILL_FEEDBACK 52990
+ // Autofill context menu commands
+--- a/chrome/app/generated_resources.grd
++++ b/chrome/app/generated_resources.grd
+@@ -1048,6 +1048,9 @@
+           <message name="IDS_CONTENT_CONTEXT_SEARCHWEBWITH" desc="The name of the Search with Engine command in the content area context menu">
+             &amp;Search with <ph name="SEARCH_ENGINE">$1<ex>DuckDuckGo</ex></ph>
+           </message>
++          <message name="IDS_CONTENT_CONTEXT_MORE_SEARCH_ENGINES" desc="The label of the More search engines submenu in the context menu">
++            More search engines
++          </message>
+           <message name="IDS_CONTENT_CONTEXT_SEARCHWEBFOR" desc="The name of the Search the Web for “string” command in the content area context menu">
+             &amp;Search <ph name="SEARCH_ENGINE">$1<ex>Google</ex></ph> for “<ph name="SEARCH_TERMS">$2<ex>flowers</ex></ph>”
+           </message>
+@@ -1419,6 +1422,9 @@
+           <message name="IDS_CONTENT_CONTEXT_SEARCHWEBWITH" desc="In Title Case: The name of the Search with Engine command in the content area context menu">
+             &amp;Search with <ph name="SEARCH_ENGINE">$1<ex>DuckDuckGo</ex></ph>
+           </message>
++          <message name="IDS_CONTENT_CONTEXT_MORE_SEARCH_ENGINES" desc="In Title Case: The label of the More search engines submenu in the context menu">
++            More Search Engines
++          </message>
+           <message name="IDS_CONTENT_CONTEXT_SEARCHWEBFOR" desc="In Title Case: The name of the Search the Web for “string” command in the content area context menu">
+             &amp;Search <ph name="SEARCH_ENGINE">$1<ex>Google</ex></ph> for “<ph name="SEARCH_TERMS">$2<ex>flowers</ex></ph>”
+           </message>
+--- a/chrome/browser/renderer_context_menu/render_view_context_menu.h
++++ b/chrome/browser/renderer_context_menu/render_view_context_menu.h
+@@ -431,6 +431,7 @@
+   void ExecSaveVideoFrameAs();
+   void ExecCopyVideoFrame();
+   void ExecSearchForVideoFrame(int event_flags, bool is_lens_query);
++  void ExecSearchForURL(GURL navigation_url, int event_flags);
+   void ExecLiveCaption();
+   void ExecRotateCW();
+   void ExecRotateCCW();
+@@ -566,6 +567,10 @@
+   std::unique_ptr<AccessibilityLabelsMenuObserver>
+       accessibility_labels_menu_observer_;
+   ui::SimpleMenuModel accessibility_labels_submenu_model_;
++
++  // Search engines sub-menu handling and stored URLs.
++  ui::SimpleMenuModel search_engines_submenu_model_;
++  std::vector<GURL> search_engine_urls_;
+ 
+ #if !BUILDFLAG(IS_MAC)
+   // An observer that handles the submenu for showing spelling options. This
+--- a/chrome/browser/renderer_context_menu/render_view_context_menu.cc
++++ b/chrome/browser/renderer_context_menu/render_view_context_menu.cc
+@@ -421,6 +421,10 @@
+ constexpr int IDC_OPEN_LINK_IN_PROFILE_LAST =
+     IDC_OPEN_LINK_IN_PROFILE_FIRST + kMaxOpenLinkInProfileItems - 1;
+ 
++constexpr int kMaxSearchWithEngineItems = 50;
++constexpr int IDC_CONTENT_CONTEXT_SEARCHWEB_LAST =
++    IDC_CONTENT_CONTEXT_SEARCHWEB_START + kMaxSearchWithEngineItems - 1;
++
+ constexpr int kMaxSpellingSuggestionsLimit = 5;
+ constexpr int IDC_SPELLCHECK_SUGGESTION_LAST =
+     IDC_SPELLCHECK_SUGGESTION_0 + kMaxSpellingSuggestionsLimit - 1;
+@@ -758,6 +762,12 @@
+     return IDC_OPEN_LINK_IN_PROFILE_FIRST;
+   }
+ 
++  if ((id >= IDC_CONTENT_CONTEXT_SEARCHWEB_START &&
++       id <= IDC_CONTENT_CONTEXT_SEARCHWEB_LAST) ||
++      id == IDC_CONTENT_CONTEXT_SEARCHWEB_SUBMENU) {
++    return IDC_CONTENT_CONTEXT_SEARCHWEBFOR;
++  }
++
+   return id;
+ }
+ 
+@@ -1095,6 +1105,7 @@
+       inspect_submenu_model_(this),
+       video_frame_submenu_model_(this),
+       accessibility_labels_submenu_model_(this),
++      search_engines_submenu_model_(this),
+       embedder_web_contents_(GetWebContentsToUse(&render_frame_host)),
+       autofill_context_menu_manager_(this, &menu_model_),
+       is_paste_enabled_(is_paste_enabled),
+@@ -2968,35 +2979,155 @@
+   if (AutocompleteMatch::IsSearchType(match.type)) {
+-    const TemplateURL* const default_provider =
+-        TemplateURLServiceFactory::GetForProfile(GetProfile())
+-            ->GetDefaultSearchProvider();
++    TemplateURLService* const template_url_service =
++        TemplateURLServiceFactory::GetForProfile(GetProfile());
++    if (!template_url_service) {
++      return;
++    }
++
++    const TemplateURL* const default_provider =
++        template_url_service->GetDefaultSearchProvider();
+     if (!default_provider) {
+       return;
+     }
+ 
+     if (!params_.properties.contains(
+             prefs::kDefaultSearchProviderContextMenuAccessAllowed)) {
+       return;
+     }
+ 
+     // When the Lens text selection entrypoint flag is enabled, checking for the
+     // availability of Lens requires the browser, so hide the menu item if the
+     // flag is enabled and there is no browser (e.g. when selecting in the side
+     // panel). However, show the menu item in print preview.
+     if (!lens::features::
+             IsLensOverlayTextSelectionContextMenuEntrypointEnabled() ||
+         GetBrowser() || IsPrintPreviewContent(current_url_)) {
+-      menu_model_.AddItem(
+-          IDC_CONTENT_CONTEXT_SEARCHWEBFOR,
+-          l10n_util::GetStringFUTF16(IDS_CONTENT_CONTEXT_SEARCHWEBWITH,
+-                                     default_provider->short_name()));
+-      if (features::IsMenuSimplificationEnabled()) {
+-        menu_model_.SetIconForCommandId(
+-            IDC_CONTENT_CONTEXT_SEARCHWEBFOR,
+-            ui::ImageModel::FromVectorIcon(
+-                features::IsRoundedIconsEnabled()
+-                    ? vector_icons::kSearchIcon
+-                    : vector_icons::kSearchChromeRefreshOldIcon,
+-                ui::kColorMenuIcon, kTabMenuIconSize));
+-      }
++      search_engine_urls_.clear();
++      search_engines_submenu_model_.Clear();
++
++      std::vector<const TemplateURL*> engines;
++      engines.push_back(default_provider);
++
++      TemplateURLRef::SearchTermsArgs search_args(params_.selection_text);
++      const SearchTermsData& search_terms_data =
++          template_url_service->search_terms_data();
++
++      auto template_urls = template_url_service->GetTemplateURLs();
++
++      auto add_matching_engines = [&](bool check_default_list) {
++        for (const TemplateURL* turl : template_urls) {
++          if (turl == default_provider) {
++            continue;
++          }
++          if (turl->starter_pack_id() !=
++              template_url_starter_pack_data::StarterPackId::kNone) {
++            continue;
++          }
++          if (turl->type() == TemplateURL::OMNIBOX_API_EXTENSION) {
++            continue;
++          }
++          if (!turl->SupportsReplacement(search_terms_data) ||
++              !turl->url_ref().IsValid(search_terms_data)) {
++            continue;
++          }
++          if (check_default_list) {
++            if (!template_url_service->ShowInDefaultList(turl)) {
++              continue;
++            }
++          } else {
++            if (!template_url_service->ShowInActivesList(turl)) {
++              continue;
++            }
++          }
++          bool duplicate = false;
++          for (const auto* existing : engines) {
++            if (existing->short_name() == turl->short_name()) {
++              duplicate = true;
++              break;
++            }
++          }
++          if (!duplicate) {
++            engines.push_back(turl);
++          }
++        }
++      };
++
++      add_matching_engines(/*check_default_list=*/true);
++      add_matching_engines(/*check_default_list=*/false);
++
++      std::vector<const TemplateURL*> valid_engines;
++      for (size_t i = 0; i < engines.size(); ++i) {
++        if (i == 0) {
++          search_engine_urls_.push_back(selection_navigation_url_);
++          valid_engines.push_back(engines[0]);
++        } else {
++          GURL search_url(engines[i]->url_ref().ReplaceSearchTerms(
++              search_args, search_terms_data));
++          if (search_url.is_valid()) {
++            search_engine_urls_.push_back(search_url);
++            valid_engines.push_back(engines[i]);
++            if (valid_engines.size() >=
++                static_cast<size_t>(kMaxSearchWithEngineItems)) {
++              break;
++            }
++          }
++        }
++      }
++
++      const size_t total_count = valid_engines.size();
++      const size_t flat_count = std::min(total_count, static_cast<size_t>(4));
++
++      for (size_t i = 0; i < flat_count; ++i) {
++        int command_id = (i == 0) ? IDC_CONTENT_CONTEXT_SEARCHWEBFOR
++                                  : (IDC_CONTENT_CONTEXT_SEARCHWEB_START + static_cast<int>(i - 1));
++        menu_model_.AddItem(
++            command_id,
++            l10n_util::GetStringFUTF16(IDS_CONTENT_CONTEXT_SEARCHWEBWITH,
++                                       valid_engines[i]->short_name()));
++        if (features::IsMenuSimplificationEnabled()) {
++          menu_model_.SetIconForCommandId(
++              command_id,
++              ui::ImageModel::FromVectorIcon(
++                  features::IsRoundedIconsEnabled()
++                      ? vector_icons::kSearchIcon
++                      : vector_icons::kSearchChromeRefreshOldIcon,
++                  ui::kColorMenuIcon, kTabMenuIconSize));
++        }
++      }
++
++      if (total_count > 4) {
++        for (size_t i = 4; i < total_count; ++i) {
++          int command_id = IDC_CONTENT_CONTEXT_SEARCHWEB_START + static_cast<int>(i - 1);
++          search_engines_submenu_model_.AddItem(
++              command_id,
++              l10n_util::GetStringFUTF16(IDS_CONTENT_CONTEXT_SEARCHWEBWITH,
++                                         valid_engines[i]->short_name()));
++          if (features::IsMenuSimplificationEnabled()) {
++            search_engines_submenu_model_.SetIconForCommandId(
++                command_id,
++                ui::ImageModel::FromVectorIcon(
++                    features::IsRoundedIconsEnabled()
++                        ? vector_icons::kSearchIcon
++                        : vector_icons::kSearchChromeRefreshOldIcon,
++                    ui::kColorMenuIcon, kTabMenuIconSize));
++          }
++        }
++
++        if (features::IsMenuSimplificationEnabled()) {
++          menu_model_.AddSubMenuWithStringIdAndIcon(
++              IDC_CONTENT_CONTEXT_SEARCHWEB_SUBMENU,
++              IDS_CONTENT_CONTEXT_MORE_SEARCH_ENGINES,
++              &search_engines_submenu_model_,
++              ui::ImageModel::FromVectorIcon(
++                  features::IsRoundedIconsEnabled()
++                      ? vector_icons::kSearchIcon
++                      : vector_icons::kSearchChromeRefreshOldIcon,
++                  ui::kColorMenuIcon, kTabMenuIconSize));
++        } else {
++          menu_model_.AddSubMenuWithStringId(
++              IDC_CONTENT_CONTEXT_SEARCHWEB_SUBMENU,
++              IDS_CONTENT_CONTEXT_MORE_SEARCH_ENGINES,
++              &search_engines_submenu_model_);
++        }
++      }
+     }
+   } else {
+@@ -3441,6 +3572,16 @@
+   bool isolated_mode_enabled =
+       enterprise_isolated_mode::IsolatedModeReplacesIncognito(GetProfile());
+ 
++  if (id >= IDC_CONTENT_CONTEXT_SEARCHWEB_START &&
++      id <= IDC_CONTENT_CONTEXT_SEARCHWEB_LAST) {
++    size_t index = static_cast<size_t>(id - IDC_CONTENT_CONTEXT_SEARCHWEB_START) + 1;
++    if (index < search_engine_urls_.size()) {
++      return navigation_allowed &&
++             IsOpenLinkAllowedByDlp(search_engine_urls_[index]);
++    }
++    return false;
++  }
++
+   switch (id) {
+     case IDC_BACK:
+       return embedder_web_contents_->GetController().CanGoBack();
+@@ -3605,6 +3746,9 @@
+       return navigation_allowed &&
+              IsOpenLinkAllowedByDlp(selection_navigation_url_);
+ 
++    case IDC_CONTENT_CONTEXT_SEARCHWEB_SUBMENU:
++      return navigation_allowed;
++
+     case IDC_CONTENT_CONTEXT_GOTOURL:
+       return navigation_allowed &&
+              IsOpenLinkAllowedByDlp(selection_navigation_url_);
+@@ -3805,6 +3949,15 @@
+     return;
+   }
+ 
++  if (id >= IDC_CONTENT_CONTEXT_SEARCHWEB_START &&
++      id <= IDC_CONTENT_CONTEXT_SEARCHWEB_LAST) {
++    size_t index = static_cast<size_t>(id - IDC_CONTENT_CONTEXT_SEARCHWEB_START) + 1;
++    if (index < search_engine_urls_.size()) {
++      ExecSearchForURL(search_engine_urls_[index], event_flags);
++    }
++    return;
++  }
++
+   switch (id) {
+     case IDC_CONTENT_CONTEXT_OPENLINKNEWTAB: {
+       WindowOpenDisposition new_tab_disposition =
+@@ -4199,36 +4352,12 @@
+       [[fallthrough]];
+     }
+     case IDC_CONTENT_CONTEXT_SEARCHWEBFORNEWTAB: {
+-      auto disposition = ui::DispositionFromEventFlags(
+-          event_flags, WindowOpenDisposition::NEW_FOREGROUND_TAB);
+-
+-      GURL navigation_url = selection_navigation_url_;
+-      if (google_util::IsGoogleSearchUrl(navigation_url)) {
+-        navigation_url = net::AppendOrReplaceQueryParameter(
+-            navigation_url, "source", "chrome.ctxt");
+-      }
+-
+-      content::OpenURLParams open_url_params = GetOpenURLParamsWithExtraHeaders(
+-          navigation_url, /*referring_url=*/GURL(),
+-          /*initiator=*/{}, disposition, ui::PAGE_TRANSITION_LINK,
+-          /*extra_headers=*/std::string(), /*started_from_context_menu=*/true);
+-
+-      enterprise_data_protection::ShouldAllowSearchWith(
+-          GetWebContentsForDataControls(), params_.selection_text.size(),
+-          base::BindOnce(
+-              [](base::WeakPtr<content::WebContents> web_contents,
+-                 content::OpenURLParams params) {
+-                if (!web_contents) {
+-                  return;
+-                }
+-                web_contents->OpenURL(
+-                    params,
+-                    base::BindOnce(
+-                        &AttachContextMenuSearchNavigationHandleUserData));
+-              },
+-              source_web_contents_->GetWeakPtr(), std::move(open_url_params)));
++      ExecSearchForURL(selection_navigation_url_, event_flags);
+       break;
+     }
++
++    case IDC_CONTENT_CONTEXT_SEARCHWEB_SUBMENU:
++      break;
+     case IDC_CONTENT_CONTEXT_GOTOURL: {
+       auto disposition = ui::DispositionFromEventFlags(
+           event_flags, WindowOpenDisposition::NEW_FOREGROUND_TAB);
+@@ -5472,6 +5598,37 @@
+ #endif
+ }
+ 
++void RenderViewContextMenu::ExecSearchForURL(GURL navigation_url,
++                                             int event_flags) {
++  auto disposition = ui::DispositionFromEventFlags(
++      event_flags, WindowOpenDisposition::NEW_FOREGROUND_TAB);
++
++  if (google_util::IsGoogleSearchUrl(navigation_url)) {
++    navigation_url = net::AppendOrReplaceQueryParameter(
++        navigation_url, "source", "chrome.ctxt");
++  }
++
++  content::OpenURLParams open_url_params = GetOpenURLParamsWithExtraHeaders(
++      navigation_url, /*referring_url=*/GURL(),
++      /*initiator=*/{}, disposition, ui::PAGE_TRANSITION_LINK,
++      /*extra_headers=*/std::string(), /*started_from_context_menu=*/true);
++
++  enterprise_data_protection::ShouldAllowSearchWith(
++      GetWebContentsForDataControls(), params_.selection_text.size(),
++      base::BindOnce(
++          [](base::WeakPtr<content::WebContents> web_contents,
++             content::OpenURLParams params) {
++            if (!web_contents) {
++              return;
++            }
++            web_contents->OpenURL(
++                params,
++                base::BindOnce(
++                    &AttachContextMenuSearchNavigationHandleUserData));
++          },
++          source_web_contents_->GetWeakPtr(), std::move(open_url_params)));
++}
++
+ void RenderViewContextMenu::ExecSearchForVideoFrame(int event_flags,
+                                                     bool is_lens_query) {
+   base::RecordAction(UserMetricsAction("MediaContextMenu_SearchForVideoFrame"));
