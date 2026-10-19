@@ -43,7 +43,6 @@
 - `defer-permission-prompts-to-load.patch`: Defers permission prompts in `permission_request_manager.cc` until the main page finishes loading, preventing clickjacking while the page is still rendering.
 
 ### 2.3 Tab Management & Desktop Ergonomics
-- `tab-cycling-mru-impl.patch`: Implements Most-Recently-Used (MRU) tab cycling in `tab_strip_model.cc` by tracking tab activation timestamps, making `Ctrl+Tab` switch back to the last active tab.
 - `tab-close-button-threshold.patch`: Lowers the close button width threshold in `chrome/browser/ui/views/tabs/tab.h` from 82px to 55px, preventing accidental tab closures when many tabs are open.
 - `pip-allow-full-window-size.patch`: Removes the maximum size cap in `video_overlay_window_views.cc`, allowing Picture-in-Picture windows to be resized freely across the screen.
 - `download-context-menu-actions.patch`: Adds "Copy Download Link" and "Show in folder" actions to the download bubble context menu.
@@ -92,7 +91,6 @@
 - `hide-pip-live-caption-button.patch` & `disable-live-caption-completely.patch`: Hides the Live Caption toggle in Picture-in-Picture windows and removes the Live Caption background service and model downloader.
 - `disable-non-standard-auth-features.patch`: Disables non-standard web authentication features (including `kFedCmDelegation`).
 - `simplify-context-menu.patch`: Trims secondary options from the default context menu.
-- `tab-cycling-mru.patch`: Registers flag entries for MRU tab cycling.
 
 ## 4. Curated Cromite Patches (`patches/cromite/`)
 
