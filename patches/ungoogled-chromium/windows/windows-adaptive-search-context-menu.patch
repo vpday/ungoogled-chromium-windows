@@ -11,28 +11,6 @@
  // Autofill feedback.
  #define IDC_CONTENT_CONTEXT_AUTOFILL_FEEDBACK 52990
  // Autofill context menu commands
---- a/chrome/app/generated_resources.grd
-+++ b/chrome/app/generated_resources.grd
-@@ -1048,6 +1048,9 @@
-           <message name="IDS_CONTENT_CONTEXT_SEARCHWEBWITH" desc="The name of the Search with Engine command in the content area context menu">
-             &amp;Search with <ph name="SEARCH_ENGINE">$1<ex>DuckDuckGo</ex></ph>
-           </message>
-+          <message name="IDS_CONTENT_CONTEXT_MORE_SEARCH_ENGINES" desc="The label of the More search engines submenu in the context menu">
-+            More search engines
-+          </message>
-           <message name="IDS_CONTENT_CONTEXT_SEARCHWEBFOR" desc="The name of the Search the Web for “string” command in the content area context menu">
-             &amp;Search <ph name="SEARCH_ENGINE">$1<ex>Google</ex></ph> for “<ph name="SEARCH_TERMS">$2<ex>flowers</ex></ph>”
-           </message>
-@@ -1419,6 +1422,9 @@
-           <message name="IDS_CONTENT_CONTEXT_SEARCHWEBWITH" desc="In Title Case: The name of the Search with Engine command in the content area context menu">
-             &amp;Search with <ph name="SEARCH_ENGINE">$1<ex>DuckDuckGo</ex></ph>
-           </message>
-+          <message name="IDS_CONTENT_CONTEXT_MORE_SEARCH_ENGINES" desc="In Title Case: The label of the More search engines submenu in the context menu">
-+            More Search Engines
-+          </message>
-           <message name="IDS_CONTENT_CONTEXT_SEARCHWEBFOR" desc="In Title Case: The name of the Search the Web for “string” command in the content area context menu">
-             &amp;Search <ph name="SEARCH_ENGINE">$1<ex>Google</ex></ph> for “<ph name="SEARCH_TERMS">$2<ex>flowers</ex></ph>”
-           </message>
 --- a/chrome/browser/renderer_context_menu/render_view_context_menu.h
 +++ b/chrome/browser/renderer_context_menu/render_view_context_menu.h
 @@ -431,6 +431,7 @@
@@ -119,7 +97,7 @@
          GetBrowser() || IsPrintPreviewContent(current_url_)) {
 -      menu_model_.AddItem(
 -          IDC_CONTENT_CONTEXT_SEARCHWEBFOR,
--          l10n_util::GetStringFUTF16(IDS_CONTENT_CONTEXT_SEARCHWEBWITH,
+-          l10n_util::GetStringFUTF16(IDS_TOUCH_BAR_SEARCH,
 -                                     default_provider->short_name()));
 -      if (features::IsMenuSimplificationEnabled()) {
 -        menu_model_.SetIconForCommandId(
@@ -210,7 +188,7 @@
 +                                  : (IDC_CONTENT_CONTEXT_SEARCHWEB_START + static_cast<int>(i - 1));
 +        menu_model_.AddItem(
 +            command_id,
-+            l10n_util::GetStringFUTF16(IDS_CONTENT_CONTEXT_SEARCHWEBWITH,
++            l10n_util::GetStringFUTF16(IDS_TOUCH_BAR_SEARCH,
 +                                       valid_engines[i]->short_name()));
 +        if (features::IsMenuSimplificationEnabled()) {
 +          menu_model_.SetIconForCommandId(
@@ -228,7 +206,7 @@
 +          int command_id = IDC_CONTENT_CONTEXT_SEARCHWEB_START + static_cast<int>(i - 1);
 +          search_engines_submenu_model_.AddItem(
 +              command_id,
-+              l10n_util::GetStringFUTF16(IDS_CONTENT_CONTEXT_SEARCHWEBWITH,
++              l10n_util::GetStringFUTF16(IDS_TOUCH_BAR_SEARCH,
 +                                         valid_engines[i]->short_name()));
 +          if (features::IsMenuSimplificationEnabled()) {
 +            search_engines_submenu_model_.SetIconForCommandId(
@@ -244,7 +222,7 @@
 +        if (features::IsMenuSimplificationEnabled()) {
 +          menu_model_.AddSubMenuWithStringIdAndIcon(
 +              IDC_CONTENT_CONTEXT_SEARCHWEB_SUBMENU,
-+              IDS_CONTENT_CONTEXT_MORE_SEARCH_ENGINES,
++              IDS_TAB_GROUP_MORE_OPTIONS,
 +              &search_engines_submenu_model_,
 +              ui::ImageModel::FromVectorIcon(
 +                  features::IsRoundedIconsEnabled()
@@ -254,7 +232,7 @@
 +        } else {
 +          menu_model_.AddSubMenuWithStringId(
 +              IDC_CONTENT_CONTEXT_SEARCHWEB_SUBMENU,
-+              IDS_CONTENT_CONTEXT_MORE_SEARCH_ENGINES,
++              IDS_TAB_GROUP_MORE_OPTIONS,
 +              &search_engines_submenu_model_);
 +        }
 +      }

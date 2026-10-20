@@ -80,7 +80,6 @@
 - `copy-url-tab-context-menu.patch`: Adds a "Copy URL" option to the tab context menu.
 - `mute-tab-context-menu.patch`: Adds a mute/unmute option to the tab context menu.
 - `open-new-tabs-next-to-active-tab-option.patch`: Adds a flag to open new tabs directly next to the active tab rather than at the end of the tab strip.
-- `enable-fluent-scrollbar.patch`: Enables Windows 11 Fluent minimal scrollbars across views.
 - `disable-user-education-nags.patch`: Suppresses feature tutorial popups, prompts, and promo bubbles.
 - `disable-outdated-build-detector.patch`: Disables the yellow "Chrome is out of date" warning banner.
 - `disable-pdf-infobar.patch`: Removes the infobar shown when viewing PDFs.
@@ -130,7 +129,6 @@
 - `Replace-DoH-probe-domain-with-RIPE-domain.patch`: Changes the default DoH connectivity probe domain from Google to neutral RIPE NCC servers.
 - `Disable-requests-for-single-word-Omnibar-searches.patch`: Stops single-word omnibox queries from triggering local intranet DNS lookups.
 - `Enable-Global-Privacy-Control.patch`: Sends `Sec-GPC: 1` on web requests and sets `navigator.globalPrivacyControl` to `true`.
-- `Disable-text-fragments-by-default.patch`: Disables URL text fragments (Scroll-to-Text) by default.
 
 ### 4.4 Windows Ecosystem & Compatibility Support
 - `Override-the-MV2-deprecation.patch`: Overrides Manifest V2 (MV2) deprecation in `manifest_v2_handler.cc`, allowing classic extensions (such as uBlock Origin MV2) to run normally.

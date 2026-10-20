@@ -1,25 +1,26 @@
 --- a/chrome/app/generated_resources.grd
 +++ b/chrome/app/generated_resources.grd
-@@ -1047,6 +1047,9 @@ are declared in tools/grit/grit_args.gni
-           <message name="IDS_CONTENT_CONTEXT_PARTIAL_TRANSLATE_SELECTION_V2" desc="The name of the Translate command in the content area context menu when there is a text selection and menu simplification is enabled.">
-             &amp;Translate “<ph name="SELECTION">$1<ex>text</ex></ph>”
-           </message>
-+          <message name="IDS_CONTENT_CONTEXT_SEARCHWEBWITH" desc="The name of the Search with Engine command in the content area context menu">
-+            &amp;Search with <ph name="SEARCH_ENGINE">$1<ex>DuckDuckGo</ex></ph>
-+          </message>
-           <message name="IDS_CONTENT_CONTEXT_SEARCHWEBFOR" desc="The name of the Search the Web for “string” command in the content area context menu">
-             &amp;Search <ph name="SEARCH_ENGINE">$1<ex>Google</ex></ph> for “<ph name="SEARCH_TERMS">$2<ex>flowers</ex></ph>”
-           </message>
-@@ -1415,6 +1418,9 @@ are declared in tools/grit/grit_args.gni
-           <message name="IDS_CONTENT_CONTEXT_PARTIAL_TRANSLATE_SELECTION_V2" desc="In Title Case: The name of the Translate command in the content area context menu when there is a text selection and menu simplification is enabled.">
-             &amp;Translate “<ph name="SELECTION">$1<ex>text</ex></ph>”
-           </message>
-+          <message name="IDS_CONTENT_CONTEXT_SEARCHWEBWITH" desc="In Title Case: The name of the Search with Engine command in the content area context menu">
-+            &amp;Search with <ph name="SEARCH_ENGINE">$1<ex>DuckDuckGo</ex></ph>
-+          </message>
-           <message name="IDS_CONTENT_CONTEXT_SEARCHWEBFOR" desc="In Title Case: The name of the Search the Web for “string” command in the content area context menu">
-             &amp;Search <ph name="SEARCH_ENGINE">$1<ex>Google</ex></ph> for “<ph name="SEARCH_TERMS">$2<ex>flowers</ex></ph>”
-           </message>
+@@ -2932,5 +2932,9 @@
+       </if>
+ 
++      <message name="IDS_TOUCH_BAR_SEARCH"
++                 desc="Text for the search button in the touch bar when Google is not the default search provider. Pressing the button will bring focus to the omnibox. $1 is the name of the search provider)">
++        Search <ph name="SEARCH_ENGINE">$1<ex>Bing</ex></ph>
++      </message>
+       <!-- Touch Bar-->
+       <if expr="is_macosx">
+         <message name="IDS_CUSTOMIZE_TOUCH_BAR"
+@@ -2946,10 +2950,6 @@
+           desc="Text for the search button in the touch bar when there is no default search provider. Pressing the button will bring focus to the omnibox.">
+           Type URL
+         </message>
+-        <message name="IDS_TOUCH_BAR_SEARCH"
+-                   desc="Text for the search button in the touch bar when Google is not the default search provider. Pressing the button will bring focus to the omnibox. $1 is the name of the search provider)">
+-          Search <ph name="SEARCH_ENGINE">$1<ex>Bing</ex></ph>
+-        </message>
+         <message name="IDS_TOUCH_BAR_BACK_FORWARD_CUSTOMIZATION_LABEL"
+                    desc="Customization label for the back and forward buttons in the touch bar.">
+           Back/Forward
 --- a/chrome/browser/renderer_context_menu/render_view_context_menu.cc
 +++ b/chrome/browser/renderer_context_menu/render_view_context_menu.cc
 @@ -2137,12 +2137,14 @@ void RenderViewContextMenu::AppendLinkIt
@@ -60,7 +61,7 @@
 -          l10n_util::GetStringFUTF16(IDS_CONTENT_CONTEXT_SEARCHWEBFOR,
 -                                     default_provider->short_name(),
 -                                     printable_selection_text));
-+          l10n_util::GetStringFUTF16(IDS_CONTENT_CONTEXT_SEARCHWEBWITH,
++          l10n_util::GetStringFUTF16(IDS_TOUCH_BAR_SEARCH,
 +                                     default_provider->short_name()));
        if (features::IsMenuSimplificationEnabled()) {
          menu_model_.SetIconForCommandId(

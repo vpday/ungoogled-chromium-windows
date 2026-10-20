@@ -50,7 +50,6 @@ ungoogled-chromium/windows/windows-adaptive-search-context-menu.patch
 helium/shift-right-click-context-menu.patch
 helium/disable-non-standard-auth-features.patch
 helium/lazy-session-restore.patch
-helium/enable-fluent-scrollbar.patch
 helium/hide-pip-live-caption-button.patch
 helium/disable-ink-ripple-effect.patch
 helium/dont-antialias-rects.patch
@@ -107,7 +106,6 @@ cromite/Reduce-HTTP-headers-in-DoH-requests-to-bare-minimum.patch
 cromite/Override-the-MV2-deprecation.patch
 cromite/Enable-menu-on-reload-button.patch
 cromite/WIN-Disable-search-for-image.patch
-cromite/Disable-text-fragments-by-default.patch
 cromite/Disable-idle-detection.patch
 cromite/Disable-css-preferred-text-scale.patch
 cromite/Disable-Sticky-User-Activation-Across-Same-Origin-Navigation.patch
