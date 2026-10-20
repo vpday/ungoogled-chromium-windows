@@ -1,4 +1,4 @@
-# Windows Optimization and Enhancement Patches Specification
+# Windows Optimizations & Curated Patches Reference
 
 ## 1. Windows Native Optimizations and Feature Overrides (`patches/ungoogled-chromium/windows/`)
 

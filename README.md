@@ -417,7 +417,7 @@ Build workflow:
 
 ### Integrated Patchsets
 
-For a detailed specification of all native Windows optimizations, feature overrides, and curated patches, see [PATCHES.md](PATCHES.md).
+For the complete reference of all native Windows optimizations, feature overrides, and curated patches, see [PATCHES.md](PATCHES.md).
 
 Selected patches from other browser projects:
 
