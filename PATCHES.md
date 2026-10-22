@@ -24,10 +24,13 @@
 - Telemetry & Metrics: Disables Structured Metrics, Critical User Journeys, and Notification Telemetry.
 - Security & UI Settings: Enables strict origin isolation and network service sandboxing; enables one-click tab audio muting and modern WebUI refresh.
 
-### 1.4 `windows-adaptive-search-context-menu.patch` (Adaptive Multi-Engine Context Menu Search)
+### 1.4 `windows-multiple-search-engines-context-menu.patch` (Multi-Engine Context Menu Search)
 *Applies to: `x64`, `x86`, `arm64`*
 - Multi-Engine Context Menu Search: Reads configured search engines from browser settings when text is selected on a webpage, showing multiple "Search with <Engine>" options in the right-click menu.
 - Adaptive Menu Layout: Displays up to 4 search engines directly in the context menu, automatically folding additional engines into a "More search engines" submenu to keep the menu compact.
+- Configuration (Disabled by default):
+  - `chrome://flags`: Set `#enable-multiple-search-engines-context-menu` ("Show more search engines in context menu") to `Enabled` (or `Default` to disable).
+  - Command Line: Add `--enable-multiple-search-engines-context-menu` to enable; omit to keep disabled.
 
 ## 2. Curated Brave Patches (`patches/brave/`)
 

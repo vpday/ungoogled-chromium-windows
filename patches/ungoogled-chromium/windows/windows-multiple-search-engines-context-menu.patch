@@ -66,7 +66,7 @@
        embedder_web_contents_(GetWebContentsToUse(&render_frame_host)),
        autofill_context_menu_manager_(this, &menu_model_),
        is_paste_enabled_(is_paste_enabled),
-@@ -2968,35 +2979,155 @@
+@@ -2968,35 +2979,172 @@
    if (AutocompleteMatch::IsSearchType(match.type)) {
 -    const TemplateURL* const default_provider =
 -        TemplateURLServiceFactory::GetForProfile(GetProfile())
@@ -108,108 +108,106 @@
 -                    : vector_icons::kSearchChromeRefreshOldIcon,
 -                ui::kColorMenuIcon, kTabMenuIconSize));
 -      }
-+      search_engine_urls_.clear();
-+      search_engines_submenu_model_.Clear();
-+
-+      std::vector<const TemplateURL*> engines;
-+      engines.push_back(default_provider);
-+
-+      TemplateURLRef::SearchTermsArgs search_args(params_.selection_text);
-+      const SearchTermsData& search_terms_data =
-+          template_url_service->search_terms_data();
-+
-+      auto template_urls = template_url_service->GetTemplateURLs();
-+
-+      auto add_matching_engines = [&](bool check_default_list) {
-+        for (const TemplateURL* turl : template_urls) {
-+          if (turl == default_provider) {
-+            continue;
-+          }
-+          if (turl->starter_pack_id() !=
-+              template_url_starter_pack_data::StarterPackId::kNone) {
-+            continue;
-+          }
-+          if (turl->type() == TemplateURL::OMNIBOX_API_EXTENSION) {
-+            continue;
-+          }
-+          if (!turl->SupportsReplacement(search_terms_data) ||
-+              !turl->url_ref().IsValid(search_terms_data)) {
-+            continue;
-+          }
-+          if (check_default_list) {
-+            if (!template_url_service->ShowInDefaultList(turl)) {
-+              continue;
-+            }
-+          } else {
-+            if (!template_url_service->ShowInActivesList(turl)) {
-+              continue;
-+            }
-+          }
-+          bool duplicate = false;
-+          for (const auto* existing : engines) {
-+            if (existing->short_name() == turl->short_name()) {
-+              duplicate = true;
-+              break;
-+            }
-+          }
-+          if (!duplicate) {
-+            engines.push_back(turl);
-+          }
-+        }
-+      };
-+
-+      add_matching_engines(/*check_default_list=*/true);
-+      add_matching_engines(/*check_default_list=*/false);
-+
-+      std::vector<const TemplateURL*> valid_engines;
-+      for (size_t i = 0; i < engines.size(); ++i) {
-+        if (i == 0) {
-+          search_engine_urls_.push_back(selection_navigation_url_);
-+          valid_engines.push_back(engines[0]);
-+        } else {
-+          GURL search_url(engines[i]->url_ref().ReplaceSearchTerms(
-+              search_args, search_terms_data));
-+          if (search_url.is_valid()) {
-+            search_engine_urls_.push_back(search_url);
-+            valid_engines.push_back(engines[i]);
-+            if (valid_engines.size() >=
-+                static_cast<size_t>(kMaxSearchWithEngineItems)) {
-+              break;
-+            }
-+          }
-+        }
-+      }
-+
-+      const size_t total_count = valid_engines.size();
-+      const size_t flat_count = std::min(total_count, static_cast<size_t>(4));
-+
-+      for (size_t i = 0; i < flat_count; ++i) {
-+        int command_id = (i == 0) ? IDC_CONTENT_CONTEXT_SEARCHWEBFOR
-+                                  : (IDC_CONTENT_CONTEXT_SEARCHWEB_START + static_cast<int>(i - 1));
++      if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
++              "enable-multiple-search-engines-context-menu")) {
 +        menu_model_.AddItem(
-+            command_id,
++            IDC_CONTENT_CONTEXT_SEARCHWEBFOR,
 +            l10n_util::GetStringFUTF16(IDS_TOUCH_BAR_SEARCH,
-+                                       valid_engines[i]->short_name()));
++                                       default_provider->short_name()));
 +        if (features::IsMenuSimplificationEnabled()) {
 +          menu_model_.SetIconForCommandId(
-+              command_id,
++              IDC_CONTENT_CONTEXT_SEARCHWEBFOR,
 +              ui::ImageModel::FromVectorIcon(
 +                  features::IsRoundedIconsEnabled()
 +                      ? vector_icons::kSearchIcon
 +                      : vector_icons::kSearchChromeRefreshOldIcon,
 +                  ui::kColorMenuIcon, kTabMenuIconSize));
 +        }
-+      }
++      } else {
++        search_engine_urls_.clear();
++        search_engines_submenu_model_.Clear();
 +
-+      if (total_count > 4) {
-+        for (size_t i = 4; i < total_count; ++i) {
-+          int command_id = IDC_CONTENT_CONTEXT_SEARCHWEB_START + static_cast<int>(i - 1);
-+          search_engines_submenu_model_.AddItem(
++        std::vector<const TemplateURL*> engines;
++        engines.push_back(default_provider);
++
++        TemplateURLRef::SearchTermsArgs search_args(params_.selection_text);
++        const SearchTermsData& search_terms_data =
++            template_url_service->search_terms_data();
++
++        auto template_urls = template_url_service->GetTemplateURLs();
++
++        auto add_matching_engines = [&](bool check_default_list) {
++          for (const TemplateURL* turl : template_urls) {
++            if (turl == default_provider) {
++              continue;
++            }
++            if (turl->starter_pack_id() !=
++                template_url_starter_pack_data::StarterPackId::kNone) {
++              continue;
++            }
++            if (turl->type() == TemplateURL::OMNIBOX_API_EXTENSION) {
++              continue;
++            }
++            if (!turl->SupportsReplacement(search_terms_data) ||
++                !turl->url_ref().IsValid(search_terms_data)) {
++              continue;
++            }
++            if (check_default_list) {
++              if (!template_url_service->ShowInDefaultList(turl)) {
++                continue;
++              }
++            } else {
++              if (!template_url_service->ShowInActivesList(turl)) {
++                continue;
++              }
++            }
++            bool duplicate = false;
++            for (const auto* existing : engines) {
++              if (existing->short_name() == turl->short_name()) {
++                duplicate = true;
++                break;
++              }
++            }
++            if (!duplicate) {
++              engines.push_back(turl);
++            }
++          }
++        };
++
++        add_matching_engines(/*check_default_list=*/true);
++        add_matching_engines(/*check_default_list=*/false);
++
++        std::vector<const TemplateURL*> valid_engines;
++        for (size_t i = 0; i < engines.size(); ++i) {
++          if (i == 0) {
++            search_engine_urls_.push_back(selection_navigation_url_);
++            valid_engines.push_back(engines[0]);
++          } else {
++            GURL search_url(engines[i]->url_ref().ReplaceSearchTerms(
++                search_args, search_terms_data));
++            if (search_url.is_valid()) {
++              search_engine_urls_.push_back(search_url);
++              valid_engines.push_back(engines[i]);
++              if (valid_engines.size() >=
++                  static_cast<size_t>(kMaxSearchWithEngineItems)) {
++                break;
++              }
++            }
++          }
++        }
++
++        const size_t total_count = valid_engines.size();
++        const size_t flat_count = std::min(total_count, static_cast<size_t>(4));
++
++        for (size_t i = 0; i < flat_count; ++i) {
++          int command_id = (i == 0) ? IDC_CONTENT_CONTEXT_SEARCHWEBFOR
++                                    : (IDC_CONTENT_CONTEXT_SEARCHWEB_START + static_cast<int>(i - 1));
++          menu_model_.AddItem(
 +              command_id,
 +              l10n_util::GetStringFUTF16(IDS_TOUCH_BAR_SEARCH,
 +                                         valid_engines[i]->short_name()));
 +          if (features::IsMenuSimplificationEnabled()) {
-+            search_engines_submenu_model_.SetIconForCommandId(
++            menu_model_.SetIconForCommandId(
 +                command_id,
 +                ui::ImageModel::FromVectorIcon(
 +                    features::IsRoundedIconsEnabled()
@@ -219,26 +217,45 @@
 +          }
 +        }
 +
-+        if (features::IsMenuSimplificationEnabled()) {
-+          menu_model_.AddSubMenuWithStringIdAndIcon(
-+              IDC_CONTENT_CONTEXT_SEARCHWEB_SUBMENU,
-+              IDS_TAB_GROUP_MORE_OPTIONS,
-+              &search_engines_submenu_model_,
-+              ui::ImageModel::FromVectorIcon(
-+                  features::IsRoundedIconsEnabled()
-+                      ? vector_icons::kSearchIcon
-+                      : vector_icons::kSearchChromeRefreshOldIcon,
-+                  ui::kColorMenuIcon, kTabMenuIconSize));
-+        } else {
-+          menu_model_.AddSubMenuWithStringId(
-+              IDC_CONTENT_CONTEXT_SEARCHWEB_SUBMENU,
-+              IDS_TAB_GROUP_MORE_OPTIONS,
-+              &search_engines_submenu_model_);
++        if (total_count > 4) {
++          for (size_t i = 4; i < total_count; ++i) {
++            int command_id = IDC_CONTENT_CONTEXT_SEARCHWEB_START + static_cast<int>(i - 1);
++            search_engines_submenu_model_.AddItem(
++                command_id,
++                l10n_util::GetStringFUTF16(IDS_TOUCH_BAR_SEARCH,
++                                           valid_engines[i]->short_name()));
++            if (features::IsMenuSimplificationEnabled()) {
++              search_engines_submenu_model_.SetIconForCommandId(
++                  command_id,
++                  ui::ImageModel::FromVectorIcon(
++                      features::IsRoundedIconsEnabled()
++                          ? vector_icons::kSearchIcon
++                          : vector_icons::kSearchChromeRefreshOldIcon,
++                      ui::kColorMenuIcon, kTabMenuIconSize));
++            }
++          }
++
++          if (features::IsMenuSimplificationEnabled()) {
++            menu_model_.AddSubMenuWithStringIdAndIcon(
++                IDC_CONTENT_CONTEXT_SEARCHWEB_SUBMENU,
++                IDS_TAB_GROUP_MORE_OPTIONS,
++                &search_engines_submenu_model_,
++                ui::ImageModel::FromVectorIcon(
++                    features::IsRoundedIconsEnabled()
++                        ? vector_icons::kSearchIcon
++                        : vector_icons::kSearchChromeRefreshOldIcon,
++                    ui::kColorMenuIcon, kTabMenuIconSize));
++          } else {
++            menu_model_.AddSubMenuWithStringId(
++                IDC_CONTENT_CONTEXT_SEARCHWEB_SUBMENU,
++                IDS_TAB_GROUP_MORE_OPTIONS,
++                &search_engines_submenu_model_);
++          }
 +        }
 +      }
      }
    } else {
-@@ -3441,6 +3572,16 @@
+@@ -3441,6 +3589,16 @@
    bool isolated_mode_enabled =
        enterprise_isolated_mode::IsolatedModeReplacesIncognito(GetProfile());
  
@@ -255,7 +272,7 @@
    switch (id) {
      case IDC_BACK:
        return embedder_web_contents_->GetController().CanGoBack();
-@@ -3605,6 +3746,9 @@
+@@ -3605,6 +3763,9 @@
        return navigation_allowed &&
               IsOpenLinkAllowedByDlp(selection_navigation_url_);
  
@@ -265,7 +282,7 @@
      case IDC_CONTENT_CONTEXT_GOTOURL:
        return navigation_allowed &&
               IsOpenLinkAllowedByDlp(selection_navigation_url_);
-@@ -3805,6 +3949,15 @@
+@@ -3805,6 +3966,15 @@
      return;
    }
  
@@ -281,7 +298,7 @@
    switch (id) {
      case IDC_CONTENT_CONTEXT_OPENLINKNEWTAB: {
        WindowOpenDisposition new_tab_disposition =
-@@ -4199,36 +4352,12 @@
+@@ -4199,36 +4369,12 @@
        [[fallthrough]];
      }
      case IDC_CONTENT_CONTEXT_SEARCHWEBFORNEWTAB: {
@@ -322,7 +339,7 @@
      case IDC_CONTENT_CONTEXT_GOTOURL: {
        auto disposition = ui::DispositionFromEventFlags(
            event_flags, WindowOpenDisposition::NEW_FOREGROUND_TAB);
-@@ -5472,6 +5598,37 @@
+@@ -5472,6 +5615,37 @@
  #endif
  }
  
@@ -360,3 +377,14 @@
  void RenderViewContextMenu::ExecSearchForVideoFrame(int event_flags,
                                                      bool is_lens_query) {
    base::RecordAction(UserMetricsAction("MediaContextMenu_SearchForVideoFrame"));
+--- a/chrome/browser/ungoogled_platform_flag_entries.h
++++ b/chrome/browser/ungoogled_platform_flag_entries.h
+@@ -12,4 +12,8 @@
+      "Disable machine ID",
+      "Disables use of a generated machine-specific ID to lock the user data directory to that machine.  This is used to enable portable user data directories.  ungoogled-chromium flag.",
+      kOsWin, SINGLE_VALUE_TYPE("disable-machine-id")},
++    {"enable-multiple-search-engines-context-menu",
++     "Show more search engines in context menu",
++     "Shows additional search engines in the right-click context menu when text is selected. ungoogled-chromium flag.",
++     kOsWin, SINGLE_VALUE_TYPE("enable-multiple-search-engines-context-menu")},
+ #endif  // CHROME_BROWSER_UNGOOGLED_PLATFORM_FLAG_ENTRIES_H_
