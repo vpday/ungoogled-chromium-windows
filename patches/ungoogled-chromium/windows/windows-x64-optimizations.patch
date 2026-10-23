@@ -41,6 +41,6 @@
 +        "-mno-scatter",
 +      ]
 +    }
- 
+
      # Enable ANSI escape codes if something emulating them is around (cmd.exe
      # doesn't understand ANSI escape codes by default). Make sure to not enable

@@ -60,7 +60,6 @@
 - `lazy-session-restore.patch`: Enables lazy session restore in `browser_tabrestore.h`; only the active tab loads on startup, while background tabs remain unloaded until clicked.
 - `infinite-tab-freezing.patch`: Removes background tab freezing timeouts in `components/performance_manager/features.cc`, keeping idle tabs frozen indefinitely without periodic background wakeups.
 - `hibernate-tab-context-menu.patch`: Adds a "Hibernate Tab" option to the tab context menu to discard individual tabs manually.
-- `tab-restore-live-tabs.patch`: Guards tab restoration with `base::WeakPtr` to avoid use-after-free (UAF) crashes when closing and restoring tabs quickly.
 
 ### 3.2 Display Energy Efficiency & Subpixel Rendering
 - `add-low-power-framerate-flag.patch`: Adds a flag to cap rendering framerate, saving battery on high-refresh-rate (120Hz+) screens.

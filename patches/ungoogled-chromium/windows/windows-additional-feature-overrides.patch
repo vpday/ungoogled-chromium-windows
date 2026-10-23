@@ -428,7 +428,7 @@
               base::FEATURE_DISABLED_BY_DEFAULT);
 --- a/components/ntp_tiles/features.cc
 +++ b/components/ntp_tiles/features.cc
-@@ -20,7 +20,7 @@ BASE_FEATURE(kPopularSitesBakedInContentFeature,
+@@ -35,7 +35,7 @@ BASE_FEATURE(kPopularSitesBakedInContentFeature,
               base::FEATURE_ENABLED_BY_DEFAULT);
  
  BASE_FEATURE(kNtpMostLikelyFaviconsFromServerFeature,
@@ -436,7 +436,7 @@
 -             base::FEATURE_ENABLED_BY_DEFAULT);
 +             base::FEATURE_DISABLED_BY_DEFAULT);
  
- BASE_FEATURE(kPopularSitesRefreshUs, base::FEATURE_DISABLED_BY_DEFAULT);
+ }  // namespace ntp_tiles
 --- a/components/omnibox/browser/aim_eligibility_service_features.cc
 +++ b/components/omnibox/browser/aim_eligibility_service_features.cc
 @@ -8,6 +8,6 @@
@@ -808,7 +808,7 @@
  bool IsChromeRefreshTokenBindingEnabled(const PrefService* profile_prefs) {
    // Enterprise policy takes precedence over the feature value.
    if (profile_prefs->HasPrefPath(prefs::kBoundSessionCredentialsEnabled)) {
-@@ -888,11 +876,11 @@
+@@ -834,7 +834,7 @@
      2);
  
  #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
@@ -816,17 +816,10 @@
 +BASE_FEATURE(kSignInPromoMaterialNextUI, base::FEATURE_DISABLED_BY_DEFAULT);
  #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
  
- #if BUILDFLAG(ENABLE_DICE_SUPPORT)
--BASE_FEATURE(kSigninPromoOnAvatarPill, base::FEATURE_ENABLED_BY_DEFAULT);
-+BASE_FEATURE(kSigninPromoOnAvatarPill, base::FEATURE_DISABLED_BY_DEFAULT);
- BASE_FEATURE_PARAM(base::TimeDelta,
-                    kSigninPromoOnAvatarPillStartupDelayForPromoShow,
-                    &kSigninPromoOnAvatarPill,
+ BASE_FEATURE(kSigninWindows10DepreciationStateBypassForTesting,
 --- a/components/skills/features.cc
 +++ b/components/skills/features.cc
-@@ -7,14 +7,8 @@
- 
- namespace features {
+@@ -9,13 +9,7 @@ namespace features {
  
 -BASE_FEATURE(kSkillsEnabled,
 -#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
@@ -835,13 +828,14 @@
 -             base::FEATURE_DISABLED_BY_DEFAULT
 -#endif
 -);
--BASE_FEATURE(kSkillsMetricsProviderEnabled, base::FEATURE_ENABLED_BY_DEFAULT);
 +BASE_FEATURE(kSkillsEnabled, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kSkillsAppMenu, base::FEATURE_DISABLED_BY_DEFAULT);
+-BASE_FEATURE(kSkillsMetricsProviderEnabled, base::FEATURE_ENABLED_BY_DEFAULT);
 +BASE_FEATURE(kSkillsMetricsProviderEnabled, base::FEATURE_DISABLED_BY_DEFAULT);
  BASE_FEATURE(kSkillsRefinementEnabled, base::FEATURE_ENABLED_BY_DEFAULT);
  BASE_FEATURE(kSkillsAutocomplete, base::FEATURE_DISABLED_BY_DEFAULT);
  BASE_FEATURE(kSkills1PDisabledForNonEnLocales,
-@@ -22,7 +16,7 @@ BASE_FEATURE(kSkills1PDisabledForNonEnLocales,
+@@ -23,7 +17,7 @@ BASE_FEATURE(kSkills1PDisabledForNonEnLocales,
  BASE_FEATURE(kSkillsSubheadersEnabled, base::FEATURE_ENABLED_BY_DEFAULT);
  BASE_FEATURE(kSkillsWebViewV2Enabled, base::FEATURE_DISABLED_BY_DEFAULT);
  
@@ -1151,15 +1145,6 @@
  BASE_FEATURE_PARAM(base::TimeDelta,
                     kPreloadingEagerHoverHeuristicsDwellTime,
                     &kPreloadingEagerHoverHeuristics,
-@@ -1801,7 +1794,7 @@ BASE_FEATURE_PARAM(base::TimeDelta,
- // non-immediate candidates on the renderer side (see the declaration in
- // features.h for details).
- BASE_FEATURE(kSpeculationRulesRendererSideHeuristics,
--             base::FEATURE_ENABLED_BY_DEFAULT);
-+             base::FEATURE_DISABLED_BY_DEFAULT);
- 
- BASE_FEATURE(kPreloadingHeuristicsMLModel, base::FEATURE_DISABLED_BY_DEFAULT);
- BASE_FEATURE_PARAM(int,
 @@ -2068,7 +2061,7 @@ const char kSkipTouchEventFilterFilteringProcessParamValueBrowserAndRenderer[] =
  BASE_FEATURE(kSpeculativeImageDecodes, base::FEATURE_DISABLED_BY_DEFAULT);
  

@@ -1,6 +1,6 @@
 --- a/chrome/browser/ungoogled_flag_entries.h
 +++ b/chrome/browser/ungoogled_flag_entries.h
-@@ -104,5 +104,9 @@
+@@ -156,5 +156,9 @@
      {"energy-saver-fps-limit",
       "Maximum frame rate for Energy Saver",
       "Configures the frame rate the browser is throttled to when Energy Saver is enabled. ungoogled-chromium flag.",
@@ -21,7 +21,7 @@
  BASE_FEATURE(kAllowEyeDropperWGCScreenCapture,
 --- a/chrome/browser/ui/ui_features.h
 +++ b/chrome/browser/ui/ui_features.h
-@@ -21,5 +21,7 @@
+@@ -21,6 +21,8 @@
  
  BASE_DECLARE_FEATURE(kUseActionsForBrowserCommands);
  bool ShouldUseActionsForBrowserCommands();
@@ -29,6 +29,7 @@
 +BASE_DECLARE_FEATURE(kHeliumHidePageActions);
  
  BASE_DECLARE_FEATURE(kAllowEyeDropperWGCScreenCapture);
+ 
 --- a/chrome/browser/ui/views/location_bar/location_bar_view.cc
 +++ b/chrome/browser/ui/views/location_bar/location_bar_view.cc
 @@ -487,6 +487,8 @@ void LocationBarView::Init() {

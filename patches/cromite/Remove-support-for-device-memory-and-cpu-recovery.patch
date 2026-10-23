@@ -14,7 +14,7 @@
  }
 --- a/third_party/blink/renderer/core/timing/memory_info.cc
 +++ b/third_party/blink/renderer/core/timing/memory_info.cc
-@@ -34,6 +34,7 @@
+@@ -32,6 +32,7 @@
  
  #include <limits>
  
@@ -22,7 +22,7 @@
  #include "base/time/default_tick_clock.h"
  #include "base/time/time.h"
  #include "third_party/blink/renderer/core/frame/settings.h"
-@@ -43,13 +44,19 @@
+@@ -43,16 +44,22 @@
  
  static constexpr base::TimeDelta kTwentyMinutes = base::Minutes(20);
  static constexpr base::TimeDelta kFiftyMs = base::Milliseconds(50);
@@ -45,3 +45,6 @@
 +      scale_factor;
 +  info.js_heap_size_limit = heap_size_limit;
  }
+ 
+ class HeapSizeCache {
+   USING_FAST_MALLOC(HeapSizeCache);

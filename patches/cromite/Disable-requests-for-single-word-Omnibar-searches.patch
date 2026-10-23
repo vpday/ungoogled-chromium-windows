@@ -1,6 +1,6 @@
---- a/chrome/browser/ui/omnibox/chrome_omnibox_navigation_observer.cc
-+++ b/chrome/browser/ui/omnibox/chrome_omnibox_navigation_observer.cc
-@@ -80,6 +80,7 @@ bool OnlyChangeIsFromHTTPToHTTPS(const GURL& origin, const GURL& destination) {
+--- a/chrome/browser/omnibox/chrome_omnibox_navigation_observer_base.cc
++++ b/chrome/browser/omnibox/chrome_omnibox_navigation_observer_base.cc
+@@ -93,6 +93,7 @@ bool OnlyChangeIsFromHTTPToHTTPS(const GURL& origin, const GURL& destination) {
    return origin_with_https == destination;
  }
  
@@ -8,15 +8,15 @@
  // Choose the appropriate URLLoaderFactory: either an explicitly specified or a
  // default for the given profile.
  network::mojom::URLLoaderFactory* GetURLLoaderFactory(
-@@ -92,6 +93,7 @@ network::mojom::URLLoaderFactory* GetURLLoaderFactory(
+@@ -105,6 +106,7 @@ network::mojom::URLLoaderFactory* GetURLLoaderFactory(
        ->GetURLLoaderFactoryForBrowserProcess()
        .get();
  }
 +#endif
  
- // Helper to keep ChromeOmniboxNavigationObserver alive while the initiated
+ // Helper to keep ChromeOmniboxNavigationObserverBase alive while the initiated
  // navigation is pending.
-@@ -257,13 +259,6 @@ ChromeOmniboxNavigationObserver::ChromeOmniboxNavigationObserver(
+@@ -282,14 +284,6 @@ ChromeOmniboxNavigationObserverBase::ChromeOmniboxNavigationObserverBase(
        profile_(profile),
        show_infobar_(std::move(show_infobar)) {
    NavigationUserData::CreateForNavigationHandle(navigation, this);
@@ -24,9 +24,10 @@
 -    loader_ = std::make_unique<AlternativeNavigationURLLoader>(
 -        alternative_nav_match.destination_url, this,
 -        base::BindOnce(
--            &ChromeOmniboxNavigationObserver::OnAlternativeLoaderDone, this),
+-            &ChromeOmniboxNavigationObserverBase::OnAlternativeLoaderDone,
+-            this),
 -        GetURLLoaderFactory(loader_factory, profile));
 -  }
  }
  
- ChromeOmniboxNavigationObserver::~ChromeOmniboxNavigationObserver() {
+ ChromeOmniboxNavigationObserverBase::~ChromeOmniboxNavigationObserverBase() {

@@ -40,19 +40,19 @@
            </message>
 --- a/chrome/browser/renderer_context_menu/render_view_context_menu.cc
 +++ b/chrome/browser/renderer_context_menu/render_view_context_menu.cc
-@@ -657,13 +657,14 @@ int UmaEnumForCommand(int key, UmaEnumId
-        {IDC_SPELLCHECK_REMOVE_FROM_DICTIONARY, 167},
-        {IDC_CONTENT_CONTEXT_SAVE_TO_MEMORY_BANKS, 168},
+@@ -668,13 +668,14 @@ int UmaEnumForCommand(int key, UmaEnumId
         {IDC_CONTENT_CONTEXT_OPENLINK_ISOLATED, 169},
-+       {IDC_CONTENT_CONTEXT_FORCE_PASTE, 170},
+        {IDC_CONTENT_CONTEXT_ASK_GOOGLE_ABOUT_THIS_PAGE, 170},
+        {IDC_CONTENT_CONTEXT_CONTEXTUAL_TASKS_SUBMENU, 171},
++       {IDC_CONTENT_CONTEXT_FORCE_PASTE, 172},
         // To add new items:
         //   - Add one more line above this comment block, using the UMA value
         //     from the line below this comment block.
         //   - Increment the UMA value in that latter line.
         //   - Add the new item to the RenderViewContextMenuItem enum in
         //     tools/metrics/histograms/metadata/ui/enums.xml.
--       {kUmaMaxValueKey, 170}});
-+       {kUmaMaxValueKey, 171}});
+-       {kUmaMaxValueKey, 172}});
++       {kUmaMaxValueKey, 173}});
    // LINT.ThenChange(//tools/metrics/histograms/metadata/ui/enums.xml:RenderViewContextMenuItem)
  
    // LINT.IfChange(ContextMenuOptionDesktop)
@@ -183,11 +183,11 @@
  // Moves the WebContents of a hosted app Browser to a tabbed Browser. Returns
 --- a/tools/metrics/histograms/metadata/ui/enums.xml
 +++ b/tools/metrics/histograms/metadata/ui/enums.xml
-@@ -414,6 +414,7 @@ chromium-metrics-reviews@google.com.
-   <int value="167" label="IDC_SPELLCHECK_REMOVE_FROM_DICTIONARY"/>
-   <int value="168" label="IDC_CONTENT_CONTEXT_SAVE_TO_MEMORY_BANKS"/>
+@@ -433,6 +433,7 @@ chromium-metrics-reviews@google.com.
    <int value="169" label="IDC_CONTENT_CONTEXT_OPENLINK_ISOLATED"/>
-+  <int value="170" label="IDC_CONTENT_CONTEXT_FORCE_PASTE"/>
+   <int value="170" label="IDC_CONTENT_CONTEXT_ASK_GOOGLE_ABOUT_THIS_PAGE"/>
+   <int value="171" label="IDC_CONTENT_CONTEXT_CONTEXTUAL_TASKS_SUBMENU"/>
++  <int value="172" label="IDC_CONTENT_CONTEXT_FORCE_PASTE"/>
  </enum>
  
  <!-- LINT.ThenChange(//chrome/browser/renderer_context_menu/render_view_context_menu.cc:RenderViewContextMenuItem) -->
