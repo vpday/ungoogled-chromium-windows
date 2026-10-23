@@ -1,8 +1,8 @@
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
-@@ -1287,6 +1287,16 @@ config("thinlto_optimize_default") {
-     } else {
+@@ -1295,6 +1295,15 @@ config("thinlto_optimize_default") {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
+       ldflags += [ "-Wl,--lto-CGO3" ]
      }
 +    if (is_win) {
 +      ldflags += [
@@ -13,13 +13,12 @@
 +          rebase_path("$clang_base_path/bin/clang", root_build_dir),
 +      ]
 +    }
-+
  
      if (toolchain_supports_rust_thin_lto) {
        # We always point Rust to a linker that performs LTO, so we don't want
-@@ -1322,6 +1332,16 @@ config("thinlto_optimize_max") {
-     } else {
+@@ -1332,6 +1341,15 @@ config("thinlto_optimize_max") {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
+       ldflags += [ "-Wl,--lto-CGO3" ]
      }
 +    if (is_win) {
 +      ldflags += [
@@ -30,7 +29,6 @@
 +          rebase_path("$clang_base_path/bin/clang", root_build_dir),
 +      ]
 +    }
-+
  
      if (toolchain_supports_rust_thin_lto) {
        # We always point Rust to a linker that performs LTO, so we don't want
