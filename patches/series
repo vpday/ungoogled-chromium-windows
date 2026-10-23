@@ -41,9 +41,6 @@ helium/infinite-tab-freezing.patch
 helium/disable-fedcm-bubble.patch
 helium/hibernate-tab-context-menu.patch
 helium/close-tabs-to-left.patch
-helium/copy-url-tab-context-menu.patch
-helium/mute-tab-context-menu.patch
-helium/simplify-context-menu.patch
 helium/disable-pdf-infobar.patch
 helium/force-paste-action.patch
 ungoogled-chromium/windows/windows-multiple-search-engines-context-menu.patch

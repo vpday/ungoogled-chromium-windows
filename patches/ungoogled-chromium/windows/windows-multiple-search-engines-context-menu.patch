@@ -66,7 +66,7 @@
        embedder_web_contents_(GetWebContentsToUse(&render_frame_host)),
        autofill_context_menu_manager_(this, &menu_model_),
        is_paste_enabled_(is_paste_enabled),
-@@ -2968,35 +2979,172 @@
+@@ -2962,36 +2973,175 @@
    if (AutocompleteMatch::IsSearchType(match.type)) {
 -    const TemplateURL* const default_provider =
 -        TemplateURLServiceFactory::GetForProfile(GetProfile())
@@ -97,8 +97,9 @@
          GetBrowser() || IsPrintPreviewContent(current_url_)) {
 -      menu_model_.AddItem(
 -          IDC_CONTENT_CONTEXT_SEARCHWEBFOR,
--          l10n_util::GetStringFUTF16(IDS_TOUCH_BAR_SEARCH,
--                                     default_provider->short_name()));
+-          l10n_util::GetStringFUTF16(IDS_CONTENT_CONTEXT_SEARCHWEBFOR,
+-                                     default_provider->short_name(),
+-                                     printable_selection_text));
 -      if (features::IsMenuSimplificationEnabled()) {
 -        menu_model_.SetIconForCommandId(
 -            IDC_CONTENT_CONTEXT_SEARCHWEBFOR,
@@ -112,8 +113,9 @@
 +              "enable-multiple-search-engines-context-menu")) {
 +        menu_model_.AddItem(
 +            IDC_CONTENT_CONTEXT_SEARCHWEBFOR,
-+            l10n_util::GetStringFUTF16(IDS_TOUCH_BAR_SEARCH,
-+                                       default_provider->short_name()));
++            l10n_util::GetStringFUTF16(IDS_CONTENT_CONTEXT_SEARCHWEBFOR,
++                                       default_provider->short_name(),
++                                       printable_selection_text));
 +        if (features::IsMenuSimplificationEnabled()) {
 +          menu_model_.SetIconForCommandId(
 +              IDC_CONTENT_CONTEXT_SEARCHWEBFOR,
@@ -204,8 +206,9 @@
 +                                    : (IDC_CONTENT_CONTEXT_SEARCHWEB_START + static_cast<int>(i - 1));
 +          menu_model_.AddItem(
 +              command_id,
-+              l10n_util::GetStringFUTF16(IDS_TOUCH_BAR_SEARCH,
-+                                         valid_engines[i]->short_name()));
++              l10n_util::GetStringFUTF16(IDS_CONTENT_CONTEXT_SEARCHWEBFOR,
++                                         valid_engines[i]->short_name(),
++                                         printable_selection_text));
 +          if (features::IsMenuSimplificationEnabled()) {
 +            menu_model_.SetIconForCommandId(
 +                command_id,
@@ -222,8 +225,9 @@
 +            int command_id = IDC_CONTENT_CONTEXT_SEARCHWEB_START + static_cast<int>(i - 1);
 +            search_engines_submenu_model_.AddItem(
 +                command_id,
-+                l10n_util::GetStringFUTF16(IDS_TOUCH_BAR_SEARCH,
-+                                           valid_engines[i]->short_name()));
++                l10n_util::GetStringFUTF16(IDS_CONTENT_CONTEXT_SEARCHWEBFOR,
++                                           valid_engines[i]->short_name(),
++                                           printable_selection_text));
 +            if (features::IsMenuSimplificationEnabled()) {
 +              search_engines_submenu_model_.SetIconForCommandId(
 +                  command_id,
@@ -255,7 +259,7 @@
 +      }
      }
    } else {
-@@ -3441,6 +3589,16 @@
+@@ -3436,6 +3586,16 @@
    bool isolated_mode_enabled =
        enterprise_isolated_mode::IsolatedModeReplacesIncognito(GetProfile());
  
@@ -272,7 +276,7 @@
    switch (id) {
      case IDC_BACK:
        return embedder_web_contents_->GetController().CanGoBack();
-@@ -3605,6 +3763,9 @@
+@@ -3600,6 +3760,9 @@
        return navigation_allowed &&
               IsOpenLinkAllowedByDlp(selection_navigation_url_);
  
@@ -282,7 +286,7 @@
      case IDC_CONTENT_CONTEXT_GOTOURL:
        return navigation_allowed &&
               IsOpenLinkAllowedByDlp(selection_navigation_url_);
-@@ -3805,6 +3966,15 @@
+@@ -3800,6 +3963,15 @@
      return;
    }
  
@@ -298,7 +302,7 @@
    switch (id) {
      case IDC_CONTENT_CONTEXT_OPENLINKNEWTAB: {
        WindowOpenDisposition new_tab_disposition =
-@@ -4199,36 +4369,12 @@
+@@ -4194,36 +4366,12 @@
        [[fallthrough]];
      }
      case IDC_CONTENT_CONTEXT_SEARCHWEBFORNEWTAB: {
@@ -339,7 +343,7 @@
      case IDC_CONTENT_CONTEXT_GOTOURL: {
        auto disposition = ui::DispositionFromEventFlags(
            event_flags, WindowOpenDisposition::NEW_FOREGROUND_TAB);
-@@ -5472,6 +5615,37 @@
+@@ -5467,6 +5610,37 @@
  #endif
  }
  

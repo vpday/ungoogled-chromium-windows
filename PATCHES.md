@@ -80,8 +80,6 @@
 - `shift-right-click-context-menu.patch`: Forces the browser's native context menu to open on `Shift + Right-Click`, bypassing pages that block right-clicking.
 - `force-paste-action.patch`: Forces paste actions to work in input fields that attempt to block clipboard pasting.
 - `close-tabs-to-left.patch`: Adds a "Close tabs to the left" option to the tab context menu.
-- `copy-url-tab-context-menu.patch`: Adds a "Copy URL" option to the tab context menu.
-- `mute-tab-context-menu.patch`: Adds a mute/unmute option to the tab context menu.
 - `open-new-tabs-next-to-active-tab-option.patch`: Adds a flag to open new tabs directly next to the active tab rather than at the end of the tab strip.
 - `disable-user-education-nags.patch`: Suppresses feature tutorial popups, prompts, and promo bubbles.
 - `disable-outdated-build-detector.patch`: Disables the yellow "Chrome is out of date" warning banner.
@@ -92,7 +90,6 @@
 - `hide-page-actions-flag.patch`: Adds a flag to hide page action icons in the location bar.
 - `hide-pip-live-caption-button.patch` & `disable-live-caption-completely.patch`: Hides the Live Caption toggle in Picture-in-Picture windows and removes the Live Caption background service and model downloader.
 - `disable-non-standard-auth-features.patch`: Disables non-standard web authentication features (including `kFedCmDelegation`).
-- `simplify-context-menu.patch`: Trims secondary options from the default context menu.
 
 ## 4. Curated Cromite Patches (`patches/cromite/`)
 

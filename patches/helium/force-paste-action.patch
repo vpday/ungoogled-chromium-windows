@@ -173,8 +173,8 @@
 --- a/chrome/browser/ui/browser_commands.h
 +++ b/chrome/browser/ui/browser_commands.h
 @@ -357,6 +357,8 @@ void CopyURL(BrowserWindowInterface* bro
+ void CopyURL(BrowserWindowInterface* browser,
               content::WebContents* web_contents);
- void CopyURLs(const std::vector<content::WebContents*>& web_contentses);
  bool CanCopyUrl(BrowserWindowInterface* browser);
 +void ForcePaste(BrowserWindowInterface* browser);
 +void ForcePaste(content::WebContents* web_contents);
