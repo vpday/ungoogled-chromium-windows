@@ -140,6 +140,7 @@ def _get_windows_components(target: WindowsTarget):
         'typescript',
         'directx-headers',
         'webauthn',
+        'multimedia-redirection',
         'rust-x64',
         target.windows_rust_std_selector,
     ]

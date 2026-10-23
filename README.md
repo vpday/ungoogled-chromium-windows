@@ -271,6 +271,11 @@ Used by `tools/typescript/ts_library.gni` for compiling WebUI and DevTools front
 1. Find the commit hash in `build/src/DEPS` under `src/third_party/microsoft_webauthn/src`
 2. Update `downloads.ini` section `[webauthn]` with `version = COMMIT_HASH`
 
+##### Multimedia Redirection API (`multimedia-redirection`)
+
+1. Find the commit hash in `build/src/DEPS` under `src/third_party/microsoft_multimedia_redirection/src`
+2. Update `downloads.ini` section `[multimedia-redirection]` with `version = COMMIT_HASH`
+
 #### Rust Toolchain
 
 The Rust toolchain consists of:
