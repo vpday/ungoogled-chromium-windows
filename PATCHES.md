@@ -3,7 +3,6 @@
 ## 1. Windows Native Optimizations and Feature Overrides (`patches/ungoogled-chromium/windows/`)
 
 ### 1.1 `windows-common-optimizations.patch` (Target-Agnostic Toolchain & Linker Tuning)
-*Applies to: `x64`, `x86`, `arm64`*
 - Compiler Optimization: Enables `-O3` globally for Clang and Rust in release builds.
 - ThinLTO Code Generation: Runs ThinLTO backend optimization at Level 3 (`lldltocgo=3`).
 - Fast Floating-Point Contraction: Enables `-ffp-contract=fast` across C/C++ and Rust to speed up WebGL, canvas, and math calculations.
@@ -17,25 +16,36 @@
 - Gather/Scatter Avoidance: Disables gather and scatter instructions in C/C++ and Rust to prevent latency regressions on CPUs with slow microcode implementations.
 
 ### 1.3 `windows-additional-feature-overrides.patch` (Feature Overrides & Background De-bloating)
-*Applies to: `x64`, `x86`, `arm64`*
 - Client AI & On-Device ML: Disables the Desktop AI assistant (Glic), Private AI, DevTools AI code features, and history passage embeddings.
 - Speculative Networking & Preloading: Disables bookmark and NTP Prerender2, Navigation Predictor, Top Chrome WebUI preloading, and speculative ServiceWorker warm-up.
 - Process De-bloating: Disables persistent spare renderer processes for the default search engine.
-- Telemetry & Metrics: Disables Structured Metrics, Critical User Journeys, and Notification Telemetry.
+- Telemetry & Metrics: Disables Structured Metrics, Critical User Journeys, Notification Telemetry, cold-start OneDrive sync state probing (`kCloudSyncedFolderChecker`), and BrowserContext-bound digital credentials service instantiation.
+- Performance & Memory Tuning: Locks background tab freezing under critical memory pressure (`kDisablePeriodicUnfreezeOnCriticalMemoryPressure`) and boosts closing tab priority (`kBoostClosingTabs`) for smoother tab strip animations.
 - Security & UI Settings: Enables strict origin isolation and network service sandboxing; enables one-click tab audio muting and modern WebUI refresh.
 
 ### 1.4 `windows-multiple-search-engines-context-menu.patch` (Multi-Engine Context Menu Search)
-*Applies to: `x64`, `x86`, `arm64`*
 - Multi-Engine Context Menu Search: Reads configured search engines from browser settings when text is selected on a webpage, showing multiple "Search with <Engine>" options in the right-click menu.
 - Adaptive Menu Layout: Displays up to 4 search engines directly in the context menu, automatically folding additional engines into a "More search engines" submenu to keep the menu compact.
 - Configuration (Disabled by default):
   - `chrome://flags`: Set `#enable-multiple-search-engines-context-menu` ("Show more search engines in context menu") to `Enabled` (or `Default` to disable).
   - Command Line: Add `--enable-multiple-search-engines-context-menu` to enable; omit to keep disabled.
 
+### 1.5 `windows-disable-digital-credentials.patch` (W3C Digital Credentials Downgrade)
+- Digital Identity Credentials: Sets `WebIdentityDigitalCredentials` and `WebIdentityDigitalCredentialsCreation` to experimental status in `runtime_enabled_features.json5`, preventing websites from triggering Google Optimization Guide low-friction whitelist requests.
+
+### 1.6 `windows-disable-jumplist-history.patch` (Taskbar JumpList Privacy Protection)
+- Taskbar History Leak Prevention: Disables writing "Most Visited" and "Recently Closed" URLs and favicon icons to the Windows JumpList in `jumplist.cc`, keeping Windows taskbar shortcuts stateless (e.g. New Window, Incognito Window) and preventing unencrypted OS-level browsing history leaks.
+
+### 1.7 `windows-normalize-user-agent-platform-version.patch` (High-Entropy Windows Version Masking)
+- Platform Version Normalization: Returns a fixed `"10.0.0"` in `GetWindowsPlatformVersion()` within `user_agent_utils.cc`, preventing Client Hints from leaking granular Windows OS contract/build versions.
+
+### 1.8 `windows-disable-antivirus-metrics-provider.patch` (Antivirus WMI & Subprocess Pruning)
+- Antivirus Telemetry Pruning: Removes `GoogleUpdateMetricsProviderWin` and `AntiVirusMetricsProvider` registration in `chrome_metrics_service_client.cc`, eliminating unnecessary WMI queries to `root\SecurityCenter2` and utility worker process launches on startup.
+
 ## 2. Curated Brave Patches (`patches/brave/`)
 
 ### 2.1 Resource De-bloating & AI Pruning
-- `disable-web-platform-ai.patch`: Disables Web Platform AI APIs (`LanguageModel`, `PromptAPI`, and `WebPlatformAI` in `runtime_enabled_features.json5`), preventing web pages from downloading or running on-device AI models.
+- `disable-web-platform-ai.patch`: Disables Web Platform AI APIs (`AIPromptAPI`, `AIPromptAPIMultimodalInput`, `AIProofreaderAPI`, `AIRewriterAPI`, `AISummarizationAPI`, and `AIWriterAPI` in `runtime_enabled_features.json5`), preventing web pages from downloading or running on-device AI models.
 - `disable-history-embeddings.patch`: Sets `kEnabledByDefaultForDesktopOnly` to `false` in `history_embeddings_utils.cc`, disabling passage embedding generation on browsing history.
 - `consolidated-features-overrides.patch`: Disables bookmark and New Tab Page Prerender2 triggers, DevTools Console Insights, DevTools AI code features, WebUI Omnibox Popups, and tab hover card thumbnail previews.
 - `kill-profile-reset-report-uploader.patch`: Empties `ResetReportUploader::DispatchReport` in `chrome/browser/profile_resetter/reset_report_uploader.cc` to stop telemetry uploads when resetting browser profiles.
@@ -82,7 +92,7 @@
 - `open-new-tabs-next-to-active-tab-option.patch`: Adds a flag to open new tabs directly next to the active tab rather than at the end of the tab strip.
 - `disable-user-education-nags.patch`: Suppresses feature tutorial popups, prompts, and promo bubbles.
 - `disable-outdated-build-detector.patch`: Disables the yellow "Chrome is out of date" warning banner.
-- `disable-pdf-infobar.patch`: Removes the infobar shown when viewing PDFs.
+- `disable-annoying-infobars.patch`: Removes the infobar shown when viewing PDFs and disables the startup foreground launch infobar.
 - `disable-fedcm-bubble.patch`: Disables FedCM third-party account selection prompt bubbles.
 - `add-more-zoom-presets.patch`: Adds more zoom percentage steps in `page_zoom.cc`.
 - `center-window-on-launch.patch`: Centers the browser window on the screen on its first launch.

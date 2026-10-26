@@ -1,6 +1,6 @@
 --- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
 +++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
-@@ -296,6 +296,7 @@
+@@ -319,6 +319,7 @@
      {
        // Interest Group JS API/runtimeflag.
        name: "AdInterestGroupAPI",
@@ -8,7 +8,7 @@
        public: true,
      },
      // Adjust the end of the next paragraph if the end position for the
-@@ -407,6 +408,7 @@
+@@ -426,6 +427,7 @@
      },
      {
        name: "AIPromptAPI",
@@ -16,7 +16,33 @@
        public: true,
        status: {
          "Win": "stable",
-@@ -512,6 +514,7 @@
+@@ -453,6 +455,7 @@
+     },
+     {
+       name: "AIPromptAPIMultimodalInput",
++      base_feature_status: "disabled",
+       status: {
+         "Win": "stable",
+         "Mac": "stable",
+@@ -507,7 +510,7 @@
+       origin_trial_feature_name: "AIProofreaderAPI",
+       origin_trial_os: ["win", "mac", "linux", "chromeos"],
+       origin_trial_allows_third_party: true,
+-      base_feature_status: "enabled",
++      base_feature_status: "disabled",
+       copied_from_base_feature_if: "overridden",
+     },
+     {
+@@ -522,7 +525,7 @@
+       origin_trial_feature_name: "AIRewriterAPI",
+       origin_trial_os: ["win", "mac", "linux", "chromeos"],
+       origin_trial_allows_third_party: true,
+-      base_feature_status: "enabled",
++      base_feature_status: "disabled",
+       copied_from_base_feature_if: "overridden",
+     },
+     {
+@@ -531,6 +534,7 @@
      },
      {
        name: "AISummarizationAPI",
@@ -24,3 +50,12 @@
        status: {
          "Win": "stable",
          "Mac": "stable",
+@@ -565,7 +569,7 @@
+       origin_trial_feature_name: "AIWriterAPI",
+       origin_trial_os: ["win", "mac", "linux", "chromeos"],
+       origin_trial_allows_third_party: true,
+-      base_feature_status: "enabled",
++      base_feature_status: "disabled",
+       copied_from_base_feature_if: "overridden",
+     },
+     {

@@ -1,6 +1,6 @@
 --- a/components/content_settings/browser/ui/cookie_controls_controller.cc
 +++ b/components/content_settings/browser/ui/cookie_controls_controller.cc
-@@ -397,25 +397,8 @@
+@@ -403,25 +403,8 @@ CookieControlsState CookieControlsController::GetCookieControlsIconState(
  
  CookieControlsState CookieControlsController::GetCookieControlsIconState(
      CookieControlsState controls_state) {

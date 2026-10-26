@@ -1,0 +1,12 @@
+--- a/chrome/browser/metrics/chrome_metrics_service_client.cc
++++ b/chrome/browser/metrics/chrome_metrics_service_client.cc
+@@ -923,9 +923,5 @@ void ChromeMetricsServiceClient::RegisterMetricsServiceProviders() {
+ #if BUILDFLAG(IS_WIN)
+-  metrics_service_->RegisterMetricsProvider(
+-      std::make_unique<GoogleUpdateMetricsProviderWin>());
+-  metrics_service_->RegisterMetricsProvider(
+-      std::make_unique<AntiVirusMetricsProvider>());
+   metrics_service_->RegisterMetricsProvider(
+       std::make_unique<TPMMetricsProvider>());
+   metrics_service_->RegisterMetricsProvider(
+       std::make_unique<SystemMemoryListMetricsProvider>());

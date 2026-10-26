@@ -37,7 +37,7 @@
  // history restored from the SessionRestore and TabRestoreService systems.
 --- a/chrome/browser/ui/browser_tabrestore.cc
 +++ b/chrome/browser/ui/browser_tabrestore.cc
-@@ -27,6 +27,7 @@
+@@ -26,6 +26,7 @@
  #include "chrome/browser/ui/tabs/tab_strip_model.h"
  #include "chrome/browser/ui/webui_browser/webui_browser.h"
  #include "chrome/common/buildflags.h"
@@ -150,7 +150,7 @@
    // If we don't have a RenderWidgetHost, we can't track paints for the tab so
 --- a/chrome/browser/sessions/session_restore_delegate.cc
 +++ b/chrome/browser/sessions/session_restore_delegate.cc
-@@ -84,8 +84,22 @@
+@@ -84,8 +84,22 @@ bool SessionRestoreDelegate::RestoredTab
  void SessionRestoreDelegate::RestoreTabs(
      const std::vector<RestoredTab>& tabs,
      const base::TimeTicks& restore_started) {
@@ -174,7 +174,7 @@
  
    SessionRestoreStatsCollector::GetOrCreateInstance(
        restore_started,
-@@ -93,12 +107,10 @@
+@@ -93,12 +107,10 @@ void SessionRestoreDelegate::RestoreTabs
            SessionRestoreStatsCollector::UmaStatsReportingDelegate>())
        ->TrackTabs(tabs);
  
@@ -183,19 +183,18 @@
 -  for (const auto& tab : tabs) {
 -    CHECK(tab.contents());
 -    web_contents_vector.push_back(tab.contents());
--  }
 +  if (tabs_to_load.empty()) {
 +    performance_manager::policies::FinishSchedulingRestoredTabs();
 +  } else {
 +    performance_manager::policies::ScheduleLoadForRestoredTabs(
 +        std::move(tabs_to_load));
-+  }
+   }
 -  performance_manager::policies::ScheduleLoadForRestoredTabs(
 -      std::move(web_contents_vector));
  }
 --- a/chrome/browser/sessions/session_restore.cc
 +++ b/chrome/browser/sessions/session_restore.cc
-@@ -562,8 +562,8 @@ class SessionRestoreImpl : public Browse
+@@ -570,8 +570,8 @@ class SessionRestoreImpl : public Browse
                    [](RestoredTab& tab) { return tab.contents() == nullptr; });
  
      if (succeeded) {
@@ -206,7 +205,7 @@
        std::stable_sort(restored_tabs.begin(), restored_tabs.end());
        SessionRestoreDelegate::RestoreTabs(restored_tabs, restore_started_);
      }
-@@ -1029,50 +1029,64 @@ class SessionRestoreImpl : public Browse
+@@ -1053,50 +1053,64 @@ class SessionRestoreImpl : public Browse
      // base::Time) can be mapped onto the TimeTicks timeline WebContents wants.
      const base::Time now = base::Time::Now();
      const base::TimeTicks now_ticks = base::TimeTicks::Now();
@@ -303,7 +302,7 @@
    void RestoreTab(const sessions::SessionTab& tab,
                    BrowserWindowInterface* browser,
                    bool is_active_browser,
-@@ -1125,7 +1139,10 @@ class SessionRestoreImpl : public Browse
+@@ -1150,7 +1164,10 @@ class SessionRestoreImpl : public Browse
          tab.extension_app_id, new_group, is_selected_tab, tab.pinned,
          last_active_time_ticks, last_active_time,
          session_storage_namespace.get(), tab.user_agent_override,
@@ -317,7 +316,7 @@
      RestoredTab restored_tab(web_contents, is_selected_tab,
 --- a/chrome/browser/ui/browser_live_tab_context.cc
 +++ b/chrome/browser/ui/browser_live_tab_context.cc
-@@ -166,6 +166,15 @@ sessions::LiveTab* BrowserLiveTabContext
+@@ -194,6 +194,15 @@ sessions::LiveTab* BrowserLiveTabContext
        tab_strip_model_->GetActiveWebContents());
  }
  
@@ -333,7 +332,7 @@
  std::map<std::string, std::string> BrowserLiveTabContext::GetExtraDataForTab(
      int index) const {
    std::map<std::string, std::string> extra_data;
-@@ -244,6 +253,15 @@ BrowserLiveTabContext::GetSavedTabGroupI
+@@ -272,6 +281,15 @@ BrowserLiveTabContext::GetSavedTabGroupI
                       : std::nullopt;
  }
  
@@ -349,7 +348,7 @@
  const std::optional<tab_groups::TabGroupId>
  BrowserLiveTabContext::GetGroupIdForSavedGroup(const base::Uuid& saved) const {
    tab_groups::TabGroupSyncService* tab_group_service =
-@@ -337,6 +355,11 @@ sessions::LiveTab* BrowserLiveTabContext
+@@ -365,6 +383,11 @@ sessions::LiveTab* BrowserLiveTabContext
        tab_strip_model_->SupportsTabGroups() ? tab.group : std::nullopt;
    std::optional<base::Uuid> saved_group_id = tab.saved_group_id;
    content::WebContents* web_contents = nullptr;
@@ -361,7 +360,7 @@
  
    BrowserWindowInterface* const browser = &*browser_;
    const bool is_normal_tab = !group_id.has_value();
-@@ -352,7 +375,8 @@ sessions::LiveTab* BrowserLiveTabContext
+@@ -380,7 +403,8 @@ sessions::LiveTab* BrowserLiveTabContext
          tab.extension_app_id, group_id, select, tab.pinned, base::TimeTicks(),
          base::Time(), storage_namespace, tab.user_agent_override,
          tab.extra_data,
@@ -371,7 +370,7 @@
  
      if (group_id.has_value() &&
          !tab_group_service->GetGroup(group_id.value()).has_value()) {
-@@ -366,6 +390,8 @@ sessions::LiveTab* BrowserLiveTabContext
+@@ -394,6 +418,8 @@ sessions::LiveTab* BrowserLiveTabContext
                tab.group.value()));
      }
    } else {
@@ -380,7 +379,7 @@
      std::optional<tab_groups::SavedTabGroup> saved_group =
          tab_group_service->GetGroup(saved_group_id.value());
      CHECK(saved_group);
-@@ -395,7 +421,7 @@ sessions::LiveTab* BrowserLiveTabContext
+@@ -423,7 +449,7 @@ sessions::LiveTab* BrowserLiveTabContext
      if (is_restoring_group_or_window) {
        // Open the saved tab group as-is if the tab is being restored from a
        // group or window context. This is to enforce that SavedTabGroups are
@@ -389,7 +388,7 @@
        return nullptr;
      }
  
-@@ -410,6 +436,10 @@ sessions::LiveTab* BrowserLiveTabContext
+@@ -444,6 +470,10 @@ sessions::LiveTab* BrowserLiveTabContext
  
    CHECK(web_contents);
  
@@ -402,7 +401,7 @@
    } else {
 --- a/components/sessions/core/tab_restore_service_helper.cc
 +++ b/components/sessions/core/tab_restore_service_helper.cc
-@@ -979,38 +979,73 @@ std::optional<std::vector<LiveTab*>> Tab
+@@ -989,38 +989,73 @@ std::optional<std::vector<LiveTab*>> Tab
  
          CHECK(!window.tabs.empty());
          const int selected_tab_index =
@@ -439,7 +438,7 @@
 +                ? selected_tab_index
 +                : static_cast<int>(first_saved_tab - window.tabs.begin());
 +
-+        std::vector<LiveTab*> restored_tabs(window.tabs.size());
++        std::vector<base::WeakPtr<LiveTab>> restored_tabs(window.tabs.size());
 +        auto restore_tab = [&](int source_index) {
 +          // Only the prefix uses saved indices. After the first tab or group,
 +          // append using the live count because saved groups may have changed.
@@ -458,7 +457,7 @@
 -                tab->navigations.at(tab->current_navigation_index)
 -                    .virtual_url());
 -            live_tabs.push_back(restored_tab->GetWeakPtr());
-+            restored_tabs[source_index] = restored_tab;
++            restored_tabs[source_index] = restored_tab->GetWeakPtr();
              restored_tab_map[tab->id] = restored_tab;
            }
 +        };
@@ -486,12 +485,12 @@
 +            client_->OnTabRestored(
 +                tab->navigations.at(tab->current_navigation_index)
 +                    .virtual_url());
-+            live_tabs.push_back(restored_tabs[source_index]->GetWeakPtr());
++            live_tabs.push_back(restored_tabs[source_index]);
 +          }
          }
  
          MapSavedGroupTabsToLiveTabs(context, window.tab_groups, tabs_by_group,
-@@ -1018,6 +1053,15 @@ std::optional<std::vector<LiveTab*>> Tab
+@@ -1028,6 +1063,15 @@ std::optional<std::vector<LiveTab*>> Tab
  
          ReconstructSplits(context, window_split_tabs, restored_tab_map);
  
@@ -509,14 +508,15 @@
            UpdateTabBrowserIDs(browser_id, context->GetSessionID());
 --- a/chrome/browser/ui/startup/startup_browser_creator_impl.cc
 +++ b/chrome/browser/ui/startup/startup_browser_creator_impl.cc
-@@ -15,5 +15,6 @@
+@@ -14,6 +14,7 @@
+ 
  #include "base/auto_reset.h"
  #include "base/command_line.h"
 +#include "base/containers/span.h"
  #include "base/functional/bind.h"
  #include "base/supports_user_data.h"
  #include "base/version.h"
-@@ -36,6 +37,7 @@
+@@ -34,6 +35,7 @@
  #include "chrome/browser/sessions/session_service_factory.h"
  #include "chrome/browser/signin/account_consistency_mode_manager.h"
  #include "chrome/browser/ui/browser_commands.h"
@@ -524,7 +524,7 @@
  #include "chrome/browser/ui/browser_tabstrip.h"
  #include "chrome/browser/ui/browser_window.h"
  #include "chrome/browser/ui/browser_window/public/browser_window_features.h"
-@@ -65,6 +67,8 @@
+@@ -63,6 +65,8 @@
  #include "chrome/common/webui_url_constants.h"
  #include "components/custom_handlers/protocol_handler_registry.h"
  #include "components/prefs/pref_service.h"
@@ -533,7 +533,7 @@
  #include "components/signin/public/base/signin_switches.h"
  #include "components/tab_groups/tab_group_id.h"
  #include "content/public/browser/child_process_security_policy.h"
-@@ -211,6 +215,24 @@ BrowserWindowInterface* GetExistingBrows
+@@ -214,6 +218,24 @@ BrowserWindowInterface* GetExistingBrows
    return workspace_browser;
  }
  

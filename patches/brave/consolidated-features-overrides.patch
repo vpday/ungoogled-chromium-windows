@@ -9,7 +9,7 @@
  
  // This flag is used for enabling BookmarkBar triggered preconnect.
  BASE_FEATURE(kBookmarkTriggerForPreconnect, base::FEATURE_ENABLED_BY_DEFAULT);
-@@ -102,7 +102,7 @@ BASE_FEATURE(kNetworkAnnotationMonitoring, base::FEATURE_ENABLED_BY_DEFAULT);
+@@ -103,7 +103,7 @@ BASE_FEATURE(kNetworkAnnotationMonitoring, base::FEATURE_ENABLED_BY_DEFAULT);
  
  // This flag is used for enabling New Tab Page triggered prerendering. See
  // crbug.com/40275094 for more details of New Tab Page triggered prerendering.
@@ -49,7 +49,7 @@ index 0a45817..358f620 100644
  const base::FeatureParam<std::string> kDevToolsAiCodeGenerationModelId{
      &kDevToolsAiCodeGeneration, "aida_model_id",
      /*default_value=*/""};
-@@ -171,7 +171,7 @@ BASE_FEATURE(kDevToolsAiGeneratedTimelineLabels,
+@@ -170,7 +170,7 @@ BASE_FEATURE(kDevToolsAiGeneratedTimelineLabels,
               base::FEATURE_ENABLED_BY_DEFAULT);
  
  // Whether the DevTools AI generated annotation labels in timeline are enabled.
@@ -58,11 +58,13 @@ index 0a45817..358f620 100644
  
  // Whether DevTools drawer can be toggled to vertical orientation.
  BASE_FEATURE(kDevToolsVerticalDrawer, base::FEATURE_ENABLED_BY_DEFAULT);
-@@ -216,7 +216,7 @@ BASE_FEATURE(kDevToolsAcceptDebuggingConnections,
- BASE_FEATURE(kDevToolsShowPolicyDialog, base::FEATURE_ENABLED_BY_DEFAULT);
+@@ -209,8 +209,8 @@ BASE_FEATURE(kDevToolsAcceptDebuggingConnections,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ #endif  // BUILDFLAG(IS_CHROMEOS)
  
- BASE_FEATURE(kDevToolsAiAssistanceContextSelectionAgent,
+-BASE_FEATURE(kDevToolsAiAssistanceContextSelectionAgent,
 -             base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kDevToolsAiAssistanceContextSelectionAgent,
 +             base::FEATURE_DISABLED_BY_DEFAULT);
  
  // Whether Console Insights Teasers are enabled.
@@ -71,7 +73,7 @@ diff --git a/chrome/browser/ui/omnibox/omnibox_next_features.cc b/chrome/browser
 index 79cfa8e..ee73c1c 100644
 --- a/chrome/browser/ui/omnibox/omnibox_next_features.cc
 +++ b/chrome/browser/ui/omnibox/omnibox_next_features.cc
-@@ -38,11 +38,11 @@ namespace omnibox {
+@@ -45,11 +45,11 @@ namespace omnibox {
  namespace internal {
  
  // If enabled, shows the omnibox suggestions in the popup in WebUI.
@@ -89,7 +91,7 @@ diff --git a/chrome/browser/ui/ui_features.cc b/chrome/browser/ui/ui_features.cc
 index 1530a17..5f102da 100644
 --- a/chrome/browser/ui/ui_features.cc
 +++ b/chrome/browser/ui/ui_features.cc
-@@ -243,13 +243,7 @@ bool IsTabGroupHoverCardsEnabled() {
+@@ -266,13 +266,7 @@ BASE_FEATURE(kNewTabButtonContextMenu, base::FEATURE_ENABLED_BY_DEFAULT);
  
  // Enables preview images in tab-hover cards.
  // https://crbug.com/41439486
@@ -108,7 +110,7 @@ diff --git a/chrome/common/chrome_features.cc b/chrome/common/chrome_features.cc
 index e9f21e3..90bbee1 100644
 --- a/chrome/common/chrome_features.cc
 +++ b/chrome/common/chrome_features.cc
-@@ -1660,7 +1660,7 @@ BASE_FEATURE(kSafetyHubTrustSafetySentimentSurvey,
+@@ -1648,7 +1648,7 @@ BASE_FEATURE(kSafetyHubTrustSafetySentimentSurvey,
  // Safe Browsing Reporting to perform a k-anonymous query to see if Google knows
  // about an SCT seen in the wild. If it hasn't been seen, then it is considered
  // a security incident and uploaded to Google.
@@ -134,7 +136,7 @@ diff --git a/components/omnibox/common/omnibox_features.cc b/components/omnibox/
 index 62a8eb0..a55e207 100644
 --- a/components/omnibox/common/omnibox_features.cc
 +++ b/components/omnibox/common/omnibox_features.cc
-@@ -336,7 +336,7 @@ BASE_FEATURE(kMlUrlScoreCaching, enable_if(!IS_ANDROID));
+@@ -374,7 +374,7 @@ BASE_FEATURE(kMlUrlScoreCaching, enable_if(!IS_ANDROID));
  
  // If enabled, runs the ML scoring model to assign new relevance scores to the
  // URL suggestions and reranks them.
@@ -143,7 +145,7 @@ index 62a8eb0..a55e207 100644
  
  // If enabled, specifies how URL model scores integrate with search traditional
  // scores.
-@@ -373,7 +373,7 @@ BASE_FEATURE(kStarterPackIPH, DISABLED);
+@@ -411,7 +411,7 @@ BASE_FEATURE(kStarterPackIPH, DISABLED);
  BASE_FEATURE(kAiModeStartPack, DISABLED);
  
  // If enabled, |SearchProvider| will not function in Zero Suggest.
@@ -165,7 +167,7 @@ index 075524a..35bb709 100644
  
  // Enables the prediction of optimization targets.
  BASE_FEATURE(kOptimizationTargetPrediction, base::FEATURE_ENABLED_BY_DEFAULT);
-@@ -82,7 +82,7 @@ BASE_FEATURE(kOverrideNumThreadsForModelExecution,
+@@ -83,7 +83,7 @@ BASE_FEATURE(kOverrideNumThreadsForModelExecution,
  // Service.
  BASE_FEATURE(kOptimizationGuideFetchingForSRP,
               "OptimizationHintsFetchingSRP",
@@ -174,7 +176,7 @@ index 075524a..35bb709 100644
  
  // Kill switch for disabling model quality logging.
  BASE_FEATURE(kModelQualityLogging, base::FEATURE_ENABLED_BY_DEFAULT);
-@@ -96,7 +96,7 @@ BASE_FEATURE(kOptimizationGuidePredictionModelKillswitch,
+@@ -97,7 +97,7 @@ BASE_FEATURE(kOptimizationGuidePredictionModelKillswitch,
  
  // Whether to enable model execution.
  BASE_FEATURE(kOptimizationGuideModelExecution,
@@ -209,7 +211,7 @@ index 0928e76..e4a27cb 100644
  
  BASE_FEATURE(kPermissionsAIv4, base::FEATURE_DISABLED_BY_DEFAULT);
  
-@@ -93,7 +93,7 @@ BASE_FEATURE(kRecordChooserPermissionLastVisitedTimestamps,
+@@ -94,7 +94,7 @@ BASE_FEATURE(kRecordChooserPermissionLastVisitedTimestamps,
  BASE_FEATURE(kShowRelatedWebsiteSetsPermissionGrants,
               base::FEATURE_DISABLED_BY_DEFAULT);
  
@@ -222,7 +224,7 @@ diff --git a/components/segmentation_platform/public/features.cc b/components/se
 index e1449a2..10d3950 100644
 --- a/components/segmentation_platform/public/features.cc
 +++ b/components/segmentation_platform/public/features.cc
-@@ -13,7 +13,7 @@ namespace segmentation_platform::features {
+@@ -12,7 +12,7 @@ namespace segmentation_platform::features {
  
  BASE_FEATURE(kSegmentationPlatformFeature,
               "SegmentationPlatform",
@@ -244,7 +246,7 @@ diff --git a/content/public/common/content_features.cc b/content/public/common/c
 index 4f3036e..7e48593 100644
 --- a/content/public/common/content_features.cc
 +++ b/content/public/common/content_features.cc
-@@ -1535,7 +1535,7 @@ BASE_FEATURE(kIOThreadInteractiveThreadType, base::FEATURE_DISABLED_BY_DEFAULT);
+@@ -1555,7 +1555,7 @@ BASE_FEATURE(kIOThreadInteractiveThreadType, base::FEATURE_DISABLED_BY_DEFAULT);
  const base::FeatureParam<int> kNavigationCapturingIPHGuardrailStorageDuration{
      &kPwaNavigationCapturing, "link_capturing_guardrail_storage_duration", 30};
  
@@ -257,7 +259,7 @@ diff --git a/extensions/common/extension_features.cc b/extensions/common/extensi
 index ba028c9..fc39294 100644
 --- a/extensions/common/extension_features.cc
 +++ b/extensions/common/extension_features.cc
-@@ -30,7 +30,7 @@ BASE_FEATURE(kApiOdfsConfigPrivate, base::FEATURE_ENABLED_BY_DEFAULT);
+@@ -28,7 +28,7 @@ BASE_FEATURE(kApiOdfsConfigPrivate, base::FEATURE_ENABLED_BY_DEFAULT);
  
  BASE_FEATURE(kApiContextualTasksPrivate, base::FEATURE_DISABLED_BY_DEFAULT);
  
@@ -270,7 +272,7 @@ diff --git a/net/base/features.cc b/net/base/features.cc
 index da499bb..78ad6aa 100644
 --- a/net/base/features.cc
 +++ b/net/base/features.cc
-@@ -211,7 +211,7 @@ BASE_FEATURE(kSplitCodeCacheByNetworkIsolationKey,
+@@ -217,7 +217,7 @@ BASE_FEATURE(kSplitCodeCacheByNetworkIsolationKey,
               base::FEATURE_DISABLED_BY_DEFAULT);
  
  BASE_FEATURE(kPartitionConnectionsByNetworkIsolationKey,
@@ -279,7 +281,7 @@ index da499bb..78ad6aa 100644
  
  BASE_FEATURE(kSplitHostCacheByNetworkAnonymizationKey,
               base::FEATURE_ENABLED_BY_DEFAULT);
-@@ -729,7 +729,7 @@ BASE_FEATURE(kRestrictAbusePorts, base::FEATURE_DISABLED_BY_DEFAULT);
+@@ -740,7 +740,7 @@ BASE_FEATURE(kRestrictAbusePorts, base::FEATURE_DISABLED_BY_DEFAULT);
  
  BASE_FEATURE(kRestrictAbusePortsOnLocalhost, base::FEATURE_ENABLED_BY_DEFAULT);
  
@@ -292,7 +294,7 @@ diff --git a/pdf/pdf_features.cc b/pdf/pdf_features.cc
 index 7f0e882..9194aef 100644
 --- a/pdf/pdf_features.cc
 +++ b/pdf/pdf_features.cc
-@@ -86,7 +86,7 @@ const base::FeatureParam<bool> kPdfInk2TextAnnotationsExtraStyles{
+@@ -84,7 +84,7 @@ const base::FeatureParam<bool> kPdfInk2TextAnnotationsExtraStyles{
  
  #if BUILDFLAG(ENABLE_PDF_SAVE_TO_DRIVE)
  // Saves the PDF file to Google Drive.

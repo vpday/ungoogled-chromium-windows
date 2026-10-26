@@ -1,0 +1,78 @@
+--- a/chrome/browser/win/jumplist.cc
++++ b/chrome/browser/win/jumplist.cc
+@@ -424,5 +424,6 @@ void JumpList::ProcessTopSitesNotification() {
+ void JumpList::ProcessTabRestoreServiceNotification() {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
++  return;
+ 
+   // Create a list of ShellLinkItems from the "Recently Closed" pages.
+   // As noted above, we create a ShellLinkItem objects with the following
+@@ -472,6 +473,7 @@ void JumpList::OnMostVisitedURLsAvailable(
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+ 
+   top_sites_has_pending_notification_ = false;
++  return;
+ 
+   // There is no need to update the JumpList if the top most visited sites in
+   // display have not changed.
+@@ -807,60 +809,6 @@ void JumpList::CreateNewJumpListAndNotifyOS(
+   URLIconCache most_visited_icons_next;
+   URLIconCache recently_closed_icons_next;
+ 
+-  // Update the icons for "Most Visisted" category of the JumpList if needed.
+-  if (most_visited_should_update) {
+-    UpdateIconFiles(most_visited_icon_dir, most_visited_pages,
+-                    kMostVisitedItems, &update_transaction->most_visited_icons,
+-                    &most_visited_icons_next);
+-  }
+-
+-  // Update the icons for "Recently Closed" category of the JumpList if needed.
+-  if (recently_closed_should_update) {
+-    UpdateIconFiles(recently_closed_icon_dir, recently_closed_pages,
+-                    kRecentlyClosedItems,
+-                    &update_transaction->recently_closed_icons,
+-                    &recently_closed_icons_next);
+-  }
+-
+-  base::ElapsedTimer add_custom_category_timer;
+-
+-  // Update the "Most Visited" category of the JumpList if it exists.
+-  // This update request is applied into the JumpList when we commit this
+-  // transaction.
+-  bool add_category_success = jumplist_updater.AddCustomCategory(
+-      l10n_util::GetStringUTF16(IDS_NEW_TAB_MOST_VISITED), most_visited_pages,
+-      kMostVisitedItems);
+-
+-  // If AddCustomCategory takes longer than the maximum allowed time, abort the
+-  // current update and skip the next |kNotificationsToSkipUnderHeavyLoad|
+-  // update notifications.
+-  //
+-  // We only time adding custom category for most visited pages because
+-  // 1. If processing the first category times out or fails, there is no need to
+-  //    process the second category. In this case, we are not able to time both
+-  //    categories. Then we need to select one category from the two.
+-  // 2. Most visited category is selected because it always has 5 items except
+-  //    for a new Chrome user who has not closed 5 distinct websites yet. In
+-  //    comparison, the number of items in recently closed category is much less
+-  //    stable. It has 3 items only after an user closes 3 websites in one
+-  //    session. This means the runtime of AddCustomCategory API should be fixed
+-  //    for most visited category, but not for recently closed category. So a
+-  //    fixed timeout threshold is only valid for most visited category.
+-  if (add_custom_category_timer.Elapsed() >= kTimeOutForAddCustomCategory) {
+-    update_transaction->update_timeout = true;
+-    return;
+-  }
+-
+-  if (!add_category_success)
+-    return;
+-
+-  // Update the "Recently Closed" category of the JumpList.
+-  if (!jumplist_updater.AddCustomCategory(
+-          l10n_util::GetStringUTF16(IDS_RECENTLY_CLOSED), recently_closed_pages,
+-          kRecentlyClosedItems)) {
+-    return;
+-  }
+-
+   // Update the "Tasks" category of the JumpList.
+   if (!UpdateTaskCategory(&jumplist_updater, incognito_availability,
+                           incognito_type, cmd_line_profile_dir)) {

@@ -41,7 +41,7 @@ helium/infinite-tab-freezing.patch
 helium/disable-fedcm-bubble.patch
 helium/hibernate-tab-context-menu.patch
 helium/close-tabs-to-left.patch
-helium/disable-pdf-infobar.patch
+helium/disable-annoying-infobars.patch
 helium/force-paste-action.patch
 ungoogled-chromium/windows/windows-multiple-search-engines-context-menu.patch
 helium/shift-right-click-context-menu.patch
@@ -114,3 +114,7 @@ cromite/Remove-support-for-device-memory-and-cpu-recovery.patch
 cromite/Keyboard-protection-flag.patch
 cromite/WIN-Add-some-prefs-to-secure-preferences.patch
 cromite/Disable-requests-for-single-word-Omnibar-searches.patch
+ungoogled-chromium/windows/windows-disable-digital-credentials.patch
+ungoogled-chromium/windows/windows-disable-jumplist-history.patch
+ungoogled-chromium/windows/windows-normalize-user-agent-platform-version.patch
+ungoogled-chromium/windows/windows-disable-antivirus-metrics-provider.patch

@@ -1,6 +1,6 @@
 --- a/chrome/browser/ui/browser_commands.cc
 +++ b/chrome/browser/ui/browser_commands.cc
-@@ -1484,44 +1484,7 @@ void CloseTab(BrowserWindowInterface* browser) {
+@@ -1492,44 +1492,7 @@ void CloseTab(BrowserWindowInterface* browser) {
    }
  #endif
  

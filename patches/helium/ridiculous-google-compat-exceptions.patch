@@ -1,6 +1,6 @@
 --- a/chrome/browser/signin/signin_util.cc
 +++ b/chrome/browser/signin/signin_util.cc
-@@ -522,8 +522,8 @@ void ShowErrorDialogWithMessage(BrowserW
+@@ -512,8 +512,8 @@ void ShowErrorDialogWithMessage(BrowserW
  #endif  // BUILDFLAG(IS_LINUX) ||  BUILDFLAG(IS_MAC) ||  BUILDFLAG(IS_WIN)
  
  std::vector<net::SchemefulSite> GetDeviceBoundSessionRestrictedSites() {

@@ -1,6 +1,6 @@
 --- a/components/permissions/permission_request_manager.cc
 +++ b/components/permissions/permission_request_manager.cc
-@@ -1049,7 +1049,7 @@ void PermissionRequestManager::DequeueRequestIfNeeded() {
+@@ -1058,7 +1058,7 @@ void PermissionRequestManager::DequeueRequestIfNeeded() {
    // only after the camera request is resolved. This is caused by code in
    // PermissionBubbleMediaAccessHandler and UserMediaClient. We probably don't
    // need two permission queues, so resolve the duplication.
@@ -9,7 +9,7 @@
        IsRequestInProgress()) {
      return;
    }
-@@ -1187,7 +1187,7 @@ void PermissionRequestManager::ShowPrompt() {
+@@ -1196,7 +1196,7 @@ void PermissionRequestManager::ShowPrompt() {
      return;
    }
 
@@ -18,7 +18,7 @@
    DCHECK(current_request_ui_to_use_);
 
    if (!tab_is_active_) {
-@@ -2095,7 +2095,7 @@ void PermissionRequestManager::OnTabActiveChanged() {
+@@ -2122,7 +2122,7 @@ void PermissionRequestManager::OnTabActiveChanged() {
      return;
    }
 

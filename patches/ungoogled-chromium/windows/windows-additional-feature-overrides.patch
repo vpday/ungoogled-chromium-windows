@@ -29,6 +29,17 @@
  
  // Whether the DevTools AI generated annotation labels in timeline are enabled.
  BASE_FEATURE(kDevToolsNewPermissionDialog, base::FEATURE_ENABLED_BY_DEFAULT);
+--- a/chrome/browser/digital_credentials/digital_credentials_keyed_service.cc
++++ b/chrome/browser/digital_credentials/digital_credentials_keyed_service.cc
+@@ -17,7 +17,7 @@ namespace digital_credentials {
+
+ namespace {
+ BASE_FEATURE(kEnableDigitalCredentialsCreationWithBrowserContext,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ }  // namespace
+
+ DigitalCredentialsKeyedService::DigitalCredentialsKeyedService(
 --- a/chrome/browser/metrics/critical_user_journeys/features.cc
 +++ b/chrome/browser/metrics/critical_user_journeys/features.cc
 @@ -8,7 +8,7 @@
@@ -127,6 +138,17 @@
 -BASE_FEATURE(kNonMilestoneUpdateToast, base::FEATURE_ENABLED_BY_DEFAULT);
 +BASE_FEATURE(kNonMilestoneUpdateToast, base::FEATURE_DISABLED_BY_DEFAULT);
  
+--- a/chrome/browser/win/cloud_synced_folder_checker.cc
++++ b/chrome/browser/win/cloud_synced_folder_checker.cc
+@@ -31,7 +31,7 @@ namespace {
+ namespace cloud_synced_folder_checker {
+ 
+ namespace features {
+-BASE_FEATURE(kCloudSyncedFolderChecker, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kCloudSyncedFolderChecker, base::FEATURE_DISABLED_BY_DEFAULT);
+ }  // namespace features
+ 
+ CloudSyncStatus::CloudSyncStatus() = default;
 --- a/chrome/common/chrome_features.cc
 +++ b/chrome/common/chrome_features.cc
 @@ -180,7 +180,7 @@
@@ -598,7 +620,15 @@
               base::FEATURE_ENABLED_BY_DEFAULT);
 --- a/components/performance_manager/features.cc
 +++ b/components/performance_manager/features.cc
-@@ -264,13 +264,7 @@ BASE_FEATURE(kUnimportantFramesPriority, base::FEATURE_DISABLED_BY_DEFAULT);
+@@ -248,6 +248,6 @@ BASE_FEATURE_PARAM(int,
+                    15);
+ 
+ BASE_FEATURE(kDisablePeriodicUnfreezeOnCriticalMemoryPressure,
+-             base::FEATURE_DISABLED_BY_DEFAULT);
++             base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kDiscardOnCommitLimit, base::FEATURE_DISABLED_BY_DEFAULT);
+@@ -264,16 +264,10 @@ BASE_FEATURE(kUnimportantFramesPriority, base::FEATURE_DISABLED_BY_DEFAULT);
  
  BASE_FEATURE(kThrottleUnimportantFrameRate, base::FEATURE_DISABLED_BY_DEFAULT);
  
@@ -611,7 +641,11 @@
 -);
 +BASE_FEATURE(kKeepDefaultSearchEngineRendererAlive, base::FEATURE_DISABLED_BY_DEFAULT);
  
- BASE_FEATURE(kBoostClosingTabs, base::FEATURE_DISABLED_BY_DEFAULT);
+-BASE_FEATURE(kBoostClosingTabs, base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kBoostClosingTabs, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kForceForegroundPriorityForAllTabs,
+              base::FEATURE_DISABLED_BY_DEFAULT);
  
 --- a/components/personal_context/core/personal_context_features.cc
 +++ b/components/personal_context/core/personal_context_features.cc

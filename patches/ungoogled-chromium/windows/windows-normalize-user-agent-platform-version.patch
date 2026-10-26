@@ -1,0 +1,11 @@
+--- a/components/embedder_support/user_agent_utils.cc
++++ b/components/embedder_support/user_agent_utils.cc
+@@ -150,6 +150,7 @@ const std::string& GetUniversalApiContractVersion() {
+ }
+ 
+ const std::string& GetWindowsPlatformVersion() {
+-  return GetUniversalApiContractVersion();
++  static const base::NoDestructor<std::string> kNormalizedVersion("10.0.0");
++  return *kNormalizedVersion;
+ }
+ #endif  // BUILDFLAG(IS_WIN)
