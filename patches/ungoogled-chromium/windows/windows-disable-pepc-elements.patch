@@ -1,0 +1,42 @@
+--- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
++++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
+@@ -1039,7 +1039,7 @@
+       // embed camera and microphone permission request controls directly in the page.
+       // https://chromestatus.com/feature/5153829504024576
+       name: "CameraAndMicrophoneElements",
+-      status: "stable",
++      base_feature_status: "disabled",
+       public: true,
+     },
+     {
+@@ -3417,7 +3417,7 @@
+     {
+       // Tracking bug for the implementation: https://crbug.com/430204832
+       name: "GeolocationElement",
+-      status: "stable",
++      base_feature_status: "disabled",
+       public: true,
+     },
+     {
+@@ -6802,19 +6802,20 @@
+     },
+     {
+       name: "UserMediaElement",
+-      status: "stable",
++      base_feature_status: "disabled",
+       public: true,
+     },
+     {
+       // Allowing legacy compatibility paths for usermedia element (such as
+       // the 'type' attribute carried over from older permission element
+       // implementations).
+       name: "UserMediaElementLegacy",
++      base_feature_status: "disabled",
+       // By mapping this new flag to the existing "UserMediaElement" origin
+       // trial name, both features can be evaluated concurrently during the
+       // trial phase while preserving a partner-less-effort path for future
+       // deprecation.
+       origin_trial_feature_name: "UserMediaElement",
+     },
+     {
+       name: "UseShadowHostStyleCheckEditable",

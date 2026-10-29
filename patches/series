@@ -27,7 +27,6 @@ ungoogled-chromium/windows/windows-fix-files-cfg-case.patch
 ungoogled-chromium/windows/windows-fix-v8-snapshot-toolchain-linux-win-arm64.patch
 ungoogled-chromium/windows/windows-fix-rust-toolchain-compat.patch
 ungoogled-chromium/windows/windows-enable-dtlto.patch
-upstream-fixes/add-emudhra-intermediates-to-blocklist.patch
 helium/memory-saving-by-default.patch
 helium/disable-history-clusters.patch
 helium/disable-user-education-nags.patch
@@ -118,3 +117,6 @@ ungoogled-chromium/windows/windows-disable-digital-credentials.patch
 ungoogled-chromium/windows/windows-disable-jumplist-history.patch
 ungoogled-chromium/windows/windows-normalize-user-agent-platform-version.patch
 ungoogled-chromium/windows/windows-disable-antivirus-metrics-provider.patch
+ungoogled-chromium/windows/windows-disable-pepc-elements.patch
+ungoogled-chromium/windows/windows-disable-ai-page-content-tracking.patch
+ungoogled-chromium/windows/windows-disable-webrtc-diagnostic-logging.patch

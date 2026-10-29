@@ -1,0 +1,12 @@
+--- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
++++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
+@@ -5396,7 +5396,8 @@
+     {
+       name: "RTCDiagnosticLogging",
+       origin_trial_feature_name: "RTCDiagnosticLogging",
+-      status: {"Android": "", "default": "stable"},
++      status: {"Android": "", "default": ""},
++      base_feature_status: "disabled",
+     },
+     {
+       name: "RTCEncodedAudioFrameConstructor",

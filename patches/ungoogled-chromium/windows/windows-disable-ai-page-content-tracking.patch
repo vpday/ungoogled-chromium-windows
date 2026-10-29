@@ -1,0 +1,19 @@
+--- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
++++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
+@@ -414,14 +414,14 @@
+     // Element::SetTrackedElementSubRect() method.
+     {
+       name: "AIPageContentTrackedElementsIframe",
+-      status: "stable"
++      base_feature_status: "disabled",
+     },
+     // When enabled, native or heuristics password element coordinates will be
+     // tracked using the Element::SetTrackedElementSubRect() method.
+     {
+       name: "AIPageContentTrackedElementsPassword",
+-      status: "stable"
++      base_feature_status: "disabled",
+     },
+     // Clamp AIPageContent visible bounding boxes to the local-root viewport
+     // after visual-viewport mapping to normalize viewport-relative geometry.
+     {

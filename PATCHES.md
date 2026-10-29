@@ -42,6 +42,15 @@
 ### 1.8 `windows-disable-antivirus-metrics-provider.patch` (Antivirus WMI & Subprocess Pruning)
 - Antivirus Telemetry Pruning: Removes `GoogleUpdateMetricsProviderWin` and `AntiVirusMetricsProvider` registration in `chrome_metrics_service_client.cc`, eliminating unnecessary WMI queries to `root\SecurityCenter2` and utility worker process launches on startup.
 
+### 1.9 `windows-disable-pepc-elements.patch` (PEPC HTML Declarative Permission Elements Hardening)
+- PEPC Element Deactivation: Disables `<camera>`, `<microphone>`, `<geolocation>`, and `<usermedia>` in-page permission elements (`CameraAndMicrophoneElements`, `GeolocationElement`, `UserMediaElement`, and `UserMediaElementLegacy` in `runtime_enabled_features.json5`), preventing clickjacking and anchor-based permission elevation while routing all hardware prompts through the trusted Omnibox origin bubble.
+
+### 1.10 `windows-disable-ai-page-content-tracking.patch` (Render-Side Password and Subframe Tracking Cutoff)
+- AI Page Content Tracking Deactivation: Disables `AIPageContentTrackedElementsPassword` and `AIPageContentTrackedElementsIframe` in `runtime_enabled_features.json5`, eliminating unnecessary per-frame heuristic password box coordinate tracking and compositor frame metadata serialization.
+
+### 1.11 `windows-disable-webrtc-diagnostic-logging.patch` (WebRTC Diagnostic Logging Interface Deactivation)
+- WebRTC Diagnostic Logging Blocking: Clears the default desktop status of `RTCDiagnosticLogging` in `runtime_enabled_features.json5`, removing `startDiagnosticLogging` and `stopDiagnosticLogging` extensions from `RTCPeerConnection` to eliminate client fingerprinting surfaces and unused Mojo IPC channels.
+
 ## 2. Curated Brave Patches (`patches/brave/`)
 
 ### 2.1 Resource De-bloating & AI Pruning
