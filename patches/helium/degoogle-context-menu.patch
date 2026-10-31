@@ -100,11 +100,16 @@
  
    if (features::IsReadAnythingMenuShuffleExperimentEnabled()) {
      // This will be set to false in AppendRegionSearchItem() if it is called.
-@@ -2850,40 +2780,7 @@
+@@ -2861,45 +2791,7 @@
    }
  }
  
 -void RenderViewContextMenu::AppendReadAnythingItem() {
+-  if (menu_model_.GetIndexOfCommandId(IDC_CONTENT_CONTEXT_OPEN_IN_READING_MODE)
+-          .has_value()) {
+-    return;
+-  }
+-
 -  const bool is_menu_simplification_enabled =
 -      features::IsMenuSimplificationEnabled();
 -  if (is_menu_simplification_enabled && params_.is_editable) {
