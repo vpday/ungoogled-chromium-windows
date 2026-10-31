@@ -1,0 +1,89 @@
+--- a/third_party/blink/renderer/modules/webgpu/gpu_adapter.cc
++++ b/third_party/blink/renderer/modules/webgpu/gpu_adapter.cc
+@@ -4,6 +4,8 @@
+ 
+ #include "third_party/blink/renderer/modules/webgpu/gpu_adapter.h"
+ 
++#include "base/feature_list.h"
++#include "third_party/blink/public/common/features.h"
+ #include "services/metrics/public/cpp/ukm_builders.h"
+ #include "third_party/blink/renderer/bindings/core/v8/script_promise_resolver.h"
+ #include "third_party/blink/renderer/bindings/core/v8/v8_object_builder.h"
+@@ -125,14 +127,66 @@
+ 
+ GPUAdapterInfo* GPUAdapter::CreateAdapterInfoForAdapter() {
+   bool is_fallback_adapter = adapter_type_ == wgpu::AdapterType::CPU;
++  String vendor = vendor_;
++  String architecture = architecture_;
++  String device = device_;
++  String description = description_;
++
++  if (base::FeatureList::IsEnabled(blink::features::kSpoofWebGLInfo)) {
++    std::string gl_vendor = blink::features::kSpoofWebGLVendorParam.Get();
++    std::string gl_renderer = blink::features::kSpoofWebGLRendererParam.Get();
++    if (!gl_vendor.empty()) {
++      if (gl_vendor.find("NVIDIA") != std::string::npos ||
++          gl_vendor.find("nvidia") != std::string::npos) {
++        vendor = "nvidia";
++        if (gl_renderer.find("980") != std::string::npos ||
++            gl_renderer.find("970") != std::string::npos) {
++          architecture = "maxwell";
++        } else if (gl_renderer.find("1080") != std::string::npos ||
++                   gl_renderer.find("1070") != std::string::npos) {
++          architecture = "pascal";
++        } else if (gl_renderer.find("2080") != std::string::npos ||
++                   gl_renderer.find("2070") != std::string::npos) {
++          architecture = "turing";
++        } else {
++          architecture = "ampere";
++        }
++      } else if (gl_vendor.find("Intel") != std::string::npos ||
++                 gl_vendor.find("intel") != std::string::npos) {
++        vendor = "intel";
++        architecture = "gen-12lp";
++      } else if (gl_vendor.find("AMD") != std::string::npos ||
++                 gl_vendor.find("amd") != std::string::npos ||
++                 gl_vendor.find("ATI") != std::string::npos) {
++        vendor = "amd";
++        architecture = "rdna-2";
++      } else if (gl_vendor.find("Apple") != std::string::npos ||
++                 gl_vendor.find("apple") != std::string::npos) {
++        vendor = "apple";
++        architecture = "common-3";
++      } else if (gl_vendor.find("Qualcomm") != std::string::npos ||
++                 gl_vendor.find("qualcomm") != std::string::npos) {
++        vendor = "qualcomm";
++        architecture = "adreno-6xx";
++      } else if (gl_vendor.find("Mesa") != std::string::npos ||
++                 gl_vendor.find("mesa") != std::string::npos) {
++        vendor = "mesa";
++        architecture = "software";
++      }
++    }
++    if (!gl_renderer.empty()) {
++      description = String::FromUtf8(gl_renderer);
++      device = String::FromUtf8(gl_renderer);
++    }
++  }
+ 
+   GPUAdapterInfo* info;
+   if (RuntimeEnabledFeatures::WebGPUDeveloperFeaturesEnabled()) {
+     // If WebGPU developer features have been enabled then provide all available
+     // adapter info values.
+     info = MakeGarbageCollected<GPUAdapterInfo>(
+-        vendor_, architecture_, subgroup_min_size_, subgroup_max_size_,
+-        is_fallback_adapter, device_, description_, driver_,
++        vendor, architecture, subgroup_min_size_, subgroup_max_size_,
++        is_fallback_adapter, device, description, driver_,
+         FromDawnEnum(backend_type_), FromDawnEnum(adapter_type_),
+         d3d_shader_model_, vk_driver_version_, FromDawnEnum(power_preference_));
+ 
+@@ -145,7 +199,7 @@
+     }
+   } else {
+     info = MakeGarbageCollected<GPUAdapterInfo>(
+-        vendor_, architecture_, subgroup_min_size_, subgroup_max_size_,
++        vendor, architecture, subgroup_min_size_, subgroup_max_size_,
+         is_fallback_adapter);
+   }
+ 

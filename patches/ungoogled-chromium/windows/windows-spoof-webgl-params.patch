@@ -1,0 +1,85 @@
+--- a/third_party/blink/renderer/modules/webgl/webgl_rendering_context_base.cc
++++ b/third_party/blink/renderer/modules/webgl/webgl_rendering_context_base.cc
+@@ -140,6 +140,7 @@
+ #include "third_party/blink/renderer/platform/bindings/exception_state.h"
+ #include "third_party/blink/renderer/platform/bindings/script_state.h"
+ #include "third_party/blink/renderer/platform/graphics/accelerated_static_bitmap_image.h"
++#include "third_party/blink/renderer/platform/graphics/static_bitmap_image.h"
+ #include "third_party/blink/renderer/platform/graphics/canvas_2d_resource_provider.h"
+ #include "third_party/blink/renderer/platform/graphics/canvas_non_2d_resource_provider.h"
+ #include "third_party/blink/renderer/platform/graphics/canvas_resource.h"
+@@ -4003,10 +4004,54 @@
+                             webgl_angle_implementation);
+ }
+ 
++
++namespace {
++
++struct SpoofedGlIntParam {
++  GLenum pname;
++  GLint value;
++};
++
++constexpr SpoofedGlIntParam kSpoofedGlIntParams[] = {
++    {GL_MAX_TEXTURE_SIZE, 16384},
++    {GL_MAX_RENDERBUFFER_SIZE, 16384},
++    {GL_MAX_CUBE_MAP_TEXTURE_SIZE, 16384},
++    {GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, 16},
++    {GL_MAX_TEXTURE_IMAGE_UNITS, 16},
++    {GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, 32},
++    {GL_MAX_VERTEX_ATTRIBS, 16},
++    {GL_MAX_VERTEX_UNIFORM_VECTORS, 1024},
++    {GL_MAX_FRAGMENT_UNIFORM_VECTORS, 1024},
++    {GL_MAX_VARYING_VECTORS, 30},
++};
++
++}  // namespace
+ ScriptValue WebGLRenderingContextBase::getParameter(ScriptState* script_state,
+                                                     GLenum pname) {
+   if (isContextLost())
+     return ScriptValue::CreateNull(script_state->GetIsolate());
++  if (base::FeatureList::IsEnabled(blink::features::kSpoofWebGLInfo)) {
++    if (pname == GL_MAX_VIEWPORT_DIMS) {
++      static const GLint kMaxViewportDims[2] = {16384, 16384};
++      return WebGLAny(script_state,
++                      DOMInt32Array::Create(base::span(kMaxViewportDims)));
++    }
++    if (pname == GL_ALIASED_LINE_WIDTH_RANGE) {
++      static const GLfloat kLineWidthRange[2] = {1.0f, 1.0f};
++      return WebGLAny(script_state,
++                      DOMFloat32Array::Create(base::span(kLineWidthRange)));
++    }
++    if (pname == GL_ALIASED_POINT_SIZE_RANGE) {
++      static const GLfloat kPointSizeRange[2] = {1.0f, 1024.0f};
++      return WebGLAny(script_state,
++                      DOMFloat32Array::Create(base::span(kPointSizeRange)));
++    }
++    for (const auto& entry : kSpoofedGlIntParams) {
++      if (entry.pname == pname) {
++        return WebGLAny(script_state, entry.value);
++      }
++    }
++  }
+   const int kIntZero = 0;
+   switch (pname) {
+     case GL_ACTIVE_TEXTURE:
+@@ -5376,6 +5421,19 @@
+     }
+     ContextGL()->ReadPixels(x, y, width, height, format, type, data);
+   }
++  if (data && format == GL_RGBA && type == GL_UNSIGNED_BYTE && width > 0 &&
++      height > 0) {
++    if (RuntimeEnabledFeatures::FingerprintingCanvasImageDataNoiseEnabled() ||
++        base::FeatureList::IsEnabled(blink::features::kSpoofWebGLInfo)) {
++      const SkImageInfo info = SkImageInfo::Make(
++          width, height, kRGBA_8888_SkColorType, kUnpremul_SkAlphaType);
++      size_t row_bytes = static_cast<size_t>(width) * 4;
++      if (pack_alignment_ > 4) {
++        row_bytes = ((row_bytes + pack_alignment_ - 1) / pack_alignment_) * pack_alignment_;
++      }
++      StaticBitmapImage::ShuffleSubchannelColorData(data, info, /*opaque_blends=*/false, x, y, row_bytes);
++    }
++  }
+ }
+ 
+ void WebGLRenderingContextBase::RenderbufferStorageImpl(

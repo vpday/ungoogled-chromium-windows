@@ -1,0 +1,168 @@
+--- a/chrome/browser/chrome_content_browser_client.h
++++ b/chrome/browser/chrome_content_browser_client.h
+@@ -452,7 +452,9 @@
+   scoped_refptr<network::SharedURLLoaderFactory>
+   GetSystemSharedURLLoaderFactory() override;
+   network::mojom::NetworkContext* GetSystemNetworkContext() override;
+   std::string GetGeolocationApiKey() override;
++  std::unique_ptr<device::LocationProvider> OverrideSystemLocationProvider()
++      override;
+ 
+ #if BUILDFLAG(OS_LEVEL_GEOLOCATION_PERMISSION_SUPPORTED)
+   device::GeolocationSystemPermissionManager*
+--- a/chrome/browser/chrome_content_browser_client.cc
++++ b/chrome/browser/chrome_content_browser_client.cc
+@@ -240,5 +240,9 @@
+ #include "chrome/common/webui_url_utils.h"
+ #include "chrome/installer/util/google_update_settings.h"
++#include <cmath>
++#include "base/timer/timer.h"
++#include "services/device/public/cpp/geolocation/location_provider.h"
++#include "services/device/public/mojom/geoposition.mojom.h"
+ #include "components/autofill/core/common/autofill_features.h"
+ #include "components/autofill/core/common/autofill_switches.h"
+ #include "components/blocked_content/popup_blocker.h"
+@@ -2989,7 +2993,17 @@ void ChromeContentBrowserClient::AppendExtraCommandLineSwitches(
+   command_line->AppendSwitchASCII(ash::switches::kHomedir, homedir.value());
+ #endif
+ 
+   if (process_type == switches::kRendererProcess) {
++    static const char* const kFingerprintSwitches[] = {
++        "notifications-permission",
++        "font-blacklist",
++        "fonts-hidden",
++        "limit-media-devices",
++        "limit-speech-voices",
++        "speech-voices",
++    };
++    command_line->CopySwitchesFrom(browser_command_line, kFingerprintSwitches);
++
+     content::RenderProcessHost* process =
+         content::RenderProcessHost::FromID(child_process_id);
+     if (process) {
+@@ -3877,9 +3891,125 @@ std::string ChromeContentBrowserClient::GetGeolocationApiKey() {
+   return google_apis::GetAPIKey();
+ }
+ 
++namespace {
++
++class VirtualLocationProvider : public device::LocationProvider {
++ public:
++  struct Fix {
++    double latitude;
++    double longitude;
++    double accuracy;
++  };
++
++  explicit VirtualLocationProvider(Fix fix) : fix_(fix) {}
++  ~VirtualLocationProvider() override = default;
++
++  void FillDiagnostics(device::mojom::GeolocationDiagnostics& diagnostics) override {
++    diagnostics.provider_state =
++        running_ ? device::mojom::GeolocationDiagnostics::ProviderState::kHighAccuracy
++                 : device::mojom::GeolocationDiagnostics::ProviderState::kStopped;
++  }
++
++  void SetUpdateCallback(const LocationProviderUpdateCallback& callback) override {
++    callback_ = callback;
++  }
++
++  void StartProvider(bool high_accuracy) override {
++    running_ = true;
++    if (permission_granted_) {
++      Emit();
++    }
++    timer_.Start(FROM_HERE, base::Seconds(1),
++                 base::BindRepeating(&VirtualLocationProvider::Emit,
++                                     base::Unretained(this)));
++  }
++
++  void StopProvider() override {
++    timer_.Stop();
++    running_ = false;
++  }
++
++  const device::mojom::GeopositionResult* GetPosition() override {
++    return position_.get();
++  }
++
++  void OnPermissionGranted() override {
++    permission_granted_ = true;
++    if (running_) {
++      Emit();
++    }
++  }
++
++ private:
++  void Emit() {
++    if (!running_ || !permission_granted_) {
++      return;
++    }
++    ++tick_;
++    auto position = device::mojom::Geoposition::New();
++    const double lat_drift = std::sin(static_cast<double>(tick_) * 0.1) * 0.000001;
++    const double lng_drift = std::cos(static_cast<double>(tick_) * 0.1) * 0.000001;
++    position->latitude = fix_.latitude + lat_drift;
++    position->longitude = fix_.longitude + lng_drift;
++    position->accuracy = fix_.accuracy;
++    position->timestamp = base::Time::Now();
++
++    position_ = device::mojom::GeopositionResult::NewPosition(std::move(position));
++
++    if (callback_) {
++      callback_.Run(this, position_.Clone());
++    }
++  }
++
++  const Fix fix_;
++  uint64_t tick_ = 0;
++  base::RepeatingTimer timer_;
++  LocationProviderUpdateCallback callback_;
++  device::mojom::GeopositionResultPtr position_;
++  bool running_ = false;
++  bool permission_granted_ = false;
++};
++
++}  // namespace
++
++std::unique_ptr<device::LocationProvider>
++ChromeContentBrowserClient::OverrideSystemLocationProvider() {
++  if (!base::CommandLine::ForCurrentProcess()->HasSwitch("geolocation")) {
++    return nullptr;
++  }
++  const std::string value =
++      base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII("geolocation");
++  std::vector<std::string_view> parts = base::SplitStringPiece(
++      value, ",", base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY);
++  if (parts.size() < 2) {
++    return nullptr;
++  }
++  double lat = 0.0;
++  double lng = 0.0;
++  if (!base::StringToDouble(parts[0], &lat) ||
++      !base::StringToDouble(parts[1], &lng)) {
++    return nullptr;
++  }
++  if (lat < -90.0 || lat > 90.0 || lng < -180.0 || lng > 180.0) {
++    return nullptr;
++  }
++  double accuracy = 20.0;
++  if (parts.size() >= 3) {
++    double parsed_acc = 0.0;
++    if (base::StringToDouble(parts[2], &parsed_acc) && parsed_acc > 0.0) {
++      accuracy = parsed_acc;
++    }
++  }
++  return std::make_unique<VirtualLocationProvider>(
++      VirtualLocationProvider::Fix{lat, lng, accuracy});
++}
++
+ #if BUILDFLAG(OS_LEVEL_GEOLOCATION_PERMISSION_SUPPORTED)
+ device::GeolocationSystemPermissionManager*
+ ChromeContentBrowserClient::GetGeolocationSystemPermissionManager() {
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch("geolocation")) {
++    return nullptr;
++  }
+   return device::GeolocationSystemPermissionManager::GetInstance();
+ }
+ #endif

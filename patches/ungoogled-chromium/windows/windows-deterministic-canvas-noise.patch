@@ -1,0 +1,373 @@
+--- a/third_party/blink/renderer/core/html/canvas/canvas_async_blob_creator.h
++++ b/third_party/blink/renderer/core/html/canvas/canvas_async_blob_creator.h
+@@ -101,6 +101,7 @@
+   // see comment above the implementation of ScheduleAsyncBlobCreation.
+   sk_sp<SkImage> skia_image_;
+   SkPixmap src_data_;  // Holds a raw pointer owned by `skia_ìmage`.
++  Vector<uint8_t> noised_pixels_;
+   std::unique_ptr<ImageEncoder> encoder_;
+   Vector<unsigned char> encoded_image_;
+   int num_rows_completed_;
+--- a/third_party/blink/renderer/core/html/canvas/canvas_async_blob_creator.cc
++++ b/third_party/blink/renderer/core/html/canvas/canvas_async_blob_creator.cc
+@@ -18,6 +18,8 @@
+ #include "third_party/blink/renderer/core/html/canvas/canvas_rendering_context.h"
+ #include "third_party/blink/renderer/platform/graphics/image_data_buffer.h"
+ #include "third_party/blink/renderer/platform/graphics/skia/skia_utils.h"
++#include "third_party/blink/renderer/platform/graphics/static_bitmap_image.h"
++#include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+ #include "third_party/blink/renderer/platform/graphics/unaccelerated_static_bitmap_image.h"
+ #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+ #include "third_party/blink/renderer/platform/image-encoders/image_encoder_utils.h"
+@@ -224,6 +226,14 @@
+                            std::min(info.height(), max_dimension));
+         src_data_.reset(info, src_data_.addr(), src_data_.rowBytes());
+       }
++      if (RuntimeEnabledFeatures::FingerprintingCanvasImageDataNoiseEnabled() &&
++          src_data_.addr() && src_data_.computeByteSize() > 0) {
++        noised_pixels_.resize(static_cast<wtf_size_t>(src_data_.computeByteSize()));
++        memcpy(noised_pixels_.data(), src_data_.addr(), src_data_.computeByteSize());
++        StaticBitmapImage::ShuffleSubchannelColorData(
++            noised_pixels_.data(), src_data_.info(), true, 0, 0, src_data_.rowBytes());
++        src_data_.reset(src_data_.info(), noised_pixels_.data(), src_data_.rowBytes());
++      }
+     }
+   }
+ 
+@@ -246,6 +256,7 @@
+   image_ = nullptr;
+   skia_image_ = nullptr;
+   encoded_image_.clear();
++  noised_pixels_.clear();
+ }
+ 
+ ImageEncodeOptions* CanvasAsyncBlobCreator::GetImageEncodeOptionsForMimeType(
+--- a/third_party/blink/renderer/modules/canvas/canvas2d/base_rendering_context_2d.cc
++++ b/third_party/blink/renderer/modules/canvas/canvas2d/base_rendering_context_2d.cc
+@@ -565,7 +565,7 @@
+       DCHECK(!bounds.intersect(SkIRect::MakeXYWH(sx, sy, sw, sh)));
+     }
+     if (read_pixels_successful && RuntimeEnabledFeatures::FingerprintingCanvasImageDataNoiseEnabled()) {
+-      StaticBitmapImage::ShuffleSubchannelColorData(image_data_pixmap.addr(), image_data_pixmap.info());
++      StaticBitmapImage::ShuffleSubchannelColorData(image_data_pixmap.addr(), image_data_pixmap.info(), true, sx, sy, image_data_pixmap.rowBytes());
+     }
+   }
+ 
+--- a/third_party/blink/renderer/platform/graphics/image_data_buffer.cc
++++ b/third_party/blink/renderer/platform/graphics/image_data_buffer.cc
+@@ -37,6 +37,7 @@
+ #include "base/memory/ptr_util.h"
+ #include "third_party/blink/renderer/platform/image-encoders/image_encoder_utils.h"
+ #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
++#include "third_party/blink/renderer/platform/graphics/static_bitmap_image.h"
+ #include "third_party/blink/renderer/platform/wtf/text/base64.h"
+ #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
+ #include "third_party/skia/include/core/SkImage.h"
+@@ -146,8 +147,18 @@
+ String ImageDataBuffer::ToDataURL(const ImageEncodingMimeType mime_type,
+                                   const double& quality) const {
+   DCHECK(is_valid_);
++  SkPixmap effective_pixmap = pixmap_;
++  Vector<uint8_t> noised_pixels;
++  if (RuntimeEnabledFeatures::FingerprintingCanvasImageDataNoiseEnabled() &&
++      pixmap_.addr() && pixmap_.computeByteSize() > 0) {
++    noised_pixels.resize(static_cast<wtf_size_t>(pixmap_.computeByteSize()));
++    memcpy(noised_pixels.data(), pixmap_.addr(), pixmap_.computeByteSize());
++    StaticBitmapImage::ShuffleSubchannelColorData(
++        noised_pixels.data(), pixmap_.info(), true, 0, 0, pixmap_.rowBytes());
++    effective_pixmap.reset(pixmap_.info(), noised_pixels.data(), pixmap_.rowBytes());
++  }
+   Vector<unsigned char> result;
+-  if (!ImageEncoder::Encode(&result, pixmap_, mime_type, quality)) {
++  if (!ImageEncoder::Encode(&result, effective_pixmap, mime_type, quality)) {
+     return "data:,";
+   }
+   return StrCat({"data:", ImageEncoderUtils::MimeTypeName(mime_type),
+--- a/third_party/blink/renderer/platform/graphics/static_bitmap_image.h
++++ b/third_party/blink/renderer/platform/graphics/static_bitmap_image.h
+@@ -38,7 +38,7 @@
+ 
+   StaticBitmapImage(ImageOrientation orientation) : orientation_(orientation) {}
+ 
+-  static void ShuffleSubchannelColorData(const void *addr, const SkImageInfo& info);
++  static void ShuffleSubchannelColorData(const void* addr, const SkImageInfo& info, bool opaque_blends = true, int offset_x = 0, int offset_y = 0, size_t row_bytes = 0);
+ 
+   bool IsStaticBitmapImage() const override { return true; }
+ 
+--- a/third_party/blink/renderer/platform/graphics/static_bitmap_image.cc
++++ b/third_party/blink/renderer/platform/graphics/static_bitmap_image.cc
+@@ -4,6 +4,8 @@
+ 
+ #include "third_party/blink/renderer/platform/graphics/static_bitmap_image.h"
+ 
++#include <algorithm>
++#include <utility>
+ #include "base/rand_util.h"
+ #include "base/logging.h"
+ #include "base/numerics/checked_math.h"
+@@ -120,154 +122,114 @@
+                         ToSkiaRectConstraint(draw_options.clamping_mode));
+ }
+ 
+-// set the component to maximum-delta if it is >= maximum, or add to existing color component (color + delta)
+-#define shuffleComponent(color, max, delta) ( (color) >= (max) ? ((max)-(delta)) : ((color)+(delta)) )
+-
+-#define writable_addr(T, p, stride, x, y) (T*)((const char *)p + y * stride + x * sizeof(T))
+-
+-void StaticBitmapImage::ShuffleSubchannelColorData(const void *addr, const SkImageInfo& info) {
+-  auto w = info.width(), h = info.height();
+-
+-  // skip tiny images; info.width()/height() can also be 0
+-  if ((w < 8) || (h < 8)) {
++void StaticBitmapImage::ShuffleSubchannelColorData(const void* addr,
++                                                  const SkImageInfo& info,
++                                                  bool opaque_blends,
++                                                  int offset_x,
++                                                  int offset_y,
++                                                  size_t row_bytes) {
++  int w = info.width();
++  int h = info.height();
++  if (w <= 0 || h <= 0 || !addr) {
+     return;
+   }
+-
+-  // generate the first random number here
+-  double shuffleX = base::RandDouble();
+-
+-  // cap maximum pixels to change
+-  auto pixels = (w + h) / 128;
+-  if (pixels > 10) {
+-    pixels = 10;
+-  } else if (pixels < 2) {
+-    pixels = 2;
++  SkColorType colorType = info.colorType();
++  if (colorType != kRGBA_8888_SkColorType && colorType != kBGRA_8888_SkColorType) {
++    return;
+   }
+ 
+-  auto colorType = info.colorType();
+-  auto fRowBytes = info.minRowBytes(); // stride
+-
+-  DLOG(INFO) << "BRM: ShuffleSubchannelColorData() w=" << w << " h=" << h << " colorType=" << colorType << " fRowBytes=" << fRowBytes;
+-
+-  // second random number (for y/height)
+-  double shuffleY = base::RandDouble();
+-
+-  // calculate random coordinates using bisection
+-  auto currentW = w, currentH = h;
+-  for(;pixels >= 0; pixels--) {
+-    int x = currentW * shuffleX, y = currentH * shuffleY;
+-
+-    // calculate randomisation amounts for each RGB component
+-    uint8_t shuffleR = base::RandIntInclusive(0, 4);
+-    uint8_t shuffleG = (shuffleR + x) % 4;
+-    uint8_t shuffleB = (shuffleG + y) % 4;
+-
+-    // manipulate pixel data to slightly change the R, G, B components
+-    switch (colorType) {
+-      case kAlpha_8_SkColorType:
+-      {
+-         auto *pixel = writable_addr(uint8_t, addr, fRowBytes, x, y);
+-         auto r = SkColorGetR(*pixel), g = SkColorGetG(*pixel), b = SkColorGetB(*pixel), a = SkColorGetA(*pixel);
+-
+-         r = shuffleComponent(r, UINT8_MAX-1, shuffleR);
+-         g = shuffleComponent(g, UINT8_MAX-1, shuffleG);
+-         b = shuffleComponent(b, UINT8_MAX-1, shuffleB);
+-         // alpha is left unchanged
+-
+-         *pixel = SkColorSetARGB(a, r, g, b);
+-      }
+-      break;
+-      case kGray_8_SkColorType:
+-      {
+-         auto *pixel = writable_addr(uint8_t, addr, fRowBytes, x, y);
+-         *pixel = shuffleComponent(*pixel, UINT8_MAX-1, shuffleB);
+-      }
+-      break;
+-      case kRGB_565_SkColorType:
+-      {
+-         auto *pixel = writable_addr(uint16_t, addr, fRowBytes, x, y);
+-         unsigned    r = SkPacked16ToR32(*pixel);
+-         unsigned    g = SkPacked16ToG32(*pixel);
+-         unsigned    b = SkPacked16ToB32(*pixel);
+-
+-         r = shuffleComponent(r, 31, shuffleR);
+-         g = shuffleComponent(g, 63, shuffleG);
+-         b = shuffleComponent(b, 31, shuffleB);
+-
+-         unsigned r16 = (r & SK_R16_MASK) << SK_R16_SHIFT;
+-         unsigned g16 = (g & SK_G16_MASK) << SK_G16_SHIFT;
+-         unsigned b16 = (b & SK_B16_MASK) << SK_B16_SHIFT;
+-
+-         *pixel = r16 | g16 | b16;
+-      }
+-      break;
+-      case kARGB_4444_SkColorType:
+-      {
+-         auto *pixel = writable_addr(uint16_t, addr, fRowBytes, x, y);
+-         auto a = SkGetPackedA4444(*pixel), r = SkGetPackedR4444(*pixel), g = SkGetPackedG4444(*pixel), b = SkGetPackedB4444(*pixel);
+-
+-         r = shuffleComponent(r, 15, shuffleR);
+-         g = shuffleComponent(g, 15, shuffleG);
+-         b = shuffleComponent(b, 15, shuffleB);
+-         // alpha is left unchanged
+-
+-         unsigned a4 = (a & 0xF) << SK_A4444_SHIFT;
+-         unsigned r4 = (r & 0xF) << SK_R4444_SHIFT;
+-         unsigned g4 = (g & 0xF) << SK_G4444_SHIFT;
+-         unsigned b4 = (b & 0xF) << SK_B4444_SHIFT;
+-
+-         *pixel = r4 | b4 | g4 | a4;
+-      }
+-      break;
+-      case kRGBA_8888_SkColorType:
+-      {
+-         auto *pixel = writable_addr(uint32_t, addr, fRowBytes, x, y);
+-         auto a = SkGetPackedA32(*pixel), r = SkGetPackedR32(*pixel), g = SkGetPackedG32(*pixel), b = SkGetPackedB32(*pixel);
+-
+-         r = shuffleComponent(r, UINT8_MAX-1, shuffleR);
+-         g = shuffleComponent(g, UINT8_MAX-1, shuffleG);
+-         b = shuffleComponent(b, UINT8_MAX-1, shuffleB);
+-         // alpha is left unchanged
++  bool is_bgra = (colorType == kBGRA_8888_SkColorType);
++  bool is_premul = (info.alphaType() == kPremul_SkAlphaType);
++  if (row_bytes == 0) {
++    row_bytes = info.minRowBytes();
++  }
++  if (row_bytes < static_cast<size_t>(w) * 4) {
++    return;
++  }
+ 
+-         *pixel = (a << SK_A32_SHIFT) | (r << SK_R32_SHIFT) |
+-                  (g << SK_G32_SHIFT) | (b << SK_B32_SHIFT);
+-      }
+-      break;
+-      case kBGRA_8888_SkColorType:
+-      {
+-         auto *pixel = writable_addr(uint32_t, addr, fRowBytes, x, y);
+-         auto a = SkGetPackedA32(*pixel), b = SkGetPackedR32(*pixel), g = SkGetPackedG32(*pixel), r = SkGetPackedB32(*pixel);
+-
+-         r = shuffleComponent(r, UINT8_MAX-1, shuffleR);
+-         g = shuffleComponent(g, UINT8_MAX-1, shuffleG);
+-         b = shuffleComponent(b, UINT8_MAX-1, shuffleB);
+-         // alpha is left unchanged
++  uint8_t* pixels = const_cast<uint8_t*>(static_cast<const uint8_t*>(addr));
++  constexpr uint64_t kSeed = 0x84222325ULL;
+ 
+-         *pixel = (a << SK_BGRA_A32_SHIFT) | (r << SK_BGRA_R32_SHIFT) |
+-                  (g << SK_BGRA_G32_SHIFT) | (b << SK_BGRA_B32_SHIFT);
++  auto at = [row_bytes](int x, int y) -> size_t {
++    return static_cast<size_t>(y) * row_bytes + static_cast<size_t>(x) * 4;
++  };
++
++  static constexpr std::pair<int, int> kNeighbours[4] = {
++      {-1, 0}, {1, 0}, {0, -1}, {0, 1}};
++
++  for (int y = 0; y < h; ++y) {
++    for (int x = 0; x < w; ++x) {
++      size_t p = at(x, y);
++      uint8_t alpha = pixels[p + 3];
++      if (alpha == 0) {
++        continue;
++      }
++
++      bool all_equal = true;
++      bool none_equal = true;
++      bool all_opaque = true;
++
++      for (const auto& d : kNeighbours) {
++        int nx = x + d.first;
++        int ny = y + d.second;
++        if (nx < 0 || ny < 0 || nx >= w || ny >= h) {
++          continue;
++        }
++        size_t q = at(nx, ny);
++        bool same = (pixels[p] == pixels[q] &&
++                     pixels[p + 1] == pixels[q + 1] &&
++                     pixels[p + 2] == pixels[q + 2] &&
++                     pixels[p + 3] == pixels[q + 3]);
++        if (same) {
++          none_equal = false;
++        } else {
++          all_equal = false;
++        }
++        if (pixels[q + 3] != 255) {
++          all_opaque = false;
++        }
++      }
++
++      if (all_equal) {
++        continue;
++      }
++
++      int abs_x = x + offset_x;
++      int abs_y = y + offset_y;
++      uint64_t hash = kSeed ^ (static_cast<uint64_t>(abs_x) * 0x100000001b3ULL) ^
++                      (static_cast<uint64_t>(abs_y) * 0x100000001b3ULL << 16);
++      hash += 0x9e3779b97f4a7c15ULL;
++      hash = (hash ^ (hash >> 30)) * 0xbf58476d1ce4e5b9ULL;
++      hash = (hash ^ (hash >> 27)) * 0x94d049bb133111ebULL;
++      hash ^= (hash >> 31);
++
++      if (hash & 1) {
++        continue;
++      }
++
++      if (alpha < 255) {
++        int step = (hash & 2) ? 1 : -1;
++        int new_a = std::clamp(static_cast<int>(alpha) + step, 1, 254);
++        pixels[p + 3] = static_cast<uint8_t>(new_a);
++        if (is_premul && alpha > 0) {
++          for (size_t c = 0; c < 3; ++c) {
++            int scaled = (pixels[p + c] * new_a + alpha / 2) / alpha;
++            pixels[p + c] = static_cast<uint8_t>(std::clamp(scaled, 0, new_a));
++          }
++        }
++      } else if (opaque_blends && none_equal && all_opaque) {
++        size_t color_idx = (hash >> 3) % 3;
++        size_t channel = (is_bgra && color_idx != 1) ? (2 - color_idx) : color_idx;
++        uint8_t& val = pixels[p + channel];
++        if ((hash >> 5) & 1) {
++          val = (val < 255) ? (val + 1) : (val - 1);
++        } else {
++          val = (val > 0) ? (val - 1) : (val + 1);
++        }
+       }
+-      break;
+-      default:
+-         // the remaining formats are not expected to be used in Chromium
+-         LOG(WARNING) << "BRM: ShuffleSubchannelColorData(): Ignoring pixel format";
+-         return;
+-    }
+-
+-    // keep bisecting or reset current width/height as needed
+-    if (x == 0) {
+-       currentW = w;
+-    } else {
+-       currentW = x;
+-    }
+-    if (y == 0) {
+-       currentH = h;
+-    } else {
+-       currentH = y;
+     }
+   }
+ }
+ 
+-#undef writable_addr
+-#undef shuffleComponent
+ 
+ }  // namespace blink
+--- a/third_party/blink/renderer/platform/image-encoders/image_encoder.cc
++++ b/third_party/blink/renderer/platform/image-encoders/image_encoder.cc
+@@ -46,10 +46,6 @@
+                           const SkPixmap& src,
+                           ImageEncodingMimeType mime_type,
+                           double quality) {
+-  if (RuntimeEnabledFeatures::FingerprintingCanvasImageDataNoiseEnabled()) {
+-    // shuffle subchannel color data within the pixmap
+-    StaticBitmapImage::ShuffleSubchannelColorData(src.writable_addr(), src.info());
+-  }
+   switch (mime_type) {
+     case kMimeTypeJpeg: {
+       SkJpegEncoder::Options options;

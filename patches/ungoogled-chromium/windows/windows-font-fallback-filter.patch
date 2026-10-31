@@ -1,0 +1,90 @@
+--- a/third_party/blink/renderer/platform/fonts/font_cache.cc
++++ b/third_party/blink/renderer/platform/fonts/font_cache.cc
+@@ -34,6 +34,11 @@
+ #include <limits>
+ #include <memory>
+ 
++#include <set>
++#include "base/command_line.h"
++#include "base/strings/string_split.h"
++#include "base/strings/string_util.h"
++#include "third_party/blink/renderer/platform/allow_discouraged_type.h"
+ #include "base/byte_size.h"
+ #include "base/debug/alias.h"
+ #include "base/feature_list.h"
+@@ -153,6 +158,61 @@
+ }
+ #endif
+ 
++namespace {
++
++bool IsGenericFontFamily(const std::string& lower) {
++  return lower == "serif" || lower == "sans-serif" || lower == "monospace" ||
++         lower == "cursive" || lower == "fantasy" || lower == "system-ui" ||
++         lower == "-webkit-body" || lower == "-webkit-standard" ||
++         lower == "ui-serif" || lower == "ui-sans-serif" ||
++         lower == "ui-monospace" || lower == "ui-rounded" ||
++         lower == "math" || lower == "emoji" || lower == "fangsong";
++}
++
++bool IsFontFamilyBlocked(const AtomicString& family) {
++  ALLOW_DISCOURAGED_TYPE("process-wide font blacklist")
++  static const auto* blocked_fonts = []() -> std::set<std::string>* {
++    const base::CommandLine* cmd = base::CommandLine::ForCurrentProcess();
++    std::string list;
++    if (cmd->HasSwitch("font-blacklist")) {
++      list = cmd->GetSwitchValueASCII("font-blacklist");
++    }
++    if (cmd->HasSwitch("fonts-hidden")) {
++      const std::string extra = cmd->GetSwitchValueASCII("fonts-hidden");
++      if (!extra.empty()) {
++        if (!list.empty()) {
++          list.push_back(',');
++        }
++        list.append(extra);
++      }
++    }
++    if (list.empty()) {
++      return nullptr;
++    }
++    auto* s = new std::set<std::string>();
++    std::vector<std::string> items = base::SplitString(
++        list, ",", base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY);
++    for (std::string item : items) {
++      base::TrimString(item, "\"'", &item);
++      if (!item.empty()) {
++        s->insert(base::ToLowerASCII(item));
++      }
++    }
++    return s;
++  }();
++
++  if (!blocked_fonts || blocked_fonts->empty()) {
++    return false;
++  }
++  const std::string lower = base::ToLowerASCII(family.Utf8());
++  if (IsGenericFontFamily(lower)) {
++    return false;
++  }
++  return blocked_fonts->find(lower) != blocked_fonts->end();
++}
++
++}  // namespace
++
+ const FontPlatformData* FontCache::GetFontPlatformData(
+     const FontDescription& font_description,
+     const FontFaceCreationParams& creation_params,
+@@ -167,6 +227,13 @@
+   }
+ #endif
+ 
++  if (alternate_font_name != AlternateFontName::kLastResort &&
++      creation_params.CreationType() == kCreateFontByFamily) {
++    if (IsFontFamilyBlocked(creation_params.Family())) {
++      return nullptr;
++    }
++  }
++
+   return font_platform_data_cache_.GetOrCreateFontPlatformData(
+       this, font_description, creation_params, alternate_font_name);
+ }

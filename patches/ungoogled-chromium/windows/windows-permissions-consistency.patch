@@ -1,0 +1,67 @@
+--- a/third_party/blink/renderer/modules/notifications/notification.cc
++++ b/third_party/blink/renderer/modules/notifications/notification.cc
+@@ -33,6 +33,7 @@
+ #include <memory>
+ #include <utility>
+ 
++#include "base/command_line.h"
+ #include "base/task/single_thread_task_runner.h"
+ #include "base/unguessable_token.h"
+ #include "mojo/public/cpp/bindings/pending_remote.h"
+@@ -444,8 +445,18 @@ V8NotificationPermission Notification::permission(ExecutionContext* context) {
+   if (status == mojom::blink::PermissionStatus::ASK) {
+     auto* window = DynamicTo<LocalDOMWindow>(context);
+     LocalFrame* frame = window ? window->GetFrame() : nullptr;
+-    if (!frame || frame->IsCrossOriginToOutermostMainFrame())
++    if (!frame || frame->IsCrossOriginToOutermostMainFrame()) {
+       status = mojom::blink::PermissionStatus::DENIED;
++    } else if (base::CommandLine::ForCurrentProcess()->HasSwitch("notifications-permission")) {
++      const std::string want = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII("notifications-permission");
++      if (want == "granted") {
++        status = mojom::blink::PermissionStatus::GRANTED;
++      } else if (want == "denied") {
++        status = mojom::blink::PermissionStatus::DENIED;
++      } else if (want == "prompt" || want == "default") {
++        status = mojom::blink::PermissionStatus::ASK;
++      }
++    }
+   }
+ 
+   return V8NotificationPermission(PermissionToV8Enum(status));
+--- a/third_party/blink/renderer/modules/permissions/permissions.cc
++++ b/third_party/blink/renderer/modules/permissions/permissions.cc
+@@ -7,6 +7,7 @@
+ #include <memory>
+ #include <utility>
+ 
++#include "base/command_line.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "third_party/blink/public/common/permissions/permission_utils.h"
+ #include "third_party/blink/public/mojom/page/page.mojom-blink.h"
+@@ -276,7 +277,26 @@ void Permissions::TaskComplete(
+   if (!resolver->GetExecutionContext() ||
+       resolver->GetExecutionContext()->IsContextDestroyed())
+     return;
+ 
++  if (result->status == mojom::blink::PermissionStatus::ASK) {
++    if (descriptor->name == mojom::blink::PermissionName::NOTIFICATIONS) {
++      auto* window = DynamicTo<LocalDOMWindow>(resolver->GetExecutionContext());
++      LocalFrame* frame = window ? window->GetFrame() : nullptr;
++      if (!frame || frame->IsCrossOriginToOutermostMainFrame()) {
++        result->status = mojom::blink::PermissionStatus::DENIED;
++      } else if (base::CommandLine::ForCurrentProcess()->HasSwitch("notifications-permission")) {
++        const std::string want = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII("notifications-permission");
++        if (want == "granted") {
++          result->status = mojom::blink::PermissionStatus::GRANTED;
++        } else if (want == "denied") {
++          result->status = mojom::blink::PermissionStatus::DENIED;
++        } else if (want == "prompt" || want == "default") {
++          result->status = mojom::blink::PermissionStatus::ASK;
++        }
++      }
++    }
++  }
++
+   PermissionStatusListener* listener = GetOrCreatePermissionStatusListener(
+       std::move(result), std::move(descriptor));
+   if (listener)

@@ -1,0 +1,41 @@
+--- a/third_party/blink/common/features.cc
++++ b/third_party/blink/common/features.cc
+@@ -27,6 +27,7 @@
+ const char kSpoofWebGLVendor[] = "vendor";
+ const base::FeatureParam<std::string> kSpoofWebGLRendererParam{&kSpoofWebGLInfo, kSpoofWebGLRenderer, " "};
+ const base::FeatureParam<std::string> kSpoofWebGLVendorParam{&kSpoofWebGLInfo, kSpoofWebGLVendor, " "};
++BASE_FEATURE(kHideNavigatorWebDriver, "HideNavigatorWebDriver", base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // -----------------------------------------------------------------------------
+ // Feature definitions and associated constants (feature params, et cetera)
+--- a/third_party/blink/public/common/features.h
++++ b/third_party/blink/public/common/features.h
+@@ -28,6 +28,7 @@
+ BLINK_COMMON_EXPORT extern const char kSpoofWebGLVendor[];
+ BLINK_COMMON_EXPORT extern const base::FeatureParam<std::string> kSpoofWebGLRendererParam;
+ BLINK_COMMON_EXPORT extern const base::FeatureParam<std::string> kSpoofWebGLVendorParam;
++BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kHideNavigatorWebDriver);
+ 
+ // -----------------------------------------------------------------------------
+ // Feature declarations and associated constants (feature params, et cetera)
+--- a/third_party/blink/renderer/core/frame/navigator.cc
++++ b/third_party/blink/renderer/core/frame/navigator.cc
+@@ -23,6 +23,8 @@
+ 
+ #include "third_party/blink/renderer/core/frame/navigator.h"
+ 
++#include "base/feature_list.h"
++#include "third_party/blink/public/common/features.h"
+ #include "third_party/blink/renderer/bindings/core/v8/script_controller.h"
+ #include "third_party/blink/renderer/core/dom/document.h"
+ #include "third_party/blink/renderer/core/execution_context/navigator_base.h"
+@@ -98,6 +100,9 @@
+ }
+ 
+ bool Navigator::webdriver() const {
++  if (base::FeatureList::IsEnabled(blink::features::kHideNavigatorWebDriver)) {
++    return false;
++  }
+   if (RuntimeEnabledFeatures::AutomationControlledEnabled())
+     return true;
+ 

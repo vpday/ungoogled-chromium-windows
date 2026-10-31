@@ -1,0 +1,69 @@
+--- a/third_party/blink/renderer/modules/speech/speech_synthesis.cc
++++ b/third_party/blink/renderer/modules/speech/speech_synthesis.cc
+@@ -26,5 +26,9 @@
+ #include "third_party/blink/renderer/modules/speech/speech_synthesis.h"
+ 
++#include "base/command_line.h"
++#include "base/strings/string_number_conversions.h"
++#include "base/strings/string_split.h"
++#include "base/strings/string_util.h"
+ #include <tuple>
+ 
+ #include "build/build_config.h"
+@@ -88,6 +92,56 @@ void SpeechSynthesis::OnSetVoiceList(
+     voice_list_.push_back(
+         MakeGarbageCollected<SpeechSynthesisVoice>(std::move(mojom_voice)));
+   }
++
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch("limit-speech-voices") ||
++      base::CommandLine::ForCurrentProcess()->HasSwitch("speech-voices")) {
++    const base::CommandLine* cmd = base::CommandLine::ForCurrentProcess();
++    const std::string limit_val = cmd->GetSwitchValueASCII("limit-speech-voices");
++    const std::string filter_val = cmd->GetSwitchValueASCII("speech-voices");
++    int max_voices = -1;
++    if (cmd->HasSwitch("limit-speech-voices")) {
++      if (limit_val.empty() || !base::StringToInt(limit_val, &max_voices) || max_voices <= 0) {
++        max_voices = 2;
++      }
++    }
++    if (!filter_val.empty()) {
++      HeapVector<Member<SpeechSynthesisVoice>> matched;
++      std::vector<std::string> allowed_tokens = base::SplitString(
++          filter_val, ",", base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY);
++      for (const auto& voice : voice_list_) {
++        const std::string vname = voice->name().Utf8();
++        const std::string vname_lower = base::ToLowerASCII(vname);
++        bool match = false;
++        for (std::string token : allowed_tokens) {
++          base::TrimString(token, "\"'", &token);
++          const std::string token_lower = base::ToLowerASCII(token);
++          if (vname_lower.find(token_lower) != std::string::npos) {
++            match = true;
++            break;
++          }
++          if ((token_lower == "xiaoxiao" && vname.find("晓晓") != std::string::npos) ||
++              (token_lower == "kangkang" && vname.find("康康") != std::string::npos) ||
++              (token_lower == "yaoyao" && vname.find("瑶瑶") != std::string::npos) ||
++              (token_lower == "huihui" && vname.find("慧慧") != std::string::npos) ||
++              (token_lower == "yunxi" && vname.find("云希") != std::string::npos) ||
++              (token_lower == "yunyang" && vname.find("云扬") != std::string::npos)) {
++            match = true;
++            break;
++          }
++        }
++        if (match) {
++          matched.push_back(voice);
++        }
++      }
++      if (!matched.empty()) {
++        voice_list_.swap(matched);
++      }
++    }
++    if (max_voices > 0 && voice_list_.size() > static_cast<wtf_size_t>(max_voices)) {
++      voice_list_.Shrink(max_voices);
++    }
++  }
++
+   VoicesDidChange();
+ }
+ 

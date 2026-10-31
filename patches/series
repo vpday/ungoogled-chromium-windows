@@ -120,3 +120,13 @@ ungoogled-chromium/windows/windows-disable-antivirus-metrics-provider.patch
 ungoogled-chromium/windows/windows-disable-pepc-elements.patch
 ungoogled-chromium/windows/windows-disable-ai-page-content-tracking.patch
 ungoogled-chromium/windows/windows-disable-webrtc-diagnostic-logging.patch
+ungoogled-chromium/windows/windows-hide-navigator-webdriver.patch
+ungoogled-chromium/windows/windows-spoof-webgpu-adapter-info.patch
+ungoogled-chromium/windows/windows-deterministic-canvas-noise.patch
+ungoogled-chromium/windows/windows-spoof-webgl-params.patch
+ungoogled-chromium/windows/windows-timezone-sandbox.patch
+ungoogled-chromium/windows/windows-permissions-consistency.patch
+ungoogled-chromium/windows/windows-font-fallback-filter.patch
+ungoogled-chromium/windows/windows-media-devices-limit.patch
+ungoogled-chromium/windows/windows-speech-voices-narrow.patch
+ungoogled-chromium/windows/windows-geolocation-override.patch

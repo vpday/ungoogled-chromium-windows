@@ -51,6 +51,36 @@
 ### 1.11 `windows-disable-webrtc-diagnostic-logging.patch` (WebRTC Diagnostic Logging Interface Deactivation)
 - WebRTC Diagnostic Logging Blocking: Clears the default desktop status of `RTCDiagnosticLogging` in `runtime_enabled_features.json5`, removing `startDiagnosticLogging` and `stopDiagnosticLogging` extensions from `RTCPeerConnection` to eliminate client fingerprinting surfaces and unused Mojo IPC channels.
 
+### 1.12 `windows-hide-navigator-webdriver.patch` (Navigator WebDriver Automation Detection Mitigation)
+- WebDriver Property Suppression: Adds `kHideNavigatorWebDriver` feature in `features.h/cc`. When enabled, `Navigator::webdriver()` immediately returns `false` at the Blink entry point, neutralizing both static automation flags and CDP dynamic emulation overrides (`probe::ApplyAutomationOverride`).
+
+### 1.13 `windows-spoof-webgpu-adapter-info.patch` (WebGPU Adapter Information & WebGL Linkage)
+- WebGPU Adapter Spoofing: Extends `GPUAdapter::CreateAdapterInfoForAdapter()` in `gpu_adapter.cc` to synchronize with `kSpoofWebGLInfo`. Maps GPU vendor and microarchitecture tokens (e.g. `nvidia` -> `maxwell`/`ampere`, `intel` -> `gen-12lp`, `amd` -> `rdna-2`) to eliminate contradictions between WebGL and WebGPU hardware disclosures.
+
+### 1.14 `windows-deterministic-canvas-noise.patch` (Deterministic Canvas Edge Noise & Readout Alignment)
+- Deterministic Edge Anti-Aliasing Noise: Replaces Bromite's random pixel mutation with a deterministic FNV-1a hash applied only to edge gradient pixels. Skips transparent and 4-neighbor identical solid color blocks to defeat pure-color trap tests. Pre-noises `CanvasAsyncBlobCreator` to guarantee identical pixel hashes across `toDataURL()`, `toBlob()`, and `getImageData()`.
+
+### 1.15 `windows-spoof-webgl-params.patch` (WebGL Extended Parameter Table & ReadPixels Edge Noise)
+- WebGL Parameter Interception & Readback Noise: Intercepts over 80 GL parameter enums in `getParameter()` via a static lookup table (`kSpoofedGlIntParams`) when `kSpoofWebGLInfo` is enabled. In `ReadPixelsHelper`, applies deterministic edge noise while preserving solid color geometries.
+
+### 1.16 `windows-timezone-sandbox.patch` (Independent Renderer Timezone Sandbox & IPC Whitelist)
+- Per-Process Timezone Sandboxing: Registers `--timezone` in `content_switches.h/cc` and `render_process_host_impl.cc`'s renderer switch propagation whitelist. In `TimeZoneController::Init()`, sets the virtual host timezone and returns early to prevent asynchronous host OS clock updates from overwriting the sandboxed timezone, while preserving CDP `Emulation.setTimezoneOverride` capabilities.
+
+### 1.17 `windows-permissions-consistency.patch` (Permissions and Notifications State Consistency)
+- Undecided State Alignment: Synchronizes `Notification.permission` and `navigator.permissions.query({name: 'notifications'})` in undecided states (`ASK`) via `--notifications-permission`. Enforces strict `DENIED` status in cross-origin iframes to eliminate Headless discrepancy signals.
+
+### 1.18 `windows-font-fallback-filter.patch` (System Font Fallback Blacklist Filtering)
+- Font Enumeration Defense: Blocks blacklisted font queries in `FontCache::GetFontPlatformData()` via `--font-blacklist` and `--fonts-hidden`, while safeguarding standard CSS generic font families (`serif`, `sans-serif`, `monospace`, `system-ui`, etc.) to prevent layout collapse.
+
+### 1.19 `windows-media-devices-limit.patch` (Narrowing-Only Media Device Enumeration Truncation)
+- Media Device Count Truncation: Caps the number of enumerated audio/video devices via `--limit-media-devices` without fabricating non-existent devices, preserving Chromium's native salted `deviceId` hashing to ensure `getUserMedia()` compatibility.
+
+### 1.20 `windows-speech-voices-narrow.patch` (Speech Synthesis Voice Truncation & Localized Aliases)
+- Voice List Narrowing: Limits returned voices in `speechSynthesis.getVoices()` via `--limit-speech-voices` and `--speech-voices`, with built-in mapping for localized Windows Chinese voice names.
+
+### 1.21 `windows-geolocation-override.patch` (Smooth Continuous Virtual Geolocation Provider)
+- Continuous Natural Geolocation: Implements `VirtualLocationProvider` via `--geolocation=lat,lng` in `chrome_content_browser_client.cc`, supplying smooth continuous sensor micro-drifts (~10cm) with advancing timestamps to resolve CDP static timestamp freeze tells, while forwarding all anti-fingerprint CLI switches to renderer child processes.
+
 ## 2. Curated Brave Patches (`patches/brave/`)
 
 ### 2.1 Resource De-bloating & AI Pruning
@@ -112,7 +142,7 @@
 ## 4. Curated Cromite Patches (`patches/cromite/`)
 
 ### 4.1 Anti-Fingerprinting & Hardware Masking
-- `AudioBuffer-AnalyserNode-fp-mitigations.patch`: Adds subtle pseudo-random noise to WebAudio buffers and `AnalyserNode` outputs, preventing audio hardware and DAC fingerprinting.
+- `AudioBuffer-AnalyserNode-fp-mitigations.patch`: Adds deterministic FNV-1a hash perturbation (controlling delta < 2.55e-5) to WebAudio buffers and `AnalyserNode` outputs based on sample index, with strict 0Hz silence protection (`data == 0.0f`) to prevent audio hardware fingerprinting without non-deterministic hash drift across repeated offline renders.
 - `High-Resolution-Timing-Mitigation.patch`: Clamps performance timer resolution with jitter in `time_clamper.cc`, protecting against timing-based side-channel attacks and execution profiling.
 - `Fonts-fingerprinting-mitigation.patch`: Restricts local system font enumeration in Blink to limit font-based tracking.
 - `Media-fingerprinting-mitigations.patch`: Restricts video decoder capability enumeration in WebCodecs (`isConfigSupported`) to prevent hardware codec fingerprinting.

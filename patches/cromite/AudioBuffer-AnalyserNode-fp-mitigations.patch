@@ -50,20 +50,25 @@
 @@ -26,6 +26,7 @@
  #include "third_party/blink/renderer/modules/webaudio/base_audio_context.h"
  
++#include <cstdint>
  #include "base/metrics/histogram_functions.h"
-+#include "base/rand_util.h"
  #include "build/build_config.h"
  #include "media/base/audio_bus.h"
  #include "third_party/blink/public/mojom/devtools/console_message.mojom-blink.h"
-@@ -771,6 +772,13 @@ LocalDOMWindow* BaseAudioContext::GetWindow() const {
+@@ -790,6 +791,18 @@ LocalDOMWindow* BaseAudioContext::GetWindow() const {
    return To<LocalDOMWindow>(GetExecutionContext());
  }
  
 +/*static*/
 +float BaseAudioContext::ShuffleAudioData(float data, unsigned index) {
-+  float rnd = 1.0f + (base::RandDouble() / 10000.0) *
-+                         (base::RandIntInclusive(0, 10) > 5 ? 1.f : -1.f);
-+  return data * rnd;
++  if (data == 0.0f) {
++    return 0.0f;
++  }
++  uint64_t h = (static_cast<uint64_t>(index) * 0x100000001b3ULL) ^ 0x84222325ULL;
++  h ^= (h >> 29);
++  const int sign = (h & 1) ? 1 : -1;
++  const float delta = sign * static_cast<float>((h >> 1) & 0xFF) * 1e-7f;
++  return data * (1.0f + delta);
 +}
 +
  void BaseAudioContext::NotifySourceNodeStartedProcessing(AudioNode* node) {

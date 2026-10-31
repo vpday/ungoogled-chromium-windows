@@ -1,0 +1,54 @@
+--- a/content/browser/renderer_host/render_process_host_impl.cc
++++ b/content/browser/renderer_host/render_process_host_impl.cc
+@@ -3958,6 +3958,7 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
+       switches::kSkiaResourceCacheLimitMb,
+       switches::kTargetDeviceScaleForTesting,
+       switches::kTestType,
++      switches::kTimezone,
+       switches::kTouchEventFeatureDetection,
+       switches::kUseCmdDecoder,
+       switches::kUseFakeCodecForPeerConnection,
+--- a/content/public/common/content_switches.cc
++++ b/content/public/common/content_switches.cc
+@@ -719,6 +719,9 @@ const char kTargetDeviceScaleForTesting[] = "target-device-scale-for-testing";
+ // Type of the current test harness ("browser" or "ui" or "gpu").
+ const char kTestType[]                      = "test-type";
+ 
++// Specifies the timezone ID to use in the sandboxed renderer process (e.g. "America/New_York", "UTC").
++const char kTimezone[] = "timezone";
++
+ // Indicates that this RenderProcess is hosting a Top Chrome WebUI.
+ const char kTopChromeWebUI[] = "top-chrome-webui";
+ 
+--- a/content/public/common/content_switches.h
++++ b/content/public/common/content_switches.h
+@@ -195,6 +195,7 @@ CONTENT_EXPORT extern const char kSkiaFontCacheLimitMb[];
+ extern const char kSkiaResourceCacheLimitMb[];
+ CONTENT_EXPORT extern const char kTargetDeviceScaleForTesting[];
+ CONTENT_EXPORT extern const char kTestType[];
++CONTENT_EXPORT extern const char kTimezone[];
+ CONTENT_EXPORT extern const char kTopChromeWebUI[];
+ CONTENT_EXPORT extern const char kTouchEventFeatureDetection[];
+ CONTENT_EXPORT extern const char kTouchEventFeatureDetectionAuto[];
+--- a/third_party/blink/renderer/core/timezone/timezone_controller.cc
++++ b/third_party/blink/renderer/core/timezone/timezone_controller.cc
+@@ -105,6 +105,19 @@ TimeZoneController::~TimeZoneController() = default;
+ 
+ // static
+ void TimeZoneController::Init() {
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch("timezone")) {
++    const std::string timezone =
++        base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII("timezone");
++    if (!timezone.empty()) {
++      const String timezone_id = String::FromUtf8(timezone);
++      base::AutoLock locker(instance().lock_);
++      if (SetIcuTimeZoneAndNotifyV8(timezone_id)) {
++        instance().host_timezone_id_ = timezone_id;
++        return;
++      }
++    }
++  }
++
+   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+           blink::switches::kTopChromeWebUI) &&
+       base::FeatureList::IsEnabled(features::kWebUIBypassMojoConnections)) {

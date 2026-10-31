@@ -1,0 +1,75 @@
+--- a/third_party/blink/renderer/modules/mediastream/media_devices.cc
++++ b/third_party/blink/renderer/modules/mediastream/media_devices.cc
+@@ -7,6 +7,10 @@
+ #include <algorithm>
+ #include <utility>
+ 
++#include "base/command_line.h"
++#include "base/strings/string_number_conversions.h"
++#include "base/strings/string_split.h"
++#include "base/strings/string_util.h"
+ #include "base/feature_list.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "base/notreached.h"
+@@ -1496,7 +1500,61 @@ void MediaDevices::DevicesEnumerated(
+       }
+     }
+   }
+ 
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch("limit-media-devices")) {
++    int max_audio_in = 1;
++    int max_audio_out = 1;
++    int max_video_in = 1;
++    const std::string val = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII("limit-media-devices");
++    if (!val.empty()) {
++      int parsed = 0;
++      if (base::StringToInt(val, &parsed)) {
++        if (parsed >= 0) {
++          max_audio_in = max_audio_out = max_video_in = parsed;
++        }
++      } else {
++        for (const std::string_view token : base::SplitStringPiece(
++                 val, ",", base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY)) {
++          const auto eq = token.find('=');
++          if (eq != std::string_view::npos) {
++            const std::string_view k = base::TrimWhitespaceASCII(token.substr(0, eq), base::TRIM_ALL);
++            const std::string_view v = base::TrimWhitespaceASCII(token.substr(eq + 1), base::TRIM_ALL);
++            int count = 0;
++            if (base::StringToInt(v, &count) && count >= 0) {
++              if (k == "audioinput" || k == "audio_in" || k == "mic") {
++                max_audio_in = count;
++              } else if (k == "audiooutput" || k == "audio_out" || k == "speaker") {
++                max_audio_out = count;
++              } else if (k == "videoinput" || k == "video_in" || k == "camera") {
++                max_video_in = count;
++              }
++            }
++          }
++        }
++      }
++    }
++    auto limit = [&](int want, mojom::blink::MediaDeviceType type) {
++      if (want < 0) return;
++      int seen = 0;
++      MediaDeviceInfoVector kept;
++      kept.reserve(media_devices.size());
++      for (MediaDeviceInfo* device : media_devices) {
++        if (device->DeviceType() != type) {
++          kept.push_back(device);
++          continue;
++        }
++        if (seen < want) {
++          kept.push_back(device);
++          ++seen;
++        }
++      }
++      media_devices = std::move(kept);
++    };
++    limit(max_audio_in, mojom::blink::MediaDeviceType::kMediaAudioInput);
++    limit(max_audio_out, mojom::blink::MediaDeviceType::kMediaAudioOutput);
++    limit(max_video_in, mojom::blink::MediaDeviceType::kMediaVideoInput);
++  }
++
+   ReportCompletedEnumerateDevices(result_contains_nonempty_input_device_ids);
+   result_tracker->Resolve(media_devices);
+   tracer->End();
