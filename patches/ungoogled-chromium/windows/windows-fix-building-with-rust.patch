@@ -104,7 +104,22 @@
  
  # Get variables and helpers from Clang update script
  sys.path.append(
-@@ -65,7 +65,7 @@ def GetHostCcTools():
+@@ -50,13 +50,7 @@ def GetHostDebianSysroot():
+     The sysroot avoids linking with the system libstdc++ and glibc.
+     `build_rust.py` downloads it, so this function only computes the path.
+     """
+-    assert sys.platform.startswith('linux')
+-    sysroot = DownloadDebianSysroot('amd64', skip_download=True)
+-    if not os.path.isdir(sysroot):
+-        raise RuntimeError(
+-            f'{sysroot} not found.  Run `tools/rust/build_rust.py` first.'
+-        )
+-    return sysroot
++    return None
+ 
+ 
+ def GetHostCcTools():
+@@ -65,7 +59,7 @@ def GetHostCcTools():
      On Windows the MSVC-style `clang-cl` driver is both the C and the C++
      compiler.
      """
@@ -113,7 +128,16 @@
      if sys.platform == 'win32':
          clang_cl = os.path.join(bin_dir, 'clang-cl.exe')
          return clang_cl, clang_cl, os.path.join(bin_dir, 'llvm-lib.exe')
-@@ -91,7 +91,7 @@ def GetHostLinker():
+@@ -78,8 +72,6 @@ def GetHostCcTools():
+ 
+ def GetHostCFlags():
+     """Returns the flags for all C and C++ compilations of host tools."""
+-    if sys.platform.startswith('linux'):
+-        return [f'--sysroot={GetHostDebianSysroot()}']
+     if sys.platform == 'darwin':
+         return ['-isysroot', GetMacSdkPath()]
+     return []
+@@ -91,7 +83,7 @@ def GetHostLinker():
      Windows uses `lld-link` for MSVC compat.  Otherwise, we use `lld` via
      `clang` (see `GetHostLinkArgs`).
      """
@@ -122,3 +146,12 @@
      if sys.platform == 'win32':
          return os.path.join(bin_dir, 'lld-link.exe')
      return os.path.join(bin_dir, 'clang')
+@@ -104,8 +96,6 @@ def GetHostLinkArgs():
+         # needs no extra args.
+         return []
+     args = ['-fuse-ld=lld']
+-    if sys.platform.startswith('linux'):
+-        args.append(f'--sysroot={GetHostDebianSysroot()}')
+     if sys.platform == 'darwin':
+         args += ['-isysroot', GetMacSdkPath()]
+         if 'x86_64' in RustTargetTriple():
