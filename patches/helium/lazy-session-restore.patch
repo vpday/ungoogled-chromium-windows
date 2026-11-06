@@ -617,27 +617,27 @@
 +}
 --- a/chrome/browser/ui/thumbnails/thumbnail_tab_helper.cc
 +++ b/chrome/browser/ui/thumbnails/thumbnail_tab_helper.cc
-@@ -16,6 +16,7 @@
+@@ -15,6 +15,7 @@
  #include "base/metrics/histogram_macros.h"
  #include "base/no_destructor.h"
  #include "chrome/browser/ui/tabs/tab_style.h"
 +#include "chrome/browser/ui/tabs/tab_utils.h"
- #include "chrome/browser/ui/thumbnails/background_thumbnail_video_capturer.h"
- #include "chrome/browser/ui/thumbnails/thumbnail_capture_driver.h"
- #include "chrome/browser/ui/thumbnails/thumbnail_readiness_tracker.h"
-@@ -195,8 +196,10 @@ class ThumbnailTabHelper::TabStateTracke
-   // ThumbnailImage::Delegate:
-   void ThumbnailImageBeingObservedChanged(bool is_being_observed) override {
-     capture_driver_.UpdateThumbnailVisibility(is_being_observed);
--    // Do not attempt to reload discarded tabs for thumbnail observation events.
--    if (is_being_observed && !web_contents()->WasDiscarded()) {
-+    // Thumbnail observation must not revive discarded tabs or trigger a
-+    // deferred restored tab's first load.
-+    if (is_being_observed && !web_contents()->WasDiscarded() &&
-+        !IsRestoredTabPendingLoad(web_contents())) {
-       web_contents()->GetController().LoadIfNecessary();
-     }
+ #include "chrome/browser/ui/thumbnails/thumbnail_scheduler.h"
+ #include "chrome/browser/ui/thumbnails/thumbnail_scheduler_impl.h"
+ #include "components/tabs/public/tab_interface.h"
+@@ -220,8 +221,10 @@ void ThumbnailTabHelper::AboutToBeDiscar
+ void ThumbnailTabHelper::ThumbnailImageBeingObservedChanged(
+     bool is_being_observed) {
+   capture_driver_.UpdateThumbnailVisibility(is_being_observed);
+-  // Do not attempt to reload discarded tabs for thumbnail observation events.
+-  if (is_being_observed && !web_contents()->WasDiscarded()) {
++  // Thumbnail observation must not revive discarded tabs or trigger a
++  // deferred restored tab's first load.
++  if (is_being_observed && !web_contents()->WasDiscarded() &&
++      !IsRestoredTabPendingLoad(web_contents())) {
+     web_contents()->GetController().LoadIfNecessary();
    }
+ }
 --- a/chrome/browser/ui/browser_live_tab_context.h
 +++ b/chrome/browser/ui/browser_live_tab_context.h
 @@ -74,6 +74,7 @@ class BrowserLiveTabContext : public ses

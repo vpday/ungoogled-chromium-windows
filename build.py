@@ -142,6 +142,8 @@ def _get_windows_components(target: WindowsTarget):
         'webauthn',
         'multimedia-redirection',
         'rust-x64',
+        'rustc-dev-x64',
+        'crubit',
         target.windows_rust_std_selector,
     ]
     if target.linux_rust_std_selector:

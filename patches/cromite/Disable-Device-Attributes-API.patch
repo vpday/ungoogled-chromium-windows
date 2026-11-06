@@ -1,6 +1,6 @@
 --- a/chrome/browser/device_api/device_service_impl.cc
 +++ b/chrome/browser/device_api/device_service_impl.cc
-@@ -127,34 +127,9 @@
+@@ -128,34 +128,9 @@ bool IsAffiliatedUser(Profile* profile) 
  
  bool IsTrustedContext(content::RenderFrameHost& host,
                        const url::Origin& origin) {
@@ -30,7 +30,7 @@
 -          origin.GetURL(),
 -          web_app::WebAppFilter::PolicyInstalledIsolatedWebApp() |
 -              web_app::WebAppFilter::IsDevModeIsolatedApp(),
--          {.exclude_scope_extensions = true})
+-          {.scope_score_options = {.exclude_scope_extensions = true}})
 -      .has_value();
 +  (void)host;
 +  (void)origin;

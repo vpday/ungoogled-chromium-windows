@@ -16,11 +16,11 @@
 - Gather/Scatter Avoidance: Disables gather and scatter instructions in C/C++ and Rust to prevent latency regressions on CPUs with slow microcode implementations.
 
 ### 1.3 `windows-additional-feature-overrides.patch` (Feature Overrides & Background De-bloating)
-- Client AI & On-Device ML: Disables the Desktop AI assistant (Glic), Private AI, DevTools AI code features, and history passage embeddings.
+- Client AI & On-Device ML: Disables the Desktop AI assistant (Glic), Private AI, WebMCP attack surfaces (`DeclarativeWebMCP`, `WebMCP`, `WebMCPDeclarativeFileInput`, `WebMCPFormAssociatedCustomElements`), DevTools AI code features, and history passage embeddings.
 - Speculative Networking & Preloading: Disables bookmark and NTP Prerender2, Navigation Predictor, Top Chrome WebUI preloading, and speculative ServiceWorker warm-up.
 - Process De-bloating: Disables persistent spare renderer processes for the default search engine.
 - Telemetry & Metrics: Disables Structured Metrics, Critical User Journeys, Notification Telemetry, cold-start OneDrive sync state probing (`kCloudSyncedFolderChecker`), and BrowserContext-bound digital credentials service instantiation.
-- Performance & Memory Tuning: Locks background tab freezing under critical memory pressure (`kDisablePeriodicUnfreezeOnCriticalMemoryPressure`) and boosts closing tab priority (`kBoostClosingTabs`) for smoother tab strip animations.
+- Performance & Memory Tuning: Locks background tab freezing under critical memory pressure (`kDisablePeriodicUnfreezeOnCriticalMemoryPressure`), eagerly resolves core delay-loaded DLL imports on startup (`kEagerlyResolveCoreDllsImports`) to prevent UI-thread jank, and boosts closing tab priority (`kBoostClosingTabs`) for smoother tab strip animations.
 - Security & UI Settings: Enables strict origin isolation and network service sandboxing; enables one-click tab audio muting and modern WebUI refresh.
 
 ### 1.4 `windows-multiple-search-engines-context-menu.patch` (Multi-Engine Context Menu Search)
@@ -45,8 +45,8 @@
 ### 1.9 `windows-disable-pepc-elements.patch` (PEPC HTML Declarative Permission Elements Hardening)
 - PEPC Element Deactivation: Disables `<camera>`, `<microphone>`, `<geolocation>`, and `<usermedia>` in-page permission elements (`CameraAndMicrophoneElements`, `GeolocationElement`, `UserMediaElement`, and `UserMediaElementLegacy` in `runtime_enabled_features.json5`), preventing clickjacking and anchor-based permission elevation while routing all hardware prompts through the trusted Omnibox origin bubble.
 
-### 1.10 `windows-disable-ai-page-content-tracking.patch` (Render-Side Password and Subframe Tracking Cutoff)
-- AI Page Content Tracking Deactivation: Disables `AIPageContentTrackedElementsPassword` and `AIPageContentTrackedElementsIframe` in `runtime_enabled_features.json5`, eliminating unnecessary per-frame heuristic password box coordinate tracking and compositor frame metadata serialization.
+### 1.10 `windows-disable-ai-page-content-tracking.patch` (Render-Side Password, Subframe and SVG Tracking Cutoff)
+- AI Page Content Tracking Deactivation: Disables `AIPageContentTrackedElementsPassword`, `AIPageContentTrackedElementsIframe`, `AIPageContentIncludeSVGSubtree`, and `AIPageContentLabelExpandFallbackSources` in `runtime_enabled_features.json5`, eliminating unnecessary per-frame heuristic password box coordinate tracking, compositor frame metadata serialization, actionable APC label fallback source expansions, and recursive SVG layout tree traversal for Screen AI / Annotated Page Content extraction.
 
 ### 1.11 `windows-disable-webrtc-diagnostic-logging.patch` (WebRTC Diagnostic Logging Interface Deactivation)
 - WebRTC Diagnostic Logging Blocking: Clears the default desktop status of `RTCDiagnosticLogging` in `runtime_enabled_features.json5`, removing `startDiagnosticLogging` and `stopDiagnosticLogging` extensions from `RTCPeerConnection` to eliminate client fingerprinting surfaces and unused Mojo IPC channels.
@@ -85,7 +85,6 @@
 
 ### 2.1 Resource De-bloating & AI Pruning
 - `disable-web-platform-ai.patch`: Disables Web Platform AI APIs (`AIPromptAPI`, `AIPromptAPIMultimodalInput`, `AIProofreaderAPI`, `AIRewriterAPI`, `AISummarizationAPI`, and `AIWriterAPI` in `runtime_enabled_features.json5`), preventing web pages from downloading or running on-device AI models.
-- `disable-history-embeddings.patch`: Sets `kEnabledByDefaultForDesktopOnly` to `false` in `history_embeddings_utils.cc`, disabling passage embedding generation on browsing history.
 - `consolidated-features-overrides.patch`: Disables bookmark and New Tab Page Prerender2 triggers, DevTools Console Insights, DevTools AI code features, WebUI Omnibox Popups, and tab hover card thumbnail previews.
 - `kill-profile-reset-report-uploader.patch`: Empties `ResetReportUploader::DispatchReport` in `chrome/browser/profile_resetter/reset_report_uploader.cc` to stop telemetry uploads when resetting browser profiles.
 
@@ -122,7 +121,8 @@
 - `disable-ad-topics-and-etc.patch`: Disables Privacy Sandbox tracking features, including the Topics API and Private Aggregation, in `network::features`.
 - `disable-history-clusters.patch`: Disables History Clusters (Journeys) grouping and background analysis.
 - `clean-omnibox-suggestions.patch`: Removes Google promotional action buttons ("pedals") from omnibox suggestions.
-- `ridiculous-google-compat-exceptions.patch` & `degoogle-context-menu.patch`: Removes hardcoded Google sign-in exceptions and unhooks Google Search / Google Lens from context menus.
+- `ridiculous-google-compat-exceptions.patch`: Removes hardcoded Google sign-in exceptions.
+- `degoogle-context-menu.patch`: Strips Google Search, Lens, Gemini, Live Caption, QR code, Translate, Reading Mode, and Reading List items from tab, page, and link context menus.
 
 ### 3.4 Ergonomics & Web Content Control
 - `shift-right-click-context-menu.patch`: Forces the browser's native context menu to open on `Shift + Right-Click`, bypassing pages that block right-clicking.

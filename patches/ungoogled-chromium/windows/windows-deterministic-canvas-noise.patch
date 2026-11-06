@@ -44,7 +44,7 @@
  ImageEncodeOptions* CanvasAsyncBlobCreator::GetImageEncodeOptionsForMimeType(
 --- a/third_party/blink/renderer/modules/canvas/canvas2d/base_rendering_context_2d.cc
 +++ b/third_party/blink/renderer/modules/canvas/canvas2d/base_rendering_context_2d.cc
-@@ -565,7 +565,7 @@
+@@ -877,7 +877,7 @@
        DCHECK(!bounds.intersect(SkIRect::MakeXYWH(sx, sy, sw, sh)));
      }
      if (read_pixels_successful && RuntimeEnabledFeatures::FingerprintingCanvasImageDataNoiseEnabled()) {
@@ -63,7 +63,7 @@
  #include "third_party/blink/renderer/platform/wtf/text/base64.h"
  #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
  #include "third_party/skia/include/core/SkImage.h"
-@@ -146,8 +147,18 @@
+@@ -147,8 +148,18 @@
  String ImageDataBuffer::ToDataURL(const ImageEncodingMimeType mime_type,
                                    const double& quality) const {
    DCHECK(is_valid_);

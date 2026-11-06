@@ -38,17 +38,17 @@
  
 --- a/chrome/browser/ui/tabs/tab_strip_model.h
 +++ b/chrome/browser/ui/tabs/tab_strip_model.h
-@@ -1123,6 +1123,10 @@ class TabStripModel {
+@@ -1121,6 +1121,10 @@ class TabStripModel {
+   // determine which indices the command applies to. Indices are sorted in
    // increasing order.
    std::vector<int> GetIndicesForCommand(int index) const;
- 
++
 +  // Returns the indices that will be discarded when executing the discard
 +  // command for the tab at |index|. Indices are sorted in increasing order.
 +  std::vector<int> GetIndicesDiscardedByCommand(int index) const;
-+
-   // Returns a vector of indices of the tabs that will close when executing the
-   // command `id` for the tab at `index`. The returned indices are sorted in
-   // descending order.
+ 
+   // Returns whether any tab would close when executing the command `id`
+   // (CommandCloseTabsToRight or CommandCloseOtherTabs) for the tab at `index`.
 --- a/chrome/browser/ui/tabs/tab_strip_model.cc
 +++ b/chrome/browser/ui/tabs/tab_strip_model.cc
 @@ -45,8 +45,11 @@
@@ -150,7 +150,7 @@
 +
      case CommandCloseOtherTabs:
      case CommandCloseTabsToRight: {
-       return !GetIndicesClosedByCommand(context_index, command_id).empty();
+       return HasIndicesClosedByCommand(context_index, command_id);
 @@ -2869,6 +2939,28 @@ void TabStripModel::ExecuteContextMenuCo
        break;
      }

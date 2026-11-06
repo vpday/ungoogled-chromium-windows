@@ -9,7 +9,7 @@
  
  // This flag is used for enabling BookmarkBar triggered prefetch.  See
  // crbug.com/413259638 for more details of Bookmark triggered prefetching.
-@@ -177,7 +177,7 @@ BASE_FEATURE(kTriggerNetworkDataMigration,
+@@ -174,22 +174,22 @@ BASE_FEATURE(kTriggerNetworkDataMigration,
  
  // Enables runtime detection of USB devices which provide a WebUSB landing page
  // descriptor.
@@ -18,6 +18,22 @@
  
  #if BUILDFLAG(IS_WIN)
  // Disable dynamic code using ACG. Prevents the browser process from generating
+ // dynamic code or modifying executable code. See comments in
+ // sandbox/win/src/security_level.h. Only available on Windows 10 RS1 (1607,
+ // Build 14393) onwards.
+ BASE_FEATURE(kBrowserDynamicCodeDisabled, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Eagerly resolves all delay-loaded imports for user32.dll, uxtheme.dll,
+ // gdi32.dll, imm32.dll and dwmapi.dll (loading those that aren't loaded yet)
+ // during browser process startup, at a point selected by
+ // `kEagerlyResolveCoreDllsImportsTiming`. This avoids UI-thread jank from
+ // contending on the apphelp.dll critical section (SE_GetProcAddressForCaller)
+ // during lazy delay-load resolution.
+-BASE_FEATURE(kEagerlyResolveCoreDllsImports, base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kEagerlyResolveCoreDllsImports, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ constexpr base::FeatureParam<EagerlyResolveCoreDllsImportsTiming>::Option
+     kEagerlyResolveCoreDllsImportsTimingOptions[] = {
 --- a/chrome/browser/devtools/features.cc
 +++ b/chrome/browser/devtools/features.cc
 @@ -168,7 +168,7 @@ BASE_FEATURE(kDevToolsAnimationStylesInStylesTab,
@@ -378,17 +394,6 @@
  
  BASE_FEATURE(kBrowserLaunchMetadataReporting,
               base::FEATURE_DISABLED_BY_DEFAULT);
---- a/components/history/core/browser/features.cc
-+++ b/components/history/core/browser/features.cc
-@@ -128,7 +128,7 @@ BASE_FEATURE(kBrowsingHistorySimilarVisitsGrouping,
- // in history entry grouping and filtering. Enabled by default on Android as
- // actor code are gated by the kGlic feature.
- BASE_FEATURE(kBrowsingHistoryActorIntegrationM3,
--             base::FEATURE_ENABLED_BY_DEFAULT);
-+             base::FEATURE_DISABLED_BY_DEFAULT);
- #endif  // !BUILDFLAG(IS_IOS)
- 
- // If enabled, improves hostname suffix matching for browsing history, so that
 --- a/components/lens/lens_features.cc
 +++ b/components/lens/lens_features.cc
 @@ -16,17 +16,11 @@
@@ -863,7 +868,7 @@
 -#endif
 -);
 +BASE_FEATURE(kSkillsEnabled, base::FEATURE_DISABLED_BY_DEFAULT);
- BASE_FEATURE(kSkillsAppMenu, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kSkillsAndExtensionsAppMenu, base::FEATURE_DISABLED_BY_DEFAULT);
 -BASE_FEATURE(kSkillsMetricsProviderEnabled, base::FEATURE_ENABLED_BY_DEFAULT);
 +BASE_FEATURE(kSkillsMetricsProviderEnabled, base::FEATURE_DISABLED_BY_DEFAULT);
  BASE_FEATURE(kSkillsRefinementEnabled, base::FEATURE_ENABLED_BY_DEFAULT);
@@ -1212,3 +1217,46 @@
 -BASE_FEATURE(kRoundedIcons, base::FEATURE_DISABLED_BY_DEFAULT);
 +BASE_FEATURE(kRoundedIcons, base::FEATURE_ENABLED_BY_DEFAULT);
  BASE_FEATURE(kWebUIRoundedIcons, base::FEATURE_DISABLED_BY_DEFAULT);
+--- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
++++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
+@@ -2393,13 +2393,12 @@
+       origin_trial_feature_name: "WebMCP",
+       origin_trial_allows_third_party: true,
+       public: true,
+-      base_feature_status: "enabled",
++      base_feature_status: "disabled",
+       copied_from_base_feature_if: "overridden",
+       implied_by: [
+         "WebMCPDeclarativeFileInput",
+         "WebMCPFormAssociatedCustomElements"
+       ],
+-      status: "experimental",
+     },
+     {
+       name: "DeferLineBoxHitTestToBackground",
+@@ -7408,24 +7407,21 @@
+       origin_trial_feature_name: "WebMCP",
+       origin_trial_allows_third_party: true,
+       public: true,
+-      base_feature_status: "enabled",
++      base_feature_status: "disabled",
+       copied_from_base_feature_if: "overridden",
+       // Note that `depends_on` isn't supported by origin trials.
+       implied_by: [
+         "WebMCPDeclarativeFileInput",
+         "WebMCPFormAssociatedCustomElements"
+       ],
+-      status: "experimental",
+     },
+     {
+       name: "WebMCPDeclarativeFileInput",
+-      status: "test",
+     },
+     {
+       // Support for form-associated custom elements in declarative
+       // WebMCP tools.
+       name: "WebMCPFormAssociatedCustomElements",
+-      status: "experimental",
+     },
+     {
+       name: "WebNFC",

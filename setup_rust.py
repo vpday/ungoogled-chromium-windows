@@ -107,6 +107,22 @@ def setup_rust_toolchain(
         if comp_lib.exists():
             shutil.copytree(comp_lib, dst_lib, dirs_exist_ok=True, symlinks=True)
 
+    # Deploy rustc-dev libraries (rustc_private crates for the x64 host, needed by Crubit)
+    host_dev_src = third_party / "rust-toolchain-x64-dev"
+    if host_dev_src.exists():
+        dev_lib_dirs = [d for d in host_dev_src.glob("*/lib") if d.is_dir()]
+        if (host_dev_src / "lib").is_dir():
+            dev_lib_dirs.append(host_dev_src / "lib")
+        dev_lib_dirs = list(dict.fromkeys(dev_lib_dirs))
+        if dev_lib_dirs:
+            for dev_lib in dev_lib_dirs:
+                get_logger().info("Deploying rustc-dev from %s to %s", dev_lib, dst_lib)
+                shutil.copytree(dev_lib, dst_lib, dirs_exist_ok=True, symlinks=True)
+        else:
+            get_logger().warning("No rustc-dev library directories found in %s", host_dev_src)
+    else:
+        get_logger().warning("Host rustc-dev not found at %s", host_dev_src)
+
     # Deploy target Windows standard library
     target_std_dir = (third_party / target.windows_rust_std_selector / f"rust-std-{target.windows_rust_target}" / "lib")
     if target_std_dir.exists():

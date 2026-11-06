@@ -17,7 +17,10 @@ This module provides toolchain and environment setup utilities including:
 
 import hashlib
 import json
+import os
 import re
+import shutil
+import subprocess
 import sys
 import urllib.request
 
@@ -341,6 +344,92 @@ def setup_sysroot(source_tree, target: WindowsTarget, ci_mode=False):
     get_logger().info("Sysroot installation completed successfully")
 
 
+def setup_crubit_tool(source_tree: Path) -> Path:
+    """
+    Build Crubit's cc_bindings_from_rs tool using host cargo.
+
+    Args:
+        source_tree: Path to the Chromium source tree root
+
+    Returns:
+        Path to the installed cc_bindings_from_rs executable
+    """
+    get_logger().info("Building Crubit cc_bindings_from_rs tool...")
+    rust_bin = source_tree / "third_party" / "rust-toolchain" / "bin"
+    cargo_bin = rust_bin / "cargo"
+    rustc_bin = rust_bin / "rustc"
+
+    if not cargo_bin.exists():
+        raise FileNotFoundError(f"Host cargo executable not found at {cargo_bin}")
+
+    crubit_root = source_tree / "third_party" / "rust-toolchain" / "crubit"
+    manifest_path = crubit_root / "lib" / "third_party" / "crubit" / "Cargo.toml"
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"Crubit manifest not found at {manifest_path}")
+
+    crubit_target = source_tree / "out" / "crubit"
+    crubit_target.mkdir(parents=True, exist_ok=True)
+
+    tool_name = "cc_bindings_from_rs"
+    installed_tool = crubit_root / "bin" / tool_name
+
+    crubit_env = dict(os.environ)
+    crubit_env["RUSTC"] = str(rustc_bin)
+    crubit_env["CARGO_HOME"] = str(crubit_target / "cargo_home")
+
+    current_path = crubit_env.get("PATH", "")
+    crubit_env["PATH"] = f"{rust_bin}:{current_path}" if current_path else str(rust_bin)
+
+    crubit_env["RUSTFLAGS"] = (
+        "-C link-arg=-Wl,-z,origin "
+        "-C link-arg=-Wl,-rpath,$ORIGIN/../../lib:$ORIGIN/../../lib/rustlib/x86_64-unknown-linux-gnu/lib"
+    )
+    rust_lib = source_tree / "third_party" / "rust-toolchain" / "lib"
+    rust_lib_target = rust_lib / "rustlib" / "x86_64-unknown-linux-gnu" / "lib"
+    current_ld = crubit_env.get("LD_LIBRARY_PATH", "")
+    ld_paths = [str(rust_lib), str(rust_lib_target)]
+    if current_ld:
+        ld_paths.append(current_ld)
+    crubit_env["LD_LIBRARY_PATH"] = ":".join(ld_paths)
+
+    run_build_process(
+        str(cargo_bin),
+        "build",
+        "--release",
+        "--locked",
+        "-p",
+        tool_name,
+        "--bin",
+        tool_name,
+        "--manifest-path",
+        str(manifest_path),
+        "--target-dir",
+        str(crubit_target),
+        env=crubit_env,
+    )
+
+    built_tool = crubit_target / "release" / tool_name
+    if not built_tool.exists():
+        raise FileNotFoundError(f"Built Crubit tool not found at {built_tool}")
+
+    installed_tool.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(built_tool, installed_tool)
+    try:
+        installed_tool.chmod(0o755)
+    except OSError:
+        pass
+
+    get_logger().info("Verifying Crubit tool with --help...")
+    try:
+        subprocess.run([str(installed_tool), "--help"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                       check=True, env=crubit_env, timeout=10)
+    except Exception as e:
+        get_logger().error("Crubit sanity check failed: %s", e)
+        raise
+
+    return installed_tool
+
+
 def setup_toolchain(source_tree, target: WindowsTarget, ci_mode=False):
     """
     Sets up the toolchain components required for cross-compiling Windows Chromium.
@@ -362,6 +451,9 @@ def setup_toolchain(source_tree, target: WindowsTarget, ci_mode=False):
         str(source_tree / "tools" / "rust" / "build_bindgen.py"),
         "--skip-test",
     )
+
+    # Build Crubit's cc_bindings_from_rs tool
+    setup_crubit_tool(source_tree)
 
     # Install Linux sysroot packages for cross-compilation
     # ci_mode is passed through to enable stamp-based skipping in setup_sysroot

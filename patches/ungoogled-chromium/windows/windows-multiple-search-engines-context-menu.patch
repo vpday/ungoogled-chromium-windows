@@ -58,15 +58,16 @@
    return id;
  }
  
-@@ -1095,6 +1105,7 @@
+@@ -1122,7 +1132,8 @@ RenderViewContextMenu::RenderViewContext
        inspect_submenu_model_(this),
+       contextual_tasks_submenu_model_(this),
        video_frame_submenu_model_(this),
        accessibility_labels_submenu_model_(this),
 +      search_engines_submenu_model_(this),
        embedder_web_contents_(GetWebContentsToUse(&render_frame_host)),
        autofill_context_menu_manager_(this, &menu_model_),
        is_paste_enabled_(is_paste_enabled),
-@@ -2962,36 +2973,175 @@
+@@ -3002,40 +3013,185 @@ void RenderViewContextMenu::AppendSearch
    if (AutocompleteMatch::IsSearchType(match.type)) {
 -    const TemplateURL* const default_provider =
 -        TemplateURLServiceFactory::GetForProfile(GetProfile())
@@ -100,6 +101,10 @@
 -          l10n_util::GetStringFUTF16(IDS_CONTENT_CONTEXT_SEARCHWEBFOR,
 -                                     default_provider->short_name(),
 -                                     printable_selection_text));
+-      menu_model_.SetElementIdentifierAt(
+-          menu_model_.GetIndexOfCommandId(IDC_CONTENT_CONTEXT_SEARCHWEBFOR)
+-              .value(),
+-          kSearchForTextItem);
 -      if (features::IsMenuSimplificationEnabled()) {
 -        menu_model_.SetIconForCommandId(
 -            IDC_CONTENT_CONTEXT_SEARCHWEBFOR,
@@ -116,6 +121,10 @@
 +            l10n_util::GetStringFUTF16(IDS_CONTENT_CONTEXT_SEARCHWEBFOR,
 +                                       default_provider->short_name(),
 +                                       printable_selection_text));
++        menu_model_.SetElementIdentifierAt(
++            menu_model_.GetIndexOfCommandId(IDC_CONTENT_CONTEXT_SEARCHWEBFOR)
++                .value(),
++            kSearchForTextItem);
 +        if (features::IsMenuSimplificationEnabled()) {
 +          menu_model_.SetIconForCommandId(
 +              IDC_CONTENT_CONTEXT_SEARCHWEBFOR,
@@ -209,6 +218,12 @@
 +              l10n_util::GetStringFUTF16(IDS_CONTENT_CONTEXT_SEARCHWEBFOR,
 +                                         valid_engines[i]->short_name(),
 +                                         printable_selection_text));
++          if (command_id == IDC_CONTENT_CONTEXT_SEARCHWEBFOR) {
++            menu_model_.SetElementIdentifierAt(
++                menu_model_.GetIndexOfCommandId(IDC_CONTENT_CONTEXT_SEARCHWEBFOR)
++                    .value(),
++                kSearchForTextItem);
++          }
 +          if (features::IsMenuSimplificationEnabled()) {
 +            menu_model_.SetIconForCommandId(
 +                command_id,
@@ -302,7 +317,7 @@
    switch (id) {
      case IDC_CONTENT_CONTEXT_OPENLINKNEWTAB: {
        WindowOpenDisposition new_tab_disposition =
-@@ -4194,36 +4366,12 @@
+@@ -4289,53 +4447,11 @@ void RenderViewContextMenu::ExecuteComma
        [[fallthrough]];
      }
      case IDC_CONTENT_CONTEXT_SEARCHWEBFORNEWTAB: {
@@ -324,16 +339,34 @@
 -          GetWebContentsForDataControls(), params_.selection_text.size(),
 -          base::BindOnce(
 -              [](base::WeakPtr<content::WebContents> web_contents,
--                 content::OpenURLParams params) {
+-                 std::u16string selection_text, content::OpenURLParams params) {
 -                if (!web_contents) {
 -                  return;
 -                }
+-                if (contextual_tasks::IsABASearchJourneysEnabled()) {
+-                  if (auto* tracker =
+-                          contextual_tasks::SearchJourneyTrackerFactory::
+-                              GetForProfile(Profile::FromBrowserContext(
+-                                  web_contents->GetBrowserContext()))) {
+-                    const SessionID tab_id =
+-                        sessions::SessionTabHelper::IdForTab(
+-                            web_contents.get());
+-                    if (content::NavigationEntry* entry =
+-                            web_contents->GetController()
+-                                .GetLastCommittedEntry()) {
+-                      tracker->OnCopyRecorded(tab_id, entry->GetUniqueID(),
+-                                              selection_text);
+-                    }
+-                  }
+-                }
 -                web_contents->OpenURL(
 -                    params,
--                    base::BindOnce(
--                        &AttachContextMenuSearchNavigationHandleUserData));
+-                    page_load_metrics::NavigationInitiatorHolder::
+-                        AttacherCallback(
+-                            chrome_navigation_initiator::kContextMenuSearch));
 -              },
--              source_web_contents_->GetWeakPtr(), std::move(open_url_params)));
+-              source_web_contents_->GetWeakPtr(), params_.selection_text,
+-              std::move(open_url_params)));
 +      ExecSearchForURL(selection_navigation_url_, event_flags);
        break;
      }
@@ -342,8 +375,7 @@
 +      break;
      case IDC_CONTENT_CONTEXT_GOTOURL: {
        auto disposition = ui::DispositionFromEventFlags(
-           event_flags, WindowOpenDisposition::NEW_FOREGROUND_TAB);
-@@ -5467,6 +5610,37 @@
+@@ -5620,6 +5736,55 @@ void RenderViewContextMenu::ExecRotateCC
  #endif
  }
  
@@ -366,16 +398,34 @@
 +      GetWebContentsForDataControls(), params_.selection_text.size(),
 +      base::BindOnce(
 +          [](base::WeakPtr<content::WebContents> web_contents,
-+             content::OpenURLParams params) {
++             std::u16string selection_text, content::OpenURLParams params) {
 +            if (!web_contents) {
 +              return;
 +            }
++            if (contextual_tasks::IsABASearchJourneysEnabled()) {
++              if (auto* tracker =
++                      contextual_tasks::SearchJourneyTrackerFactory::
++                          GetForProfile(Profile::FromBrowserContext(
++                              web_contents->GetBrowserContext()))) {
++                const SessionID tab_id =
++                    sessions::SessionTabHelper::IdForTab(
++                        web_contents.get());
++                if (content::NavigationEntry* entry =
++                        web_contents->GetController()
++                            .GetLastCommittedEntry()) {
++                  tracker->OnCopyRecorded(tab_id, entry->GetUniqueID(),
++                                          selection_text);
++                }
++              }
++            }
 +            web_contents->OpenURL(
 +                params,
-+                base::BindOnce(
-+                    &AttachContextMenuSearchNavigationHandleUserData));
++                page_load_metrics::NavigationInitiatorHolder::
++                    AttacherCallback(
++                        chrome_navigation_initiator::kContextMenuSearch));
 +          },
-+          source_web_contents_->GetWeakPtr(), std::move(open_url_params)));
++          source_web_contents_->GetWeakPtr(), params_.selection_text,
++          std::move(open_url_params)));
 +}
 +
  void RenderViewContextMenu::ExecSearchForVideoFrame(int event_flags,

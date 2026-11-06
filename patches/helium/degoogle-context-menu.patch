@@ -36,7 +36,22 @@
    }
  
    if (editable) {
-@@ -2565,55 +2545,6 @@
+@@ -2192,14 +2172,6 @@
+                                   params_.link_url.SchemeIs(url::kMailToScheme)
+                                       ? IDS_CONTENT_CONTEXT_COPYEMAILADDRESS
+                                       : IDS_CONTENT_CONTEXT_COPYLINKLOCATION);
+-  if (features::IsMenuSimplificationEnabled() && !params_.has_image_contents) {
+-    menu_model_.AddItemWithStringIdAndIcon(
+-        IDC_CONTENT_CONTEXT_ADD_LINK_TO_READING_LIST,
+-        IDS_CONTENT_CONTEXT_ADD_LINK_TO_READING_LIST,
+-        ui::ImageModel::FromVectorIcon(features::IsRoundedIconsEnabled()
+-                                           ? kListAltIcon
+-                                           : kReadingListOldIcon));
+-  }
+ }
+ 
+ void RenderViewContextMenu::AppendOpenWithLinkItems() {
+@@ -2565,55 +2537,6 @@
                                      IDS_CONTENT_CONTEXT_SAVEPAGEAS);
      menu_model_.AddItemWithStringId(IDC_PRINT, IDS_CONTENT_CONTEXT_PRINT);
  
@@ -92,7 +107,7 @@
      menu_model_.AddSeparator(ui::NORMAL_SEPARATOR);
      return;
    }
-@@ -2631,7 +2562,6 @@
+@@ -2631,7 +2554,6 @@
                                    IDS_CONTENT_CONTEXT_SAVEPAGEAS);
    menu_model_.AddItemWithStringId(IDC_PRINT, IDS_CONTENT_CONTEXT_PRINT);
    AppendLiveCaptionItem();
@@ -100,7 +115,7 @@
  
    if (features::IsReadAnythingMenuShuffleExperimentEnabled()) {
      // This will be set to false in AppendRegionSearchItem() if it is called.
-@@ -2861,45 +2791,7 @@
+@@ -2861,45 +2783,7 @@
    }
  }
  
@@ -147,7 +162,7 @@
  void RenderViewContextMenu::AppendSaveToMemoryBanksItem() {
    if (base::FeatureList::IsEnabled(context_hub::features::kMemoryBanks)) {
      menu_model_.AddItemWithStringId(IDC_CONTENT_CONTEXT_SAVE_TO_MEMORY_BANKS,
-@@ -4273,26 +4170,7 @@
+@@ -4273,26 +4162,7 @@
    AddSpellCheckServiceItem(&menu_model_, is_checked);
  }
  
@@ -175,7 +190,7 @@
  
  // static
  void RenderViewContextMenu::RegisterMenuShownCallbackForTesting(
-@@ -4670,43 +4548,12 @@
+@@ -4670,43 +4540,12 @@
      bool draw_icon,
      bool add_separator,
      bool ignore_simplification) {
@@ -225,7 +240,7 @@
  void RenderViewContextMenu::AppendSendTabToSelfItem(bool add_separator) {
    if (!embedder_web_contents_) {
      return;
-@@ -5826,19 +5673,11 @@
+@@ -5826,19 +5665,11 @@
  }
  
  bool RenderViewContextMenu::CanTranslate(bool menu_logging) {

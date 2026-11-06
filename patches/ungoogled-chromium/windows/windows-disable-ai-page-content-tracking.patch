@@ -1,6 +1,21 @@
 --- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
 +++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
-@@ -414,14 +414,14 @@
+@@ -393,12 +393,12 @@
+     },
+     {
+       name: "AIPageContentIncludeSVGSubtree",
+-      status: "stable"
++      base_feature_status: "disabled",
+     },
+     // Add label sources in actionable APC.
+     {
+       name: "AIPageContentLabelExpandFallbackSources",
+-      status: "stable",
++      base_feature_status: "disabled",
+     },
+     // Remove labels that duplicate extracted text in any node in its subtree
+     // or its image caption. Remove SVG root text when extracted child nodes
+@@ -436,14 +436,14 @@
      // Element::SetTrackedElementSubRect() method.
      {
        name: "AIPageContentTrackedElementsIframe",

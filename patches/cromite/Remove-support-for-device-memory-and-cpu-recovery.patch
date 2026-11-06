@@ -19,10 +19,10 @@
  #include <limits>
  
 +#include "base/rand_util.h"
+ #include "base/memory/raw_ptr_exclusion.h"
  #include "base/time/default_tick_clock.h"
  #include "base/time/time.h"
- #include "third_party/blink/renderer/core/frame/settings.h"
-@@ -43,16 +44,22 @@
+@@ -44,16 +45,22 @@
  
  static constexpr base::TimeDelta kTwentyMinutes = base::Minutes(20);
  static constexpr base::TimeDelta kFiftyMs = base::Milliseconds(50);

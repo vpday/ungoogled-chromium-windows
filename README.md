@@ -347,18 +347,18 @@ Update `win_toolchain.json` when:
 ```json
 {
   "variables": {
-    "chromium_version": "156.0.8078.35",
+    "chromium_version": "157.0.8103.26",
     "sdk_version": "10.0.28000.0",
     "vs_version": "2026",
     "repo": "vpday/chromium-win-toolchain-builder"
   },
   "win-toolchain": {
-    "zip_filename": "32f2c0f568",
+    "zip_filename": "eef2affb6a",
     "sha512": "...",
     "files": []
   },
   "win-toolchain-noarm": {
-    "zip_filename": "7b55f8d4cb",
+    "zip_filename": "1f1a5a4fc0",
     "sha512": "...",
     "files": []
   }
@@ -386,8 +386,8 @@ Update `variables.chromium_version` in `win_toolchain.json` to match this versio
 2. Collect release filenames and checksums.
 
 Visit `https://github.com/vpday/chromium-win-toolchain-builder/releases/tag/VERSION` and retrieve:
-- Full toolchain (`win-toolchain`): split archives (`.tar.001`, `.tar.002`), zip filename (`32f2c0f568.zip`), zip SHA-512, and tar SHA-256 checksums
-- Lightweight toolchain (`win-toolchain-noarm`): single archive (`...noarm.tar`), zip filename (`7b55f8d4cb.zip`), zip SHA-512, and tar SHA-256 checksum
+- Full toolchain (`win-toolchain`): split archives (`.tar.001`, `.tar.002`), zip filename (`eef2affb6a.zip`), zip SHA-512, and tar SHA-256 checksums
+- Lightweight toolchain (`win-toolchain-noarm`): single archive (`...noarm.tar`), zip filename (`1f1a5a4fc0.zip`), zip SHA-512, and tar SHA-256 checksum
 
 3. Update `win_toolchain.json`.
 
@@ -395,7 +395,7 @@ Update the `variables` section:
 ```json
 {
   "variables": {
-    "chromium_version": "156.0.8078.35",
+    "chromium_version": "157.0.8103.26",
     "sdk_version": "10.0.28000.0",
     "vs_version": "2026"
   }
