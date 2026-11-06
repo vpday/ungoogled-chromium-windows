@@ -19,7 +19,7 @@
 - Client AI & On-Device ML: Disables the Desktop AI assistant (Glic), Private AI, WebMCP attack surfaces (`DeclarativeWebMCP`, `WebMCP`, `WebMCPDeclarativeFileInput`, `WebMCPFormAssociatedCustomElements`), DevTools AI code features, and history passage embeddings.
 - Speculative Networking & Preloading: Disables bookmark and NTP Prerender2, Navigation Predictor, Top Chrome WebUI preloading, and speculative ServiceWorker warm-up.
 - Process De-bloating: Disables persistent spare renderer processes for the default search engine.
-- Telemetry & Metrics: Disables Structured Metrics, Critical User Journeys, Notification Telemetry, cold-start OneDrive sync state probing (`kCloudSyncedFolderChecker`), and BrowserContext-bound digital credentials service instantiation.
+- Telemetry & Metrics: Disables Structured Metrics, Critical User Journeys, Notification Telemetry, cold-start OneDrive sync state probing (`kCloudSyncedFolderChecker`), and BrowserContext-bound digital credentials service instantiation; removes the delayed startup TPM benchmark registration (`crypto::MaybeMeasureTpmOperations`) and its now-unused crypto/channel includes.
 - Performance & Memory Tuning: Locks background tab freezing under critical memory pressure (`kDisablePeriodicUnfreezeOnCriticalMemoryPressure`), eagerly resolves core delay-loaded DLL imports on startup (`kEagerlyResolveCoreDllsImports`) to prevent UI-thread jank, and boosts closing tab priority (`kBoostClosingTabs`) for smoother tab strip animations.
 - Security & UI Settings: Enables strict origin isolation and network service sandboxing; enables one-click tab audio muting and modern WebUI refresh.
 

@@ -178,6 +178,17 @@ def _generate_gn_flags(target: WindowsTarget, is_tarball: bool, source_tree: Pat
     elif target.id == 'x86':
         windows_flags += '\nv8_enable_drumbrake=false\n'
 
+    rust_dir = source_tree / 'third_party' / 'rust-toolchain'
+    rust_version_file = rust_dir / 'INSTALLED_VERSION'
+    if not rust_version_file.exists():
+        rust_version_file = rust_dir / 'VERSION'
+    if rust_version_file.exists():
+        content = rust_version_file.read_text(encoding=ENCODING).strip()
+        if content:
+            rust_ver = content.splitlines()[0].strip()
+            if rust_ver and rust_ver != 'rustc not installed':
+                windows_flags += f'\nrustc_version="{rust_ver}"\n'
+
     # Point V8 metagen at the local libclang and Python cindex bindings
     clang_spec = importlib.util.find_spec('clang')
     if clang_spec is None or not clang_spec.submodule_search_locations:

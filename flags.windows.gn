@@ -17,4 +17,5 @@ enable_rust=true
 enable_mse_mpeg2ts_stream_parser=true
 target_os="win"
 use_v8_context_snapshot=true
+rust_sysroot_absolute="//third_party/rust-toolchain"
 rust_crubit_root="//third_party/rust-toolchain/crubit"

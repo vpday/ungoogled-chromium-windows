@@ -9,26 +9,6 @@
    }
  }
  
---- a/build/config/rust.gni
-+++ b/build/config/rust.gni
-@@ -57,7 +57,7 @@ declare_args() {
-   # using a *nightly* version of Rust toolchain (see
-   # `docs/rust/unstable_rust_feature_usage.md`) although other projects (e.g.
-   # V8) may be compatible with the stable version of Rust toolchain.
--  rust_sysroot_absolute = ""
-+  rust_sysroot_absolute = "//third_party/rust-toolchain"
- 
-   # Directory under which to find `bin/bindgen` (a `bin` directory containing
-   # the bindgen exectuable).
-@@ -67,7 +67,7 @@ declare_args() {
-   # set this to the output of `rustc -V`. Changing this string will cause all
-   # Rust targets to be rebuilt, which allows you to update your toolchain and
-   # not break incremental builds.
--  rustc_version = ""
-+  rustc_version = "rustc-1.95.0-nightly"
- 
-   # Whether artifacts produced by the Rust compiler can participate in ThinLTO.
-   #
 --- a/build/rust/allocator/lib.rs
 +++ b/build/rust/allocator/lib.rs
 @@ -114,15 +114,4 @@ mod both_allocators {
@@ -155,3 +135,17 @@
      if sys.platform == 'darwin':
          args += ['-isysroot', GetMacSdkPath()]
          if 'x86_64' in RustTargetTriple():
+@@ -155,6 +145,13 @@ def GetHostCargoEnv(cargo_home=CARGO_HOME_DIR):
+         # libraries (`/MT`), so that the tools need no `VCRUNTIME140.dll`.
+         # This also makes the `cc` crate use `/MT`.
+         env['RUSTFLAGS'] += ' -Ctarget-feature=+crt-static'
++    rust_lib = os.path.join(RUST_TOOLCHAIN_OUT_DIR, 'lib')
++    llvm_lib = os.path.join(THIRD_PARTY_DIR, 'llvm-build', 'Release+Asserts', 'lib')
++    cur_ld = env.get('LD_LIBRARY_PATH', '')
++    ld_paths = [rust_lib, llvm_lib]
++    if cur_ld:
++        ld_paths.append(cur_ld)
++    env['LD_LIBRARY_PATH'] = ':'.join(ld_paths)
+     return env
+ 
+ 

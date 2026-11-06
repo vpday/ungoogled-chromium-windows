@@ -445,11 +445,23 @@ def setup_toolchain(source_tree, target: WindowsTarget, ci_mode=False):
     """
     get_logger().info("Setting up toolchain")
 
+    rust_lib = source_tree / "third_party" / "rust-toolchain" / "lib"
+    rust_lib_target = rust_lib / "rustlib" / "x86_64-unknown-linux-gnu" / "lib"
+    llvm_lib = source_tree / "third_party" / "llvm-build" / "Release+Asserts" / "lib"
+
+    bindgen_env = dict(os.environ)
+    current_ld = bindgen_env.get("LD_LIBRARY_PATH", "")
+    ld_paths = [str(rust_lib), str(rust_lib_target), str(llvm_lib)]
+    if current_ld:
+        ld_paths.append(current_ld)
+    bindgen_env["LD_LIBRARY_PATH"] = ":".join(ld_paths)
+
     get_logger().info("Building bindgen tool...")
     run_build_process(
         sys.executable,
         str(source_tree / "tools" / "rust" / "build_bindgen.py"),
         "--skip-test",
+        env=bindgen_env,
     )
 
     # Build Crubit's cc_bindings_from_rs tool

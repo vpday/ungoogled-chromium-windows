@@ -10,6 +10,7 @@ Rust toolchain management for ungoogled-chromium Windows cross-compilation.
 Sets up a Linux x86_64 host Rust toolchain with the target Windows standard library.
 """
 
+import os
 import shutil
 import subprocess
 import sys
@@ -25,8 +26,8 @@ sys.path.pop(0)
 from windows_target import WindowsTarget
 
 
-def _generate_version_file(rust_dir: Path, flag_file: Path) -> None:
-    """Generate a version file to track the installed Rust toolchain."""
+def _generate_version_file(rust_dir: Path, flag_file: Path | None = None) -> None:
+    """Generate version files to track the installed Rust toolchain."""
     rustc_path = rust_dir / "bin" / "rustc"
     version_info = "rustc not installed\n"
 
@@ -45,7 +46,11 @@ def _generate_version_file(rust_dir: Path, flag_file: Path) -> None:
         except Exception as e:
             get_logger().warning("Failed to execute rustc: %s", e)
 
-    flag_file.write_text(version_info, encoding=ENCODING)
+    target_files = {rust_dir / "INSTALLED_VERSION", rust_dir / "VERSION"}
+    if flag_file is not None:
+        target_files.add(flag_file)
+    for f in target_files:
+        f.write_text(version_info, encoding=ENCODING)
     get_logger().info("Rust version: %s", version_info.strip())
 
 
@@ -73,6 +78,12 @@ def setup_rust_toolchain(
     rust_flag_file = rust_dir_dst / "INSTALLED_VERSION"
 
     if ci_mode and rust_flag_file.exists():
+        version_file = rust_dir_dst / "VERSION"
+        if not version_file.exists():
+            try:
+                version_file.write_text(rust_flag_file.read_text(encoding=ENCODING), encoding=ENCODING)
+            except Exception as e:
+                get_logger().warning("Failed to sync VERSION from INSTALLED_VERSION: %s", e)
         return rust_dir_dst
 
     get_logger().info("Setting up Rust toolchain...")
@@ -122,6 +133,24 @@ def setup_rust_toolchain(
             get_logger().warning("No rustc-dev library directories found in %s", host_dev_src)
     else:
         get_logger().warning("Host rustc-dev not found at %s", host_dev_src)
+
+    # Ensure host rustlib target has relative symlinks to libLLVM*.so* in dst_lib
+    target_host_lib = dst_lib / "rustlib" / "x86_64-unknown-linux-gnu" / "lib"
+    target_host_lib.mkdir(parents=True, exist_ok=True)
+    for llvm_file in dst_lib.glob("libLLVM*.so*"):
+        if not (llvm_file.is_file() or llvm_file.is_symlink()):
+            continue
+        target_link = target_host_lib / llvm_file.name
+        if target_link.is_symlink() or target_link.exists():
+            if target_link.is_dir() and not target_link.is_symlink():
+                shutil.rmtree(target_link)
+            else:
+                target_link.unlink()
+        rel_target = Path(os.path.relpath(llvm_file, target_host_lib)).as_posix()
+        try:
+            target_link.symlink_to(rel_target)
+        except OSError:
+            shutil.copy2(llvm_file, target_link)
 
     # Deploy target Windows standard library
     target_std_dir = (third_party / target.windows_rust_std_selector / f"rust-std-{target.windows_rust_target}" / "lib")
