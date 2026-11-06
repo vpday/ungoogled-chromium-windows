@@ -257,6 +257,30 @@ def _compute_build_environment(source_tree: Path, target: WindowsTarget, rust_di
     return os.environ
 
 
+def _ensure_minibranch(source_tree: Path) -> None:
+    """Ensure build/util/MINIBRANCH exists in the source tree to satisfy build graph dependencies."""
+    source_tree = Path(source_tree)
+    minibranch_file = source_tree / "build" / "util" / "MINIBRANCH"
+    if minibranch_file.exists():
+        return
+
+    lastchange_py = source_tree / "build" / "util" / "lastchange.py"
+    if lastchange_py.exists():
+        try:
+            run_build_process(sys.executable, str(lastchange_py), "--minibranch-out", str(minibranch_file),
+                              cwd=source_tree)
+        except Exception as exc:
+            get_logger().warning("Failed to generate MINIBRANCH using lastchange.py: %s", exc)
+
+    if not minibranch_file.exists():
+        dummy_file = source_tree / "build" / "util" / "MINIBRANCH.dummy"
+        if dummy_file.is_file():
+            shutil.copyfile(dummy_file, minibranch_file)
+        else:
+            minibranch_file.parent.mkdir(parents=True, exist_ok=True)
+            minibranch_file.write_text("MINIBRANCH_BASE_VERSION=\n", encoding="utf-8", newline="\n")
+
+
 def _step_prepare_sources(
         source_tree: Path,
         downloads_cache: Path,
@@ -313,6 +337,8 @@ def _step_prepare_sources(
                         cwd=source_tree,
                     )
                     get_logger().info("v8 submodule initialized successfully")
+
+    _ensure_minibranch(source_tree)
 
 
 def _step_download_windows_dependencies(
