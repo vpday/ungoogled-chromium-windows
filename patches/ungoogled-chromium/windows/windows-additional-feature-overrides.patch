@@ -167,17 +167,17 @@
  CloudSyncStatus::CloudSyncStatus() = default;
 --- a/chrome/common/chrome_features.cc
 +++ b/chrome/common/chrome_features.cc
-@@ -180,7 +180,7 @@
+@@ -181,7 +181,7 @@ bool RemoteActorCredentialSharingEnabled() {
  }
  
  // Controls the enablement of structured metrics on Windows, Linux, and Mac.
 -BASE_FEATURE(kChromeStructuredMetrics, base::FEATURE_ENABLED_BY_DEFAULT);
 +BASE_FEATURE(kChromeStructuredMetrics, base::FEATURE_DISABLED_BY_DEFAULT);
  
- BASE_FEATURE(kDeferSpellcheckInitialization, base::FEATURE_DISABLED_BY_DEFAULT);
- 
-@@ -249,7 +249,7 @@
-                                                     ""};
+ #if BUILDFLAG(IS_MAC)
+ // Defers Cocoa spellchecker initialization to a post-startup idle task on
+@@ -249,7 +249,7 @@ BASE_FEATURE(kForcedAppRelaunchOnPlaceholderUpdate,
+ #endif  // BUILDFLAG(IS_CHROMEOS)
  
  // Controls whether the actor component of Glic is enabled.
 -BASE_FEATURE(kGlicActor, base::FEATURE_ENABLED_BY_DEFAULT);
@@ -279,9 +279,9 @@
  const base::FeatureParam<base::TimeDelta>
 --- a/components/actor/core/actor_features.cc
 +++ b/components/actor/core/actor_features.cc
-@@ -178,8 +178,8 @@ const base::FeatureParam<int> kActorScriptToolDelayObservationMillis{
- 
- BASE_FEATURE(kActorFormScriptToolInterrupt, base::FEATURE_ENABLED_BY_DEFAULT);
+@@ -180,8 +180,8 @@ BASE_FEATURE(kActorScriptToolDelayObservation,
+ const base::FeatureParam<int> kActorScriptToolDelayObservationMillis{
+     &kActorScriptToolDelayObservation, "script_tool_delay_observation_ms", 0};
  
 -BASE_FEATURE(kActorObserveScreenshotDefault, base::FEATURE_ENABLED_BY_DEFAULT);
 -BASE_FEATURE(kActorObservePageContentDefault, base::FEATURE_ENABLED_BY_DEFAULT);
@@ -322,21 +322,24 @@
  
  // This parameter configures a preamble which is returned in the
  // extra_information attribute of the return value of attempt_form_filling. It
-@@ -275,4 +275,4 @@ BASE_FEATURE_PARAM(
+@@ -282,7 +282,7 @@
+ 
  // If enabled, the client may trigger the server model for AutofillAI type
  // predictions.
 -DEFINE_FEATURE_WITH_MOBILE_COUNTRY_RESTRICTION(kAutofillAiServerModel);
 +BASE_FEATURE(kAutofillAiServerModel, base::FEATURE_DISABLED_BY_DEFAULT);
-
-@@ -1000,7 +1000,7 @@ BASE_FEATURE(kAutofillServerExperimentalSignatures,
+ 
+ // The maximum duration for which an AutofillAI server model response is kept in
+ // the local cache. NOTE: It is advisable to choose a value that is at least as
+@@ -1022,7 +1022,7 @@ BASE_FEATURE(kAutofillServerExperimentalSignatures,
  
  // Enables uploading of more data to the Autofill server to use for computing
  // signatures: go/autofill-signatures-more-data.
 -BASE_FEATURE(kAutofillServerUploadMoreData, base::FEATURE_ENABLED_BY_DEFAULT);
 +BASE_FEATURE(kAutofillServerUploadMoreData, base::FEATURE_DISABLED_BY_DEFAULT);
  
- // Kill switch: If enabled, the focus check in AutofillPopupControllerImpl and
- // AutofillKeyboardAccessoryControllerImpl is simplified.
+ // When enabled, autofill suggestions for one-time passwords (OTPs) from Gmail
+ // are shown.
 --- a/components/autofill/core/common/autofill_payments_features.cc
 +++ b/components/autofill/core/common/autofill_payments_features.cc
 @@ -52,14 +52,8 @@ BASE_FEATURE(kAutofillEnableAiCardRecommendation,
@@ -375,7 +378,7 @@
  // (BNPL) issuers that are externally linked.
 --- a/components/commerce/core/commerce_feature_list.cc
 +++ b/components/commerce/core/commerce_feature_list.cc
-@@ -224,6 +224,6 @@ BASE_FEATURE(kInStockNotification, base::FEATURE_DISABLED_BY_DEFAULT);
+@@ -218,7 +218,7 @@
  
  BASE_FEATURE(kShoppingPageTypes, base::FEATURE_DISABLED_BY_DEFAULT);
  
@@ -383,9 +386,10 @@
 +BASE_FEATURE(kRetailCoupons, base::FEATURE_DISABLED_BY_DEFAULT);
  
  const char kRetailCouponsWithCodeParam[] = "RetailCouponsWithCodeParam";
+ 
 --- a/components/enterprise/browser/reporting/reporting_features.cc
 +++ b/components/enterprise/browser/reporting/reporting_features.cc
-@@ -16,7 +16,7 @@ BASE_FEATURE(kSaasUsageReporting,
+@@ -16,7 +16,7 @@
  #endif
  );
  
@@ -393,7 +397,7 @@
 +BASE_FEATURE(kGeminiInChromeUsageReporting, base::FEATURE_DISABLED_BY_DEFAULT);
  
  BASE_FEATURE(kBrowserLaunchMetadataReporting,
-              base::FEATURE_DISABLED_BY_DEFAULT);
+              base::FEATURE_ENABLED_BY_DEFAULT);
 --- a/components/lens/lens_features.cc
 +++ b/components/lens/lens_features.cc
 @@ -16,17 +16,11 @@
@@ -466,7 +470,7 @@
  }  // namespace ntp_tiles
 --- a/components/omnibox/browser/aim_eligibility_service_features.cc
 +++ b/components/omnibox/browser/aim_eligibility_service_features.cc
-@@ -8,6 +8,6 @@
+@@ -8,7 +8,7 @@
  
  namespace omnibox {
  
@@ -474,6 +478,7 @@
 +BASE_FEATURE(kAimEnabled, base::FEATURE_DISABLED_BY_DEFAULT);
  
  BASE_FEATURE(kAimServerEligibilityEnabled, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
 --- a/components/omnibox/common/omnibox_features.cc
 +++ b/components/omnibox/common/omnibox_features.cc
 @@ -58,7 +58,7 @@ BASE_FEATURE(kDynamicMaxAutocomplete,
@@ -611,7 +616,7 @@
 +BASE_FEATURE(kActorLoginQualityLogs, base::FEATURE_DISABLED_BY_DEFAULT);
  #endif  // !BUILDFLAG(IS_IOS)
  
- BASE_FEATURE(kApplyClientsideModelPredictionsForPasswordTypes,
+ #if BUILDFLAG(IS_ANDROID)
 --- a/components/payments/core/features.cc
 +++ b/components/payments/core/features.cc
 @@ -37,7 +37,7 @@ BASE_FEATURE(kDelayNativePaymentAppScrimShow,
@@ -625,7 +630,7 @@
               base::FEATURE_ENABLED_BY_DEFAULT);
 --- a/components/performance_manager/features.cc
 +++ b/components/performance_manager/features.cc
-@@ -248,6 +248,6 @@ BASE_FEATURE_PARAM(int,
+@@ -271,7 +271,7 @@
                     15);
  
  BASE_FEATURE(kDisablePeriodicUnfreezeOnCriticalMemoryPressure,
@@ -633,6 +638,7 @@
 +             base::FEATURE_ENABLED_BY_DEFAULT);
  
  BASE_FEATURE(kDiscardOnCommitLimit, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
 @@ -264,16 +264,10 @@ BASE_FEATURE(kUnimportantFramesPriority, base::FEATURE_DISABLED_BY_DEFAULT);
  
  BASE_FEATURE(kThrottleUnimportantFrameRate, base::FEATURE_DISABLED_BY_DEFAULT);
@@ -665,7 +671,7 @@
               base::FEATURE_DISABLED_BY_DEFAULT);
 --- a/components/private_ai/features.cc
 +++ b/components/private_ai/features.cc
-@@ -9,10 +9,10 @@
+@@ -9,11 +9,11 @@
  
  namespace private_ai {
  
@@ -679,6 +685,7 @@
 +BASE_FEATURE(kPrivateAiUseTokenAttestation, base::FEATURE_DISABLED_BY_DEFAULT);
  
  BASE_FEATURE(kPrivateAiSendClientMetadata, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
 --- a/components/safe_browsing/core/common/features.cc
 +++ b/components/safe_browsing/core/common/features.cc
 @@ -240,7 +240,7 @@ BASE_FEATURE(kCreateNotificationsAcceptedClientSafeBrowsingReports,
@@ -793,14 +800,17 @@
  
  // If enabled, the Canvas action chip will be shown.
  BASE_FEATURE(kNtpNextCanvasChip, base::FEATURE_DISABLED_BY_DEFAULT);
-@@ -271,4 +261,4 @@
+@@ -279,7 +279,7 @@
+ BASE_FEATURE(kNtpOneGoogleBarAsyncBarParts, base::FEATURE_DISABLED_BY_DEFAULT);
  
  // If enabled, a footer will show on the NTP.
 -BASE_FEATURE(kNtpFooter, base::FEATURE_ENABLED_BY_DEFAULT);
 +BASE_FEATURE(kNtpFooter, base::FEATURE_DISABLED_BY_DEFAULT);
  
-@@ -308,13 +298,13 @@ BASE_FEATURE(kNtpFeatureOptimizationDismissModulesRemoval,
-              base::FEATURE_ENABLED_BY_DEFAULT);
+ // If enabled, tab groups module will be shown.
+ BASE_FEATURE(kNtpTabGroupsModule,
+@@ -313,13 +313,13 @@
+ #endif
  
  // If enabled, will support animated Doodles on the NTP.
 -BASE_FEATURE(kNtpAnimatedDoodles, base::FEATURE_ENABLED_BY_DEFAULT);
@@ -847,8 +857,8 @@
  bool IsChromeRefreshTokenBindingEnabled(const PrefService* profile_prefs) {
    // Enterprise policy takes precedence over the feature value.
    if (profile_prefs->HasPrefPath(prefs::kBoundSessionCredentialsEnabled)) {
-@@ -834,7 +834,7 @@
-     2);
+@@ -863,7 +863,7 @@
+ #endif  // BUILDFLAG(IS_ANDROID)
  
  #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
 -BASE_FEATURE(kSignInPromoMaterialNextUI, base::FEATURE_ENABLED_BY_DEFAULT);
@@ -925,16 +935,15 @@
  #endif  // BUILDFLAG(IS_WIN)
  
  #if BUILDFLAG(IS_ANDROID)
-@@ -597,7 +597,7 @@ BASE_FEATURE(kPriorityOverridePendingViews, base::FEATURE_ENABLED_BY_DEFAULT);
- 
+@@ -615,7 +615,7 @@
  // Enables exposure of the core milestone 1 (M1) APIs in the renderer without an
  // origin trial token: Attribution Reporting, FLEDGE, Topics.
--BASE_FEATURE(kPrivacySandboxAdsAPIsM1Override,
+ BASE_FEATURE(kPrivacySandboxAdsAPIsM1Override,
 -             base::FEATURE_ENABLED_BY_DEFAULT);
-+BASE_FEATURE(kPrivacySandboxAdsAPIsM1Override,
 +             base::FEATURE_DISABLED_BY_DEFAULT);
  
  #if BUILDFLAG(IS_ANDROID)
+ // When disabled("legacy behavior") it resets ongoing gestures when window loses
 --- a/content/public/common/content_features.cc
 +++ b/content/public/common/content_features.cc
 @@ -622,5 +622,5 @@ BASE_FEATURE(kInstalledApp, base::FEATURE_ENABLED_BY_DEFAULT);
@@ -1022,7 +1031,7 @@
  // When enabled, will unconditionally poll the C++ cache to check Java node
 --- a/media/base/media_switches.cc
 +++ b/media/base/media_switches.cc
-@@ -551,6 +551,6 @@ BASE_FEATURE(kDocumentPictureInPictureReparenting,
+@@ -550,7 +550,7 @@
  BASE_FEATURE(kEnableRtcpReporting, base::FEATURE_ENABLED_BY_DEFAULT);
  
  // Enables user control over muting tab audio from the tab strip.
@@ -1030,6 +1039,7 @@
 +BASE_FEATURE(kEnableTabMuting, base::FEATURE_ENABLED_BY_DEFAULT);
  
  // Enables tracking the occlusion of HW secure encrypted video elements.
+ // The HW secure check is OS agnostic, but this switch is currently only
 @@ -904,7 +904,7 @@ BASE_FEATURE(kPreloadMediaEngagementData,
  BASE_FEATURE(kRecordMediaEngagementScores, base::FEATURE_ENABLED_BY_DEFAULT);
  
@@ -1092,9 +1102,9 @@
  #endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
 --- a/services/network/public/cpp/features.cc
 +++ b/services/network/public/cpp/features.cc
-@@ -36,9 +36,9 @@ bool ShouldBlockAcceptClientHintsFor(const url::Origin& origin) {
-   return block_accept_ch && blocked_site->IsSameOriginWith(origin);
- }
+@@ -16,9 +16,9 @@
+ 
+ namespace network::features {
  
 -BASE_FEATURE(kNetworkErrorLogging, base::FEATURE_ENABLED_BY_DEFAULT);
 +BASE_FEATURE(kNetworkErrorLogging, base::FEATURE_DISABLED_BY_DEFAULT);
@@ -1113,16 +1123,15 @@
  
  // When this feature is enabled, preloaded dictionaries will not be used for
  // network requests if the binary has not yet been preloaded.
-@@ -455,7 +455,7 @@ BASE_FEATURE(kCSPScriptSrcHashesInV1,
-              "ScriptSrcHashesV1",
+@@ -437,7 +437,7 @@
               base::FEATURE_ENABLED_BY_DEFAULT);
  
--BASE_FEATURE(kCacheSharingForPervasiveResources,
+ BASE_FEATURE(kCacheSharingForPervasiveResources,
 -             base::FEATURE_ENABLED_BY_DEFAULT);
-+BASE_FEATURE(kCacheSharingForPervasiveResources,
 +             base::FEATURE_DISABLED_BY_DEFAULT);
  
  BASE_FEATURE(kPervasiveSharedDictionaries, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
 @@ -541,7 +541,7 @@ BASE_FEATURE_PARAM(int,
                     /*default_value=*/base::MiB(350).InBytes());
  
@@ -1134,7 +1143,7 @@
  
 --- a/third_party/blink/common/features.cc
 +++ b/third_party/blink/common/features.cc
-@@ -125,6 +125,6 @@ BASE_FEATURE(kAllowDatapipeDrainedAsBytesConsumerInBFCache,
+@@ -128,7 +128,7 @@
  
  // Enables URN URLs like those produced by Protected Audience auctions to be
  // displayed by iframes (instead of requiring fenced frames).
@@ -1142,6 +1151,7 @@
 +BASE_FEATURE(kAllowURNsInIframes, base::FEATURE_DISABLED_BY_DEFAULT);
  
  // A console warning is shown when the opaque url returned from Protected
+ // Audience/selectUrl is used to navigate an iframe. Since fenced frames are not
 @@ -195,7 +195,7 @@ BASE_FEATURE_PARAM(std::string,
  
  // Enable background resource fetch in Blink. See https://crbug.com/1379780 for
@@ -1151,7 +1161,7 @@
  BASE_FEATURE_PARAM(bool,
                     kBackgroundFontResponseProcessor,
                     &kBackgroundResourceFetch,
-@@ -638,6 +638,6 @@ BASE_FEATURE_PARAM(bool,
+@@ -673,7 +673,7 @@
  // this feature does not automatically expose this element to the web, it only
  // allows the element to be enabled by the runtime enabled feature, for origin
  // trials.
@@ -1159,6 +1169,7 @@
 +BASE_FEATURE(kFencedFrames, base::FEATURE_DISABLED_BY_DEFAULT);
  
  // Enable sending event-level reports through reportEvent() in cross-origin
+ // subframes. This requires opt-in both from the cross-origin subframe that is
 @@ -1655,7 +1655,7 @@ BASE_FEATURE(kMoveResizeWindowToIPCs, base::FEATURE_ENABLED_BY_DEFAULT);
  // anchor element will be extracted and recorded.
  // Note that the desktop roll out is being done separately from android. See
@@ -1193,7 +1204,7 @@
  
  // kSpeculativeServiceWorkerWarmUp warms up service workers up to this max
  // count.
-@@ -2295,6 +2295,6 @@ BASE_FEATURE(kThrottleFullscreenVideoActiveTab,
+@@ -2271,7 +2271,7 @@
  
  // Changes behavior of User-Agent Client Hints to send blank headers when the
  // User-Agent string is overridden, instead of disabling the headers altogether.
@@ -1201,22 +1212,29 @@
 +BASE_FEATURE(kUACHOverrideBlank, base::FEATURE_ENABLED_BY_DEFAULT);
  
  // If enabled, the body of `EmulateLoadStartedForInspector` is executed only
+ // once per Resource per ResourceFetcher, and thus duplicated network load
 --- a/chrome/browser/ui/tabs/features.cc
 +++ b/chrome/browser/ui/tabs/features.cc
-@@ -95,4 +95,4 @@
+@@ -40,7 +40,7 @@
+ 
  // Enables Back-to-Opener behavior, allowing users to press the back button in a
  // newly opened tab to close that tab and return focus to the opener tab.
 -BASE_FEATURE(kBackToOpener, base::FEATURE_DISABLED_BY_DEFAULT);
 +BASE_FEATURE(kBackToOpener, base::FEATURE_ENABLED_BY_DEFAULT);
  
+ bool IsSplitViewHorizontalIndirectAccessEnabled() {
+   return base::FeatureList::IsEnabled(kSplitViewHorizontal) &&
 --- a/ui/base/ui_base_features.cc
 +++ b/ui/base/ui_base_features.cc
-@@ -504,4 +504,4 @@
+@@ -522,7 +522,7 @@
  BASE_FEATURE_PARAM(bool, kGlassExpandOnHoverEnabled, &kGlassFrame, true);
+ BASE_FEATURE_PARAM(bool, kGlassFrameEnabledByDefault, &kGlassFrame, true);
  
 -BASE_FEATURE(kRoundedIcons, base::FEATURE_DISABLED_BY_DEFAULT);
 +BASE_FEATURE(kRoundedIcons, base::FEATURE_ENABLED_BY_DEFAULT);
  BASE_FEATURE(kWebUIRoundedIcons, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Updates the default dark neutrals for the theme palette.
 --- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
 +++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
 @@ -2393,13 +2393,12 @@

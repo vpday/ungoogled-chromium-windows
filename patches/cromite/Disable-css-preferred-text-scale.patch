@@ -36,7 +36,7 @@
          LocalFrame* local_frame = DynamicTo<LocalFrame>(frame);
 --- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
 +++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
-@@ -1846,6 +1846,11 @@
+@@ -1959,6 +1959,11 @@
        name: "CSSPositionStickyStaticScrollPosition",
        status: "test",
      },
@@ -46,5 +46,5 @@
 +      public: true,
 +    },
      {
-       // The @private rule declares lexically-scoped custom properties that are
-       // visible only within the enclosing style rule and the elements it
+       // Support for `position-visibility: anchor-valid`.
+       // See crbug.com/333421963.

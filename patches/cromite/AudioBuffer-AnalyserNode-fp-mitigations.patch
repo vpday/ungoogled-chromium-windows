@@ -87,14 +87,14 @@
    }
 --- a/third_party/blink/renderer/modules/webaudio/offline_audio_context.cc
 +++ b/third_party/blink/renderer/modules/webaudio/offline_audio_context.cc
-@@ -436,6 +436,7 @@ void OfflineAudioContext::FireCompletionEvent() {
-     if (!rendered_buffer) {
-       return;
-     }
-+    rendered_buffer->ShuffleAudioData();
+@@ -583,6 +583,7 @@ void OfflineAudioContext::OnChunkRendered() {
+   Member<AudioBuffer> rendered_buffer = pending_render_targets_.TakeFirst();
  
-     // Call the offline rendering completion event listener and resolve the
-     // promise too.
+   CHECK(rendered_buffer);
++  rendered_buffer->ShuffleAudioData();
+   resolver->Resolve(rendered_buffer.Get());
+ 
+   if (IsRenderComplete()) {
 --- a/third_party/blink/renderer/modules/webaudio/realtime_analyser.cc
 +++ b/third_party/blink/renderer/modules/webaudio/realtime_analyser.cc
 @@ -34,5 +34,6 @@

@@ -44,15 +44,15 @@
    } else {
 --- a/chrome/browser/ui/tabs/tab_strip_model.cc
 +++ b/chrome/browser/ui/tabs/tab_strip_model.cc
-@@ -2761,6 +2761,7 @@ bool TabStripModel::IsContextMenuCommand
-     }
+@@ -2692,6 +2692,7 @@ bool TabStripModel::IsContextMenuCommandEnabled(
+       return delegate_->CanReload();
  
      case CommandCloseOtherTabs:
 +    case CommandCloseTabsToLeft:
      case CommandCloseTabsToRight: {
-       return !GetIndicesClosedByCommand(context_index, command_id).empty();
+       return HasIndicesClosedByCommand(context_index, command_id);
      }
-@@ -2986,6 +2987,7 @@ void TabStripModel::ExecuteContextMenuCo
+@@ -2895,6 +2896,7 @@ void TabStripModel::ExecuteContextMenuCommand(int context_index,
        break;
      }
  
@@ -60,9 +60,9 @@
      case CommandCloseTabsToRight: {
        base::UmaHistogramCounts1000(
            "Tab.ContextMenu.CloseTabsToRight.SelectedTabsCount",
-@@ -3911,15 +3913,22 @@ std::vector<int> TabStripModel::GetIndic
+@@ -3784,15 +3786,22 @@ bool TabStripModel::HasIndicesClosedByCommand(int index,
    if (!ContainsIndex(index)) {
-     return indices;
+     return false;
    }
 -  DCHECK(id == CommandCloseTabsToRight || id == CommandCloseOtherTabs);
 +  DCHECK(id == CommandCloseTabsToRight || id == CommandCloseTabsToLeft ||
@@ -84,8 +84,8 @@
    }
  
    // If the tab that the context menu command is invoked on is not selected and
-@@ -3935,6 +3944,10 @@ std::vector<int> TabStripModel::GetIndic
-   // NOTE: callers expect the vector to be sorted in descending order.
+@@ -3807,6 +3816,10 @@ bool TabStripModel::HasIndicesClosedByCommand(int index,
+ 
    std::optional<tab_groups::TabGroupId> focused_group = GetFocusedGroup();
    for (int i = count() - 1; i > last_unclosed_tab; --i) {
 +    if (id == CommandCloseTabsToLeft && i >= first_unclosed_tab) {
@@ -95,7 +95,7 @@
      // Skip tabs that are not part of the focused group.
      if (focused_group.has_value() && GetTabGroupForTab(i) != focused_group) {
        continue;
-@@ -3954,7 +3967,8 @@ std::vector<tabs::TabInterface*> TabStri
+@@ -3826,7 +3839,8 @@ std::vector<tabs::TabInterface*> TabStripModel::GetTabsClosedByCommand(
      return {};
    }
  
@@ -105,7 +105,7 @@
  
    tabs::TabInterface* invoked_tab = GetTabAtIndex(index);
  
-@@ -3977,6 +3991,10 @@ std::vector<tabs::TabInterface*> TabStri
+@@ -3849,6 +3861,10 @@ std::vector<tabs::TabInterface*> TabStripModel::GetTabsClosedByCommand(
      }
  
      if (tab == invoked_tab || tab->IsPinned()) {
