@@ -67,7 +67,7 @@
 - Per-Process Timezone Sandboxing: Registers `--timezone` in `content_switches.h/cc` and `render_process_host_impl.cc`'s renderer switch propagation whitelist. In `TimeZoneController::Init()`, sets the virtual host timezone and returns early to prevent asynchronous host OS clock updates from overwriting the sandboxed timezone, while preserving CDP `Emulation.setTimezoneOverride` capabilities.
 
 ### 1.17 `windows-permissions-consistency.patch` (Permissions and Notifications State Consistency)
-- Undecided State Alignment: Synchronizes `Notification.permission` and `navigator.permissions.query({name: 'notifications'})` in undecided states (`ASK`) via `--notifications-permission`. Enforces strict `DENIED` status in cross-origin iframes to eliminate Headless discrepancy signals.
+- Undecided State Alignment: Synchronizes `Notification.permission` and `navigator.permissions.query({name: 'notifications'})` in undecided states (`ASK`) when `--notifications-permission` is explicitly specified.
 
 ### 1.18 `windows-font-fallback-filter.patch` (System Font Fallback Blacklist Filtering)
 - Font Enumeration Defense: Blocks blacklisted font queries in `FontCache::GetFontPlatformData()` via `--font-blacklist` and `--fonts-hidden`, while safeguarding standard CSS generic font families (`serif`, `sans-serif`, `monospace`, `system-ui`, etc.) to prevent layout collapse.
@@ -142,14 +142,11 @@
 ## 4. Curated Cromite Patches (`patches/cromite/`)
 
 ### 4.1 Anti-Fingerprinting & Hardware Masking
-- `AudioBuffer-AnalyserNode-fp-mitigations.patch`: Adds deterministic FNV-1a hash perturbation (controlling delta < 2.55e-5) to WebAudio buffers and `AnalyserNode` outputs based on sample index, with strict 0Hz silence protection (`data == 0.0f`) to prevent audio hardware fingerprinting without non-deterministic hash drift across repeated offline renders.
-- `High-Resolution-Timing-Mitigation.patch`: Clamps performance timer resolution with jitter in `time_clamper.cc`, protecting against timing-based side-channel attacks and execution profiling.
 - `Fonts-fingerprinting-mitigation.patch`: Restricts local system font enumeration in Blink to limit font-based tracking.
 - `Media-fingerprinting-mitigations.patch`: Restricts video decoder capability enumeration in WebCodecs (`isConfigSupported`) to prevent hardware codec fingerprinting.
 - `Reduce-input-capability-fingerprinting-through-normalization.patch`: Normalizes reported mouse, pen, and touch capabilities in `pointer_device_win.cc`.
 - `Disable-support-for-pointer-device-id.patch`: Disables stylus pen device ID reporting in `pen_id_handler.cc`.
 - `Keyboard-protection-flag.patch`: Adds a flag to block `navigator.keyboard.getLayoutMap()` from enumerating physical keyboard layouts.
-- `Remove-support-for-device-memory-and-cpu-recovery.patch`: Removes `navigator.deviceMemory` reporting and limits hardware concurrency probing.
 - `Set-caret-blink-interval-to-default.patch`: Uses a fixed caret blink interval in `web_view_impl.cc` to prevent cursor timing fingerprinting.
 - `Disable-Posture-API.patch`, `Disable-Device-Attributes-API.patch`, `Disable-Viewport-Segments.patch`: Disables foldable screen posture, device attribute, and viewport segment APIs.
 - `Disable-idle-detection.patch`: Disables the Blink Idle Detection API.

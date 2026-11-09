@@ -38,18 +38,19 @@
  #include "base/metrics/histogram_functions.h"
  #include "third_party/blink/public/common/permissions/permission_utils.h"
  #include "third_party/blink/public/mojom/page/page.mojom-blink.h"
-@@ -276,7 +277,26 @@ void Permissions::TaskComplete(
+@@ -276,7 +277,27 @@ void Permissions::TaskComplete(
    if (!resolver->GetExecutionContext() ||
        resolver->GetExecutionContext()->IsContextDestroyed())
      return;
  
-+  if (result->status == mojom::blink::PermissionStatus::ASK) {
-+    if (descriptor->name == mojom::blink::PermissionName::NOTIFICATIONS) {
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch("notifications-permission")) {
++    if (result->status == mojom::blink::PermissionStatus::ASK &&
++        descriptor->name == mojom::blink::PermissionName::NOTIFICATIONS) {
 +      auto* window = DynamicTo<LocalDOMWindow>(resolver->GetExecutionContext());
 +      LocalFrame* frame = window ? window->GetFrame() : nullptr;
 +      if (!frame || frame->IsCrossOriginToOutermostMainFrame()) {
 +        result->status = mojom::blink::PermissionStatus::DENIED;
-+      } else if (base::CommandLine::ForCurrentProcess()->HasSwitch("notifications-permission")) {
++      } else {
 +        const std::string want = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII("notifications-permission");
 +        if (want == "granted") {
 +          result->status = mojom::blink::PermissionStatus::GRANTED;
