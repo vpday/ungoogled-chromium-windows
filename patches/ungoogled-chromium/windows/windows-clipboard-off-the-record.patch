@@ -1,0 +1,34 @@
+--- a/chrome/browser/renderer_context_menu/render_view_context_menu.cc
++++ b/chrome/browser/renderer_context_menu/render_view_context_menu.cc
+@@ -1236,6 +1236,9 @@ void RenderViewContextMenu::WriteURLToClipboard(const GURL& url, int id) {
+   ui::ScopedClipboardWriter scw(
+       ui::ClipboardBuffer::kCopyPaste,
+       CreateDataEndpoint(/*notify_if_restricted=*/true));
++  if (GetProfile()->IsOffTheRecord()) {
++    scw.MarkAsOffTheRecord();
++  }
+   scw.SetDataSourceURL(main_frame_url_, current_url_);
+   scw.WriteText(FormatURLForClipboard(url));
+ 
+@@ -5367,6 +5370,9 @@ void RenderViewContextMenu::ExecCopyLinkText() {
+   ui::ScopedClipboardWriter scw(
+       ui::ClipboardBuffer::kCopyPaste,
+       CreateDataEndpoint(/*notify_if_restricted=*/true));
++  if (GetProfile()->IsOffTheRecord()) {
++    scw.MarkAsOffTheRecord();
++  }
+   scw.SetDataSourceURL(main_frame_url_, current_url_);
+   scw.WriteText(params_.link_text);
+ }
+--- a/chrome/browser/ui/views/find_bar_view.cc
++++ b/chrome/browser/ui/views/find_bar_view.cc
+@@ -588,6 +588,9 @@ std::unique_ptr<ui::ScopedClipboardWriter>
+   }
+   auto clipboard_writer = std::make_unique<ui::ScopedClipboardWriter>(
+       ui::ClipboardBuffer::kCopyPaste, std::move(dte));
++  if (web_contents->GetBrowserContext()->IsOffTheRecord()) {
++    clipboard_writer->MarkAsOffTheRecord();
++  }
+   content::AddSourceDataToClipboardWriter(*clipboard_writer,
+                                           *web_contents->GetPrimaryMainFrame());
+ 

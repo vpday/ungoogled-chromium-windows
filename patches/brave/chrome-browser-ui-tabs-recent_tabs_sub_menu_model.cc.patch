@@ -1,0 +1,28 @@
+--- a/chrome/browser/ui/tabs/recent_tabs_sub_menu_model.cc
++++ b/chrome/browser/ui/tabs/recent_tabs_sub_menu_model.cc
+@@ -525,23 +525,6 @@ void RecentTabsSubMenuModel::BuildTabsFromOtherDevices() {
+       sessions;
+   if (!open_tabs || !open_tabs->GetAllForeignSessions(&sessions)) {
+-    if (open_tabs) {
+-      AddItemWithStringId(IDC_RECENT_TABS_NO_DEVICE_TABS,
+-                          IDS_RECENT_TABS_NO_DEVICE_TABS);
+-    } else if (syncer::IsReplaceSyncPromosWithSignInPromosEnabled()) {
+-      AddItemWithStringIdAndIcon(
+-          IDC_RECENT_TABS_SEE_DEVICE_TABS, IDS_RECENT_TABS_SEE_DEVICE_TABS,
+-          ui::ImageModel::FromVectorIcon(
+-              features::IsRoundedIconsEnabled() ? vector_icons::kSyncIcon
+-                                                : kSyncRefreshOldIcon,
+-              ui::kColorMenuIcon, ui::SimpleMenuModel::kDefaultIconSize));
+-    } else {
+-      AddItemWithStringIdAndIcon(
+-          IDC_RECENT_TABS_LOGIN_FOR_DEVICE_TABS,
+-          IDS_RECENT_TABS_LOGIN_FOR_DEVICE_TABS,
+-          ui::ImageModel::FromVectorIcon(
+-              features::IsRoundedIconsEnabled() ? vector_icons::kSyncIcon
+-                                                : kSyncRefreshOldIcon,
+-              ui::kColorMenuIcon, ui::SimpleMenuModel::kDefaultIconSize));
+-    }
++    AddItemWithStringId(IDC_RECENT_TABS_NO_DEVICE_TABS,
++                        IDS_RECENT_TABS_NO_DEVICE_TABS);
+     return;
+   }

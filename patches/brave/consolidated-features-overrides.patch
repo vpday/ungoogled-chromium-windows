@@ -69,6 +69,18 @@ index 0a45817..358f620 100644
  
  // Whether Console Insights Teasers are enabled.
  BASE_FEATURE(kDevToolsConsoleInsightsTeasers,
+diff --git a/chrome/browser/preloading/preloading_features.cc b/chrome/browser/preloading/preloading_features.cc
+--- a/chrome/browser/preloading/preloading_features.cc
++++ b/chrome/browser/preloading/preloading_features.cc
+@@ -6,7 +6,7 @@
+ 
+ namespace features {
+ 
+-BASE_FEATURE(kPrewarm, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kPrewarm, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kPrewarmZeroSuggestTrigger, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kPrewarmDisableOnStartup, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE_PARAM(std::string, kPrewarmUrlOverride, &kPrewarm, "");
 diff --git a/chrome/browser/ui/omnibox/omnibox_next_features.cc b/chrome/browser/ui/omnibox/omnibox_next_features.cc
 index 79cfa8e..ee73c1c 100644
 --- a/chrome/browser/ui/omnibox/omnibox_next_features.cc
@@ -268,6 +280,38 @@ index ba028c9..fc39294 100644
  
  BASE_FEATURE(kApiEnterpriseReportingPrivateOnDataMaskingRulesTriggered,
               base::FEATURE_ENABLED_BY_DEFAULT);
+diff --git a/media/base/media_switches.cc b/media/base/media_switches.cc
+index af08e2530c8..2113acd7eb1 100644
+--- a/media/base/media_switches.cc
++++ b/media/base/media_switches.cc
+@@ -390,7 +390,7 @@ BASE_FEATURE(kAutoPictureInPictureSurveys, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Allows media to autoplay without a user gesture if the site has been
+ // granted microphone or camera permissions.
+-BASE_FEATURE(kAutoplayBypassForMicCamera, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kAutoplayBypassForMicCamera, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Whether we should show a setting to disable autoplay policy.
+ BASE_FEATURE(kAutoplayDisableSettings, base::FEATURE_DISABLED_BY_DEFAULT);
+@@ -621,7 +621,7 @@ BASE_FEATURE(kForceSoftwareForRtcLowResolutions,
+ // TODO(crbug.com/420406085): Remove after January 2028.
+ // Keep this flag around at least until that date.
+ BASE_FEATURE(kGetDisplayMediaConfersActivation,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Auto-dismiss global media controls.
+ BASE_FEATURE(kGlobalMediaControlsAutoDismiss, base::FEATURE_ENABLED_BY_DEFAULT);
+@@ -727,8 +727,8 @@ BASE_FEATURE(kInternalMediaSession,
+ );
+ 
+ // Enables the Live Caption feature on supported devices.
+-BASE_FEATURE(kLiveCaption, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kLiveCaption, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Enable automatic downloading of speech recognition language packs.
+ BASE_FEATURE(kLiveCaptionAutomaticLanguageDownload,
+              base::FEATURE_DISABLED_BY_DEFAULT);
 diff --git a/net/base/features.cc b/net/base/features.cc
 index da499bb..78ad6aa 100644
 --- a/net/base/features.cc

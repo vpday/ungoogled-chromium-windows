@@ -81,6 +81,9 @@ brave/fsa-restrict-to-opfs.patch
 brave/disable-web-platform-ai.patch
 brave/defer-permission-prompts-to-load.patch
 brave/download-context-menu-actions.patch
+brave/chrome-browser-media-webrtc-webrtc_event_log_uploader.cc.patch
+brave/chrome-browser-media-webrtc-webrtc_log_uploader.cc.patch
+brave/chrome-browser-ui-tabs-recent_tabs_sub_menu_model.cc.patch
 cromite/WIN-disable-annotate-downloads.patch
 cromite/WIN-Disable-first-run.patch
 cromite/WIN-Fix-log-to-file.patch
@@ -125,3 +128,6 @@ ungoogled-chromium/windows/windows-font-fallback-filter.patch
 ungoogled-chromium/windows/windows-media-devices-limit.patch
 ungoogled-chromium/windows/windows-speech-voices-narrow.patch
 ungoogled-chromium/windows/windows-geolocation-override.patch
+ungoogled-chromium/windows/windows-clipboard-off-the-record.patch
+ungoogled-chromium/windows/windows-block-tsf-recall-learning.patch
+ungoogled-chromium/windows/windows-keep-window-open-on-last-tab.patch

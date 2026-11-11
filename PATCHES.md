@@ -81,12 +81,22 @@
 ### 1.21 `windows-geolocation-override.patch` (Smooth Continuous Virtual Geolocation Provider)
 - Continuous Natural Geolocation: Implements `VirtualLocationProvider` via `--geolocation=lat,lng` in `chrome_content_browser_client.cc`, supplying smooth continuous sensor micro-drifts (~10cm) with advancing timestamps to resolve CDP static timestamp freeze tells, while forwarding all anti-fingerprint CLI switches to renderer child processes.
 
+### 1.22 `windows-clipboard-off-the-record.patch` (Direct-Write Clipboard Incognito Isolation)
+- Incognito OS Clipboard History Leak Prevention: Invokes `MarkAsOffTheRecord()` in `RenderViewContextMenu` ("Copy link address" and "Copy link text") and `FindBarView`, preventing URLs and text copied in incognito mode from leaking into Windows 10/11 clipboard history (`Win + V`) or syncing to Microsoft Cloud Clipboard.
+
+### 1.23 `windows-block-tsf-recall-learning.patch` (Windows 11 Recall & TSF Cloud IME Learning Blocking)
+- OS-Level Screen & Input Capture Mitigation: Returns `false` unconditionally in `WebContentsImpl::ShouldDoLearning()` and `OmniboxViewViews::Init()`, signaling `IS_PRIVATE` to Windows Text Services Framework (TSF) to prevent Windows 11 Copilot+ Recall OCR capture and cloud IME dictionary learning.
+
+### 1.24 `windows-keep-window-open-on-last-tab.patch` (Keep Window Open on Closing Last Tab)
+- Accidental Window Close Guard: Intercepts `Browser::TabStripEmpty()` for normal windows to asynchronously open a new tab instead of terminating the window. Gracefully exempts cross-window tab drags (`kInsertedIntoOtherTabStrip`), popups, DevTools, and explicit window close requests.
+
 ## 2. Curated Brave Patches (`patches/brave/`)
 
 ### 2.1 Resource De-bloating & AI Pruning
 - `disable-web-platform-ai.patch`: Disables Web Platform AI APIs (`AIPromptAPI`, `AIPromptAPIMultimodalInput`, `AIProofreaderAPI`, `AIRewriterAPI`, `AISummarizationAPI`, and `AIWriterAPI` in `runtime_enabled_features.json5`), preventing web pages from downloading or running on-device AI models.
-- `consolidated-features-overrides.patch`: Disables bookmark and New Tab Page Prerender2 triggers, DevTools Console Insights, DevTools AI code features, WebUI Omnibox Popups, and tab hover card thumbnail previews.
+- `consolidated-features-overrides.patch`: Disables bookmark and New Tab Page Prerender2 triggers, DevTools Console Insights, DevTools AI code features, WebUI Omnibox Popups, tab hover card thumbnail previews, speculative ZeroSuggest prewarming (`kPrewarm`), mic/camera autoplay escalation (`kAutoplayBypassForMicCamera`), screen-share transient activation (`kGetDisplayMediaConfersActivation`), and Live Caption.
 - `kill-profile-reset-report-uploader.patch`: Empties `ResetReportUploader::DispatchReport` in `chrome/browser/profile_resetter/reset_report_uploader.cc` to stop telemetry uploads when resetting browser profiles.
+- `chrome-browser-media-webrtc-webrtc_event_log_uploader.cc.patch` & `chrome-browser-media-webrtc-webrtc_log_uploader.cc.patch`: Blocks WebRTC RTP event log and text diagnostic uploads to Google endpoints and cleans up local diagnostic dump files.
 
 ### 2.2 System Security & Process Hardening
 - `crashpad-prune-win-environment-block.patch`: Removes the PEB environment variable block from Crashpad minidumps on Windows so tokens and environment variables do not leak into crash reports.
@@ -100,6 +110,7 @@
 - `suppress-undo-tab-close-toast.patch`: Suppresses the "Undo closed tab" snackbar notification in `browser_commands.cc`.
 - `hide-cookie-controls-location-bar-icon.patch`: Hides the third-party cookie blocking icon from the omnibox.
 - `disable-global-signin-promos.patch`: Disables the first-run account selection screen and desktop sign-in promotional banners.
+- `chrome-browser-ui-tabs-recent_tabs_sub_menu_model.cc.patch`: Removes Google sign-in promotional banners from the "Tabs from other devices" submenu when signed out.
 
 ## 3. Curated Helium Patches (`patches/helium/`)
 

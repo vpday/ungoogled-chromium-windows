@@ -1,0 +1,81 @@
+--- a/chrome/browser/ui/browser.cc
++++ b/chrome/browser/ui/browser.cc
+@@ -73,6 +73,7 @@
+ #include "chrome/browser/ui/browser_manager_service.h"
+ #include "chrome/browser/ui/browser_manager_service_factory.h"
+ #include "chrome/browser/ui/browser_tab_strip_model_delegate.h"
++#include "chrome/browser/ui/browser_tabstrip.h"
+ #include "chrome/browser/ui/browser_ui_controller/browser_ui_controller.h"
+ #include "chrome/browser/ui/browser_web_contents_delegate/browser_web_contents_delegate.h"
+ #include "chrome/browser/ui/browser_window.h"
+@@ -208,6 +209,21 @@ using custom_handlers::ProtocolHandler;
+ using input::NativeWebKeyboardEvent;
+ using ui::WebDialogDelegate;
+ using web_modal::WebContentsModalDialogManager;
++
++namespace {
++
++const Browser* g_tab_moved_to_other_strip_browser = nullptr;
++
++bool WasTabMovedToOtherWindow(const TabStripModelChange& change) {
++  if (change.type() != TabStripModelChange::kRemoved) {
++    return false;
++  }
++  const auto& removed = change.GetRemove()->contents;
++  return !removed.empty() && removed.front().remove_reason ==
++                                 TabRemovedReason::kInsertedIntoOtherTabStrip;
++}
++
++}  // namespace
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ // Browser, CreateParams:
+@@ -351,6 +367,9 @@ Browser::~Browser() {
+ }
+ 
+ Browser::~Browser() {
++  if (g_tab_moved_to_other_strip_browser == this) {
++    g_tab_moved_to_other_strip_browser = nullptr;
++  }
+   if (!IsDeleteScheduled()) {
+     // Guarantee the Browser has performed the necessary cleanup in the
+     // `OnWindowClosing()` lifecycle hook. This may not be invoked during
+@@ -580,6 +599,9 @@ void Browser::OnTabStripModelChanged(TabStripModel* tab_strip_model,
+       break;
+     }
+     case TabStripModelChange::kRemoved: {
++      if (tab_strip_model->empty() && WasTabMovedToOtherWindow(change)) {
++        g_tab_moved_to_other_strip_browser = this;
++      }
+       for (const auto& contents : change.GetRemove()->contents) {
+         bool had_active_modal_dialog = false;
+         if (TabRemoveReasonUtils::WillDeleteTab(contents.remove_reason)) {
+@@ -621,6 +643,28 @@ void Browser::TabStripEmpty() {
+   if (TabDragController::OnBrowserTabStripEmptyDuringDrag(this)) {
+     return;
+   }
++
++  const bool moved_to_other_strip = (g_tab_moved_to_other_strip_browser == this);
++  g_tab_moved_to_other_strip_browser = nullptr;
++
++  if (GetType() == BrowserWindowInterface::Type::TYPE_NORMAL &&
++      !moved_to_other_strip &&
++      !tab_strip_model_->closing_all() &&
++      !TabDragController::IsActive()) {
++    UnloadController::From(this)->CancelWindowClose();
++    base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
++        FROM_HERE,
++        base::BindOnce([](base::WeakPtr<Browser> browser) {
++          if (!browser || browser->IsDeleteScheduled() ||
++              !browser->GetTabStripModel()->empty()) {
++            return;
++          }
++          chrome::AddTabAt(browser.get(),
++                           chrome::GetNewTabURL(browser.get()),
++                           /*index=*/-1, /*foreground=*/true);
++        }, weak_factory_.GetWeakPtr()));
++    return;
++  }
+ 
+   // Note: even though the tab strip is empty, the call to Close() may not
+   // result in closing this Browser. This can happen in the case of closing

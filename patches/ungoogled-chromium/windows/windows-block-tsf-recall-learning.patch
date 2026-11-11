@@ -1,0 +1,22 @@
+--- a/chrome/browser/ui/views/omnibox/omnibox_view_views.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_view_views.cc
+@@ -296,7 +296,7 @@ void OmniboxViewViews::Init() {
+ 
+   if (location_bar_view_) {
+     // Set whether the text should be used to improve typing suggestions.
+-    SetShouldDoLearning(!location_bar_view_->GetProfile()->IsOffTheRecord());
++    SetShouldDoLearning(false);
+   }
+ 
+   // Override the default FocusableBorder from Textfield, since the
+--- a/content/browser/web_contents/web_contents_impl.cc
++++ b/content/browser/web_contents/web_contents_impl.cc
+@@ -3143,7 +3143,7 @@ int WebContentsImpl::GetVirtualKeyboardHeight() {
+ }
+ 
+ bool WebContentsImpl::ShouldDoLearning() {
+-  return !GetBrowserContext()->IsOffTheRecord();
++  return false;
+ }
+ 
+ void WebContentsImpl::OnAudioStateChanged() {

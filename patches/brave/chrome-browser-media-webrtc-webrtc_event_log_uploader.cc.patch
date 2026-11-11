@@ -1,0 +1,19 @@
+--- a/chrome/browser/media/webrtc/webrtc_event_log_uploader.cc
++++ b/chrome/browser/media/webrtc/webrtc_event_log_uploader.cc
+@@ -233,6 +233,7 @@ void WebRtcEventLogUploaderImpl::Cancel() {
+ }
+ 
+ bool WebRtcEventLogUploaderImpl::PrepareUploadData(std::string* upload_data) {
++  return false;
+   CHECK(task_runner_->RunsTasksInCurrentSequence(), base::NotFatalUntil::M161);
+ 
+   std::string log_file_contents;
+@@ -281,6 +282,8 @@ bool WebRtcEventLogUploaderImpl::PrepareUploadData(std::string* upload_data) {
+ }
+ 
+ void WebRtcEventLogUploaderImpl::StartUpload(const std::string& upload_data) {
++  ReportResult(/*upload_successful=*/false);
++  return;
+   CHECK(task_runner_->RunsTasksInCurrentSequence(), base::NotFatalUntil::M161);
+ 
+   auto resource_request = std::make_unique<network::ResourceRequest>();
