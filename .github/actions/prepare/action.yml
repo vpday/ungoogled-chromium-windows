@@ -152,7 +152,7 @@ runs:
       run: |
         if ! ldconfig -p 2>/dev/null | grep 'libicui18n\.so\.70' >/dev/null 2>&1; then
           echo "Installing libicu70 for LLVM toolchain compatibility..."
-          curl -fsSL --retry 3 --retry-connrefused http://archive.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb -o /tmp/libicu70.deb
+          curl -fsSL --retry 3 --retry-connrefused --retry-all-errors http://archive.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb -o /tmp/libicu70.deb
           sudo dpkg -i /tmp/libicu70.deb
           rm -f /tmp/libicu70.deb
         fi

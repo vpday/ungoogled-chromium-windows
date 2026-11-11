@@ -1,8 +1,99 @@
 --- a/components/embedder_support/user_agent_utils.cc
 +++ b/components/embedder_support/user_agent_utils.cc
-@@ -150,6 +150,7 @@ const std::string& GetUniversalApiContractVersion() {
- }
+@@ -55,97 +55,8 @@ namespace embedder_support {
+ namespace {
  
+ #if BUILDFLAG(IS_WIN)
+-
+-// The registry key where the UniversalApiContract version value can be read
+-// from.
+-constexpr wchar_t kWindowsRuntimeWellKnownContractsRegKeyName[] =
+-    L"SOFTWARE\\Microsoft\\WindowsRuntime\\WellKnownContracts";
+-
+-// Name of the UniversalApiContract registry.
+-constexpr wchar_t kUniversalApiContractName[] =
+-    L"Windows.Foundation.UniversalApiContract";
+-
+-// There's a chance that access to the registry key that contains the
+-// UniversalApiContract Version will not be available in the future. After we
+-// confirm that our Windows version is RS5 or greater, it is best to have the
+-// default return value be the highest known version number at the time this
+-// code is submitted. If the UniversalApiContract registry key is no longer
+-// available, there will either be a new API introduced, or we will need
+-// to rely on querying the IsApiContractPresentByMajor function used by
+-// user_agent_utils_unittest.cc.
+-const int kHighestKnownUniversalApiContractVersion = 19;
+-
+-int GetPreRS5UniversalApiContractVersion() {
+-  // This calls Kernel32Version() to get the real non-spoofable version (as
+-  // opposed to base::win::GetVersion() which as of writing this seems to return
+-  // different results depending on compatibility mode, and is spoofable).
+-  // See crbug.com/1404448.
+-  const base::win::Version version = base::win::OSInfo::Kernel32Version();
+-  if (version == base::win::Version::WIN10) {
+-    return 1;
+-  }
+-  if (version == base::win::Version::WIN10_TH2) {
+-    return 2;
+-  }
+-  if (version == base::win::Version::WIN10_RS1) {
+-    return 3;
+-  }
+-  if (version == base::win::Version::WIN10_RS2) {
+-    return 4;
+-  }
+-  if (version == base::win::Version::WIN10_RS3) {
+-    return 5;
+-  }
+-  if (version == base::win::Version::WIN10_RS4) {
+-    return 6;
+-  }
+-  // The list above should account for all Windows versions prior to
+-  // RS5.
+-  NOTREACHED();
+-}
+-
+-// Returns the UniversalApiContract version number, which is available for
+-// Windows versions greater than RS5. Otherwise, returns 0.
+-const std::string& GetUniversalApiContractVersion() {
+-  // Do not use this for runtime environment detection logic. This method should
+-  // only be used to help populate the Sec-CH-UA-Platform client hint. If
+-  // authoring code that depends on a minimum API contract version being
+-  // available, you should instead leverage the OS's IsApiContractPresentByMajor
+-  // method.
+-  static const base::NoDestructor<std::string> universal_api_contract_version(
+-      [] {
+-        int major_version = 0;
+-        int minor_version = 0;
+-        if (base::win::OSInfo::Kernel32Version() <=
+-            base::win::Version::WIN10_RS4) {
+-          major_version = GetPreRS5UniversalApiContractVersion();
+-        } else {
+-          base::win::RegKey version_key(
+-              HKEY_LOCAL_MACHINE, kWindowsRuntimeWellKnownContractsRegKeyName,
+-              KEY_QUERY_VALUE | KEY_WOW64_64KEY);
+-          if (version_key.Valid()) {
+-            DWORD universal_api_contract_version = 0;
+-            LONG result = version_key.ReadValueDW(
+-                kUniversalApiContractName, &universal_api_contract_version);
+-            if (result == ERROR_SUCCESS) {
+-              major_version = HIWORD(universal_api_contract_version);
+-              minor_version = LOWORD(universal_api_contract_version);
+-            } else {
+-              major_version = kHighestKnownUniversalApiContractVersion;
+-            }
+-          } else {
+-            major_version = kHighestKnownUniversalApiContractVersion;
+-          }
+-        }
+-        // The major version of the contract is stored in the HIWORD, while the
+-        // minor version is stored in the LOWORD.
+-        return base::StrCat({base::NumberToString(major_version), ".",
+-                             base::NumberToString(minor_version), ".0"});
+-      }());
+-  return *universal_api_contract_version;
+-}
+-
  const std::string& GetWindowsPlatformVersion() {
 -  return GetUniversalApiContractVersion();
 +  static const base::NoDestructor<std::string> kNormalizedVersion("10.0.0");

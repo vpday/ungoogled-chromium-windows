@@ -42,7 +42,17 @@
      case DownloadCommands::CANCEL:
      case DownloadCommands::RESUME:
      case DownloadCommands::COPY_TO_CLIPBOARD:
-@@ -868,6 +877,24 @@ void DownloadItemModel::ExecuteCommand(DownloadCommands* download_commands,
+@@ -789,6 +798,9 @@ bool DownloadItemModel::IsCommandChecked(
+     case DownloadCommands::CANCEL_DEEP_SCAN:
+     case DownloadCommands::OPEN_WITH_MEDIA_APP:
+     case DownloadCommands::EDIT_WITH_MEDIA_APP:
++    case DownloadCommands::REMOVE_FROM_LIST:
++    case DownloadCommands::DELETE_LOCAL_FILE:
++    case DownloadCommands::COPY_DOWNLOAD_LINK:
+       return false;
+   }
+   return false;
+@@ -868,6 +880,24 @@ void DownloadItemModel::ExecuteCommand(DownloadCommands* download_commands,
      case DownloadCommands::EDIT_WITH_MEDIA_APP:
        DownloadUIModel::ExecuteCommand(download_commands, command);
        break;

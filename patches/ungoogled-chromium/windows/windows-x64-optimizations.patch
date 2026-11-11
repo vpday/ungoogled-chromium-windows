@@ -1,13 +1,3 @@
---- a/build/config/compiler/BUILD.gn
-+++ b/build/config/compiler/BUILD.gn
-@@ -998,6 +998,7 @@ config("compiler") {
-     "-Zexternal-clangrt",
-
-     "-Cllvm-args=-fp-contract=fast",
-+    "-Ctarget-feature=-fast-gather,+prefer-no-gather,+prefer-no-scatter",
-   ]
-
-   if (!is_win || force_rustc_color_output) {
 --- a/build/config/win/BUILD.gn
 +++ b/build/config/win/BUILD.gn
 @@ -121,9 +121,30 @@ config("compiler") {

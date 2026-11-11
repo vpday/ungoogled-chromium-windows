@@ -1,7 +1,7 @@
 --- a/chrome/browser/browser_features.cc
 +++ b/chrome/browser/browser_features.cc
 @@ -28,7 +28,7 @@ BASE_FEATURE(kBookmarkTriggerForPrerender2KillSwitch,
-              base::FEATURE_DISABLED_BY_DEFAULT);
+              base::FEATURE_ENABLED_BY_DEFAULT);
  
  // This flag is used for enabling BookmarkBar triggered preconnect.
 -BASE_FEATURE(kBookmarkTriggerForPreconnect, base::FEATURE_ENABLED_BY_DEFAULT);
@@ -44,7 +44,7 @@
 +             base::FEATURE_DISABLED_BY_DEFAULT);
  
  // Whether the DevTools AI generated annotation labels in timeline are enabled.
- BASE_FEATURE(kDevToolsNewPermissionDialog, base::FEATURE_ENABLED_BY_DEFAULT);
+ BASE_FEATURE(kDevToolsNewPermissionDialog, base::FEATURE_DISABLED_BY_DEFAULT);
 --- a/chrome/browser/digital_credentials/digital_credentials_keyed_service.cc
 +++ b/chrome/browser/digital_credentials/digital_credentials_keyed_service.cc
 @@ -17,7 +17,7 @@ namespace digital_credentials {
@@ -542,7 +542,7 @@
 --- a/components/optimization_guide/core/optimization_guide_features.cc
 +++ b/components/optimization_guide/core/optimization_guide_features.cc
 @@ -60,7 +60,7 @@ constexpr auto enabled_by_default_mobile_only =
- BASE_FEATURE(kOptimizationHints, base::FEATURE_ENABLED_BY_DEFAULT);
+ BASE_FEATURE(kOptimizationHints, base::FEATURE_DISABLED_BY_DEFAULT);
  
  // Enables the prediction of optimization targets.
 -BASE_FEATURE(kOptimizationTargetPrediction, base::FEATURE_ENABLED_BY_DEFAULT);
@@ -550,8 +550,7 @@
  
  // This feature flag does not turn off any behavior, it is only used for
  // experiment parameters.
-@@ -85,7 +85,7 @@ BASE_FEATURE(kOptimizationGuideFetchingForSRP,
-              base::FEATURE_ENABLED_BY_DEFAULT);
+@@ -78,7 +78,7 @@
  
  // Kill switch for disabling model quality logging.
 -BASE_FEATURE(kModelQualityLogging, base::FEATURE_ENABLED_BY_DEFAULT);
@@ -559,6 +558,7 @@
  
  // An emergency kill switch feature to stop serving certain model versions per
  // optimization target. This is useful in exceptional situations when a bad
+ // model version got served that lead to crashes or critical failures, and an
 --- a/components/page_content_annotations/core/page_content_annotations_features.cc
 +++ b/components/page_content_annotations/core/page_content_annotations_features.cc
 @@ -106,7 +106,7 @@ BASE_FEATURE(kOptimizationGuideUseContinueOnShutdownForPageContentAnnotations,
@@ -588,9 +588,20 @@
  
 --- a/components/passage_embeddings/core/passage_embeddings_features.cc
 +++ b/components/passage_embeddings/core/passage_embeddings_features.cc
-@@ -23,7 +23,7 @@ constexpr auto enabled_by_default_desktop_only =
+@@ -11,18 +11,7 @@ namespace passage_embeddings {
  
- BASE_FEATURE(kPassageEmbedder, enabled_by_default_desktop_only);
+-namespace {
+-
+-constexpr auto enabled_by_default_desktop_only =
+-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+-    base::FEATURE_DISABLED_BY_DEFAULT;
+-#else
+-    base::FEATURE_ENABLED_BY_DEFAULT;
+-#endif
+-
+-}  // namespace
+-
+ BASE_FEATURE(kPassageEmbedder, base::FEATURE_DISABLED_BY_DEFAULT);
  
 -BASE_FEATURE(kPDFEmbeddingsGeneration, enabled_by_default_desktop_only);
 +BASE_FEATURE(kPDFEmbeddingsGeneration, base::FEATURE_DISABLED_BY_DEFAULT);

@@ -4,6 +4,7 @@ import * as exec from '@actions/exec';
 import { DefaultArtifactClient } from '@actions/artifact';
 import * as glob from '@actions/glob';
 import fs from 'fs';
+import { execSync } from 'child_process';
 import { Octokit } from "@octokit/core";
 
 const TARGET_POLICIES = Object.freeze({
@@ -233,16 +234,25 @@ async function getJobTimeInfo(token) {
 }
 
 async function run() {
-    process.on('SIGTERM', () => {
-        console.error('Received SIGTERM, writing finished output and exiting');
+    let vsFilesMount = null;
+    const cleanupOnSignal = (signal) => {
+        console.error(`Received ${signal}, unmounting ciopfs if mounted, writing finished output and exiting`);
+        if (vsFilesMount) {
+            try {
+                execSync(`fusermount -u "${vsFilesMount}"`, { stdio: 'ignore' });
+            } catch (e) {
+                try {
+                    execSync(`fusermount -u -z "${vsFilesMount}"`, { stdio: 'ignore' });
+                } catch (_) {
+                    // ignore
+                }
+            }
+        }
         core.setOutput('finished', finishedOutput);
         process.exit(1);
-    });
-    process.on('SIGINT', () => {
-        console.error('Received SIGINT, writing finished output and exiting');
-        core.setOutput('finished', finishedOutput);
-        process.exit(1);
-    });
+    };
+    process.on('SIGTERM', () => cleanupOnSignal('SIGTERM'));
+    process.on('SIGINT', () => cleanupOnSignal('SIGINT'));
 
     const actionStartedAt = Math.floor(Date.now() / 1000);
 
@@ -260,6 +270,7 @@ async function run() {
 
         const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE || process.cwd();
         const BUILD_DIR = `${GITHUB_WORKSPACE}/build`;
+        vsFilesMount = `${BUILD_DIR}/src/third_party/depot_tools/win_toolchain/vs_files`;
 
         const artifact = new DefaultArtifactClient();
         const artifactName = targetPolicy.cacheArtifact;
@@ -335,6 +346,13 @@ async function run() {
         const isTimedOut = (retCode === 124) || (retCode === 137 && buildDurationSeconds >= Math.max(0, buildTimeoutSeconds - 60));
 
         if (retCode === 0) {
+            await sleep(5000);
+            try {
+                await ensureUnmounted(vsFilesMount);
+            } catch (e) {
+                console.error(`Unmount before upload failed: ${e}`);
+            }
+
             const globber = await glob.create(`${BUILD_DIR}/ungoogled-chromium*`, { matchDirectories: false });
             let packageList = await globber.glob();
             const finalArtifactName = targetPolicy.finalArtifact;
@@ -346,7 +364,6 @@ async function run() {
             await sleep(5000);
 
             // Unmount ciopfs before archiving to avoid packing the FUSE mountpoint
-            const vsFilesMount = `${BUILD_DIR}/src/third_party/depot_tools/win_toolchain/vs_files`;
             try {
                 await ensureUnmounted(vsFilesMount);
             } catch (e) {
@@ -379,6 +396,14 @@ async function run() {
             throw new Error(`Build failed with critical error code: ${retCode} (elapsed: ${buildDurationSeconds}s)`);
         }
     } finally {
+        if (vsFilesMount && await isMountpoint(vsFilesMount)) {
+            await sleep(5000);
+            try {
+                await ensureUnmounted(vsFilesMount);
+            } catch (e) {
+                console.error(`Post-stage unmount cleanup failed: ${e}`);
+            }
+        }
         core.setOutput('finished', finishedOutput);
     }
 }
