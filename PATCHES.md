@@ -119,11 +119,21 @@
 - `lazy-session-restore.patch`: Enables lazy session restore in `browser_tabrestore.h`; only the active tab loads on startup, while background tabs remain unloaded until clicked.
 - `infinite-tab-freezing.patch`: Removes background tab freezing timeouts in `components/performance_manager/features.cc`, keeping idle tabs frozen indefinitely without periodic background wakeups.
 - `hibernate-tab-context-menu.patch`: Adds a "Hibernate Tab" option to the tab context menu to discard individual tabs manually.
+- `prioritize-platform-policy-loading.patch`: Prioritizes enterprise and platform configuration policy loading over background tasks to avoid race conditions during startup.
+- `tab-favicon-retention.patch`: Retains previous same-origin favicons during navigation and session restoration to prevent blank flicker on slow connections or discarded tabs.
+- `tab-icon.patch`: Differentiates hibernated and discarded tabs with a clean grayscale shader while preserving loading throbber animations and avoiding UI text changes.
 
 ### 3.2 Display Energy Efficiency & Subpixel Rendering
 - `add-low-power-framerate-flag.patch`: Adds a flag to cap rendering framerate, saving battery on high-refresh-rate (120Hz+) screens.
 - `dont-antialias-rects.patch`: Disables non-antialiased rectangle draws in `ui/views/view.cc` under fractional scaling (125%, 150%, etc.), fixing visible seam lines and subpixel jitter.
 - `disable-ink-ripple-effect.patch`: Removes the Material Design ink ripple animation in `platform_style.h` for faster, click-responsive UI feedback.
+- `fix-windows-ui-position.patch`: Fixes tab strip and window caption top padding coordinate calculation on Windows.
+- `generate-standard-qr-codes.patch`: Replaces custom dino-centered QR codes with standard high-contrast square modules and square locators.
+- `exclusive-access-bubble.patch`: Speeds up full-screen notification slide duration and styles prompt bubbles cleanly.
+- `square-interstitial-buttons.patch`: Applies standard modern rounded button aesthetics to interstitial security pages.
+- `toolbar-window-frame-hit-test.patch`: Allows empty non-interactive spaces in the top toolbar to fall through to the native window frame caption for window dragging.
+- `remove-toolbar-dividers.patch`: Removes redundant vertical visual dividers between extension icons and pinned toolbar containers.
+- `improve-flags-webui.patch`: Enhances `chrome://flags` search box styling and displays explicit state indicators for overridden flags.
 
 ### 3.3 Privacy, Degoogling & Network Layer Hardening
 - `split-clienthello.patch`: Randomly splits TLS ClientHello packets in BoringSSL, helping resist TLS fingerprinting and bypass SNI-based blocking.
@@ -134,6 +144,11 @@
 - `clean-omnibox-suggestions.patch`: Removes Google promotional action buttons ("pedals") from omnibox suggestions.
 - `ridiculous-google-compat-exceptions.patch`: Removes hardcoded Google sign-in exceptions.
 - `degoogle-context-menu.patch`: Strips Google Search, Lens, Gemini, Live Caption, QR code, Translate, Reading Mode, and Reading List items from tab, page, and link context menus.
+- `fix-instance-id-stuck.patch`: Prevents InstanceID task queues from deadlocking when GCM registration is unavailable or blocked.
+- `omnibox-default-search-icon.patch`: Replaces dynamic remote default search engine icons with a generic privacy-respecting search icon.
+- `break-favicons.patch`: Strips remote prepopulated search engine favicon and logo URLs to prevent background network pings.
+- `remove-unused-ai-resources.patch`: Prunes dead AI and side-panel assets (Actor, Glic, Compose, Skills, Lens, TTC) from packaged resource pak bundles.
+- `remove-experimental-webui.patch`: Disables experimental WebUI omnibox and popup interfaces, removing unused WebUI pak overhead.
 
 ### 3.4 Ergonomics & Web Content Control
 - `shift-right-click-context-menu.patch`: Forces the browser's native context menu to open on `Shift + Right-Click`, bypassing pages that block right-clicking.
@@ -149,6 +164,14 @@
 - `hide-page-actions-flag.patch`: Adds a flag to hide page action icons in the location bar.
 - `hide-pip-live-caption-button.patch` & `disable-live-caption-completely.patch`: Hides the Live Caption toggle in Picture-in-Picture windows and removes the Live Caption background service and model downloader.
 - `disable-non-standard-auth-features.patch`: Disables non-standard web authentication features (including `kFedCmDelegation`).
+- `remove-dead-toolbar-actions.patch`: Removes defunct Google toolbar actions and side-panel entrypoints (Passwords, Lens, Reading List, Shopping, etc.).
+- `remove-reading-list-from-app-menu.patch`: Removes Reading List from the primary bookmark sub-menu in the main application menu.
+- `remove-dead-profile-actions.patch`: Removes Google account and autofill manager management buttons from the profile menu.
+- `clean-up-installed-extension-bubble.patch`: Strips redundant promotional text and shortcuts links from the post-installation dialog.
+- `disable-tab-group-editor-footer.patch`: Disables the educational footer nag in tab group editor bubbles.
+- `bookmark-open-all-confirmation-flag.patch`: Enables confirmation dialog before opening 15 or more bookmarks simultaneously.
+- `add-default-browser-reject-button.patch`: Adds a permanent "Don't ask again" reject button to the default browser infobar, backed by `browser.default_browser_infobar_rejected`.
+- `remove-devtools-annoyances.patch`: Removes Gemini AI rebranding banners, feedback links, GDP badges, and Google account sync sections from DevTools.
 
 ## 4. Curated Cromite Patches (`patches/cromite/`)
 

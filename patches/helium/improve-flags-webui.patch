@@ -1,0 +1,128 @@
+--- a/components/webui/flags/resources/app.css
++++ b/components/webui/flags/resources/app.css
+@@ -105,8 +105,8 @@
+ }
+ 
+ :focus-visible {
+-  box-shadow: 0 0 0 2px var(--focus-shadow-color);
+-  outline: none;
++  outline: var(--focus-shadow-color) 2px solid;
++  outline-offset: 2px;
+ }
+ 
+ @media (forced-colors: active) {
+@@ -159,7 +159,7 @@
+ #header .flex-container {
+   box-sizing: border-box;
+   margin: 0 auto;
+-  max-width: 700px;
++  max-width: calc(700px + 2rem);
+ }
+ 
+ #header .flex-container .flex:first-child {
+@@ -169,6 +169,7 @@
+ 
+ #header .flex-container .flex:last-child {
+   text-align: right;
++  flex: unset;
+   /* csschecker-disable-line left-right */
+ }
+ 
+@@ -185,11 +186,11 @@
+   background: var(--input-background)
+       url(chrome://resources/images/icon_search.svg) no-repeat 8px 50%;
+   border: 1px solid transparent;
+-  border-radius: 3px;
++  border-radius: 8px;
+   box-sizing: border-box;
+   color: inherit;
+-  font-size: .8125rem;
+-  padding: 12px 36px;
++  font-size: 14px;
++  padding: 9px 38px;
+   width: 100%;
+ }
+ 
+--- a/components/webui/flags/resources/experiment.css
++++ b/components/webui/flags/resources/experiment.css
+@@ -12,8 +12,8 @@
+ }
+ 
+ :focus-visible {
+-  box-shadow: 0 0 0 2px var(--focus-shadow-color);
+-  outline: none;
++  outline: var(--focus-shadow-color) 2px solid;
++  outline-offset: 2px;
+ }
+ 
+ @media (forced-colors: active) {
+@@ -104,11 +104,12 @@
+   border: 1px solid var(--link-color);
+   color: var(--link-color);
+   font-size: .8125rem;
+-  height: 1.625rem;
++  height: 1.8rem;
+   letter-spacing: .01em;
+   max-width: 150px;
+   text-align-last: center;
+   width: 100%;
++  border-radius: 6px;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -195,19 +196,6 @@
+     text-align: left; /* csschecker-disable-line left-right */
+     width: 100%;
+   }
+-
+-  /* Hide the overflow description text */
+-  .body {
+-    overflow: hidden;
+-    text-overflow: ellipsis;
+-    white-space: nowrap;
+-    width: 100%;
+-  }
+-
+-  :host([expanded_]) .body {
+-    overflow: visible;
+-    white-space: normal;
+-  }
+ }
+ 
+ @media (max-width: 732px) {
+--- a/components/webui/flags/feature_entry.cc
++++ b/components/webui/flags/feature_entry.cc
+@@ -108,6 +108,23 @@
+ #endif  // BUILDFLAG(IS_CHROMEOS)
+   );
+   DCHECK_LT(index, NumOptions());
++  if (index == 0 &&
++      (type == FeatureEntry::FEATURE_VALUE ||
++       type == FeatureEntry::FEATURE_WITH_PARAMS_VALUE)) {
++    const base::Feature& base_feature = *feature.feature;
++    const bool is_enabled = base::FeatureList::IsEnabled(base_feature);
++    const bool differs_from_default =
++        is_enabled !=
++        (base_feature.default_state == base::FEATURE_ENABLED_BY_DEFAULT);
++    const char* effective_state =
++        is_enabled ? kGenericExperimentChoiceEnabled
++                   : kGenericExperimentChoiceDisabled;
++    const std::string description = base::StrCat(
++        {kGenericExperimentChoiceDefault, " (", effective_state,
++         differs_from_default ? "*" : "", ")"});
++    return base::ASCIIToUTF16(description);
++  }
++
+   const auto index_s = base::checked_cast<size_t>(index);
+   const char* description = nullptr;
+   if (type == FeatureEntry::ENABLE_DISABLE_VALUE ||
+--- a/components/webui/flags/resources/app.html.ts
++++ b/components/webui/flags/resources/app.html.ts
+@@ -89,6 +89,7 @@
+       </p>
+ </if>
+     </div>
++    <p>* Default state overridden via command line or variations.</p>
+     <p id="promos" ?hidden="${!this.shouldShowPromos_()}">
+       <!-- Those strings are not localized because they only
+       appear in chrome://flags, which is not localized. -->

@@ -1,0 +1,21 @@
+--- a/chrome/browser/ui/views/frame/browser_view.cc
++++ b/chrome/browser/ui/views/frame/browser_view.cc
+@@ -4677,6 +4677,18 @@ int BrowserView::NonClientHitTest(const
+       return web_app_component;
+     }
+   }
++  // The empty spaces in toolbar should allow mouse events to fall
++  // through to the caption area.
++  if (toolbar_) {
++    gfx::Point test_point(point);
++    if (ConvertedHitTest(parent(), toolbar_, &test_point)) {
++      if (toolbar_->IsPositionInWindowCaption(test_point)) {
++        return HTCAPTION;
++      }
++      return HTCLIENT;
++    }
++  }
++
+ 
+   // Let the frame handle any events that fall within the bounds of the window
+   // controls overlay.

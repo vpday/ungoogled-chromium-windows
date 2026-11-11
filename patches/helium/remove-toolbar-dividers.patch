@@ -1,0 +1,64 @@
+--- a/chrome/browser/ui/views/toolbar/toolbar_view.cc
++++ b/chrome/browser/ui/views/toolbar/toolbar_view.cc
+@@ -405,15 +405,12 @@ void ToolbarView::Init() {
+   PrefService* const prefs = browser_->GetProfile()->GetPrefs();
+ 
+   std::unique_ptr<ExtensionsToolbarDesktop> extensions_container;
+-  std::unique_ptr<ToolbarDivider> toolbar_divider;
+ 
+   // Do not create the extensions or browser actions container if it is a guest
+   // profile (only regular and incognito profiles host extensions).
+   if (!browser_->GetProfile()->IsGuestSession() &&
+       !features::IsWebUIExtensionsContainerEnabled()) {
+     extensions_container = std::make_unique<ExtensionsToolbarDesktop>(browser_);
+-
+-    toolbar_divider = std::make_unique<ToolbarDivider>();
+   }
+ 
+   std::unique_ptr<MediaToolbarButtonView> media_button;
+@@ -510,10 +507,6 @@ void ToolbarView::Init() {
+         std::make_unique<ExtensionsToolbarCoordinator>(extensions_container_);
+   }
+ 
+-  if (toolbar_divider) {
+-    toolbar_divider_ = AddChildView(std::move(toolbar_divider));
+-  }
+-
+   if (!features::IsWebUIPinnedToolbarActionsEnabled()) {
+     pinned_toolbar_actions_container_ = AddChildView(
+         std::make_unique<PinnedToolbarActionsContainer>(browser_view_, this));
+@@ -1614,13 +1607,6 @@ void ToolbarView::InitLayout() {
+             .WithOrder(kToolbarActionsFlexOrder));
+   }
+ 
+-  if (toolbar_divider_) {
+-    toolbar_divider_->SetProperty(
+-        views::kMarginsKey,
+-        gfx::Insets::VH(
+-            0, GetLayoutConstant(LayoutConstant::kToolbarDividerSpacing)));
+-  }
+-
+   if (glic_button_view_ &&
+       base::FeatureList::IsEnabled(features::kToolbarGlicButtonResizing)) {
+     glic_button_view_->SetProperty(
+@@ -1806,10 +1792,6 @@ void ToolbarView::LayoutCommon() {
+   GetAppMenuControl()->SetIsMaximizedOrFullscreen(
+       ShouldAppMenuApplyFittsLaw(is_maximized_or_fullscreen));
+ 
+-  if (toolbar_divider_ && extensions_container_) {
+-    views::ManualLayoutUtil(layout_manager_)
+-        .SetViewHidden(toolbar_divider_, !extensions_container_->GetVisible());
+-  }
+   // Cast button visibility is controlled externally.
+ }
+ 
+--- a/chrome/browser/ui/views/toolbar/pinned_toolbar_actions_container.cc
++++ b/chrome/browser/ui/views/toolbar/pinned_toolbar_actions_container.cc
+@@ -172,6 +172,7 @@ PinnedToolbarActionsContainer::PinnedToo
+               GetLayoutConstant(LayoutConstant::kToolbarIconDefaultMargin),
+           0, GetLayoutConstant(LayoutConstant::kToolbarDividerSpacing)));
+   toolbar_divider_ = AddChildView(std::move(toolbar_divider));
++  toolbar_divider_->SetVisible(false);
+ 
+   // Initialize the pinned action buttons.
+   action_view_controller_ = std::make_unique<views::ActionViewController>();

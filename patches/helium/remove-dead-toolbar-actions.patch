@@ -1,0 +1,531 @@
+--- a/chrome/browser/ui/webui/side_panel/customize_chrome/customize_toolbar/customize_toolbar_handler.cc
++++ b/chrome/browser/ui/webui/side_panel/customize_chrome/customize_toolbar/customize_toolbar_handler.cc
+@@ -45,28 +45,12 @@ MojoActionForChromeAction(actions::Actio
+       return side_panel::customize_chrome::mojom::ActionId::kShowBookmarks;
+     case kActionSidePanelShowHistoryCluster:
+       return side_panel::customize_chrome::mojom::ActionId::kShowHistoryCluster;
+-    case kActionSidePanelShowReadAnything:
+-      return side_panel::customize_chrome::mojom::ActionId::kShowReadAnything;
+-    case kActionSidePanelShowReadingList:
+-      return side_panel::customize_chrome::mojom::ActionId::kShowReadingList;
+-    case kActionSidePanelShowLensOverlayResults:
+-      return side_panel::customize_chrome::mojom::ActionId::kShowLensOverlay;
+-    case kActionSidePanelShowSearchCompanion:
+-      return side_panel::customize_chrome::mojom::ActionId::
+-          kShowSearchCompanion;
+     case kActionHome:
+       return side_panel::customize_chrome::mojom::ActionId::kHome;
+     case kActionForward:
+       return side_panel::customize_chrome::mojom::ActionId::kForward;
+     case kActionNewIncognitoWindow:
+       return side_panel::customize_chrome::mojom::ActionId::kNewIncognitoWindow;
+-    case kActionShowPasswordsBubbleOrPage:
+-      return side_panel::customize_chrome::mojom::ActionId::
+-          kShowPasswordManager;
+-    case kActionShowPaymentsBubbleOrPage:
+-      return side_panel::customize_chrome::mojom::ActionId::kShowPaymentMethods;
+-    case kActionShowAddressesBubbleOrPage:
+-      return side_panel::customize_chrome::mojom::ActionId::kShowAddresses;
+     case kActionShowDownloads:
+       return side_panel::customize_chrome::mojom::ActionId::kShowDownloads;
+     case kActionClearBrowsingData:
+@@ -107,26 +91,12 @@ std::optional<actions::ActionId> ChromeA
+       return kActionSidePanelShowBookmarks;
+     case side_panel::customize_chrome::mojom::ActionId::kShowHistoryCluster:
+       return kActionSidePanelShowHistoryCluster;
+-    case side_panel::customize_chrome::mojom::ActionId::kShowReadAnything:
+-      return kActionSidePanelShowReadAnything;
+-    case side_panel::customize_chrome::mojom::ActionId::kShowReadingList:
+-      return kActionSidePanelShowReadingList;
+-    case side_panel::customize_chrome::mojom::ActionId::kShowLensOverlay:
+-      return kActionSidePanelShowLensOverlayResults;
+-    case side_panel::customize_chrome::mojom::ActionId::kShowSearchCompanion:
+-      return kActionSidePanelShowSearchCompanion;
+     case side_panel::customize_chrome::mojom::ActionId::kHome:
+       return kActionHome;
+     case side_panel::customize_chrome::mojom::ActionId::kForward:
+       return kActionForward;
+     case side_panel::customize_chrome::mojom::ActionId::kNewIncognitoWindow:
+       return kActionNewIncognitoWindow;
+-    case side_panel::customize_chrome::mojom::ActionId::kShowPasswordManager:
+-      return kActionShowPasswordsBubbleOrPage;
+-    case side_panel::customize_chrome::mojom::ActionId::kShowPaymentMethods:
+-      return kActionShowPaymentsBubbleOrPage;
+-    case side_panel::customize_chrome::mojom::ActionId::kShowAddresses:
+-      return kActionShowAddressesBubbleOrPage;
+     case side_panel::customize_chrome::mojom::ActionId::kShowDownloads:
+       return kActionShowDownloads;
+     case side_panel::customize_chrome::mojom::ActionId::kClearBrowsingData:
+@@ -314,16 +284,8 @@ void CustomizeToolbarHandler::ListAction
+   add_action(kActionNewIncognitoWindow,
+              side_panel::customize_chrome::mojom::CategoryId::kNavigation);
+ 
+-  add_action(kActionShowPasswordsBubbleOrPage,
+-             side_panel::customize_chrome::mojom::CategoryId::kYourChrome);
+-  add_action(kActionShowPaymentsBubbleOrPage,
+-             side_panel::customize_chrome::mojom::CategoryId::kYourChrome);
+-  add_action(kActionShowAddressesBubbleOrPage,
+-             side_panel::customize_chrome::mojom::CategoryId::kYourChrome);
+   add_action(kActionSidePanelShowBookmarks,
+              side_panel::customize_chrome::mojom::CategoryId::kYourChrome);
+-  add_action(kActionSidePanelShowReadingList,
+-             side_panel::customize_chrome::mojom::CategoryId::kYourChrome);
+   add_action(kActionSidePanelShowHistoryCluster,
+              side_panel::customize_chrome::mojom::CategoryId::kYourChrome);
+   add_action(kActionShowDownloads,
+@@ -338,18 +300,12 @@ void CustomizeToolbarHandler::ListAction
+     add_action(kActionSidePanelShowContextualTasks,
+                side_panel::customize_chrome::mojom::CategoryId::kTools);
+   }
+-  add_action(kActionSidePanelShowLensOverlayResults,
+-             side_panel::customize_chrome::mojom::CategoryId::kTools);
+-  add_action(kActionSidePanelShowSearchCompanion,
+-             side_panel::customize_chrome::mojom::CategoryId::kTools);
+   add_action(kActionShowTranslate,
+              side_panel::customize_chrome::mojom::CategoryId::kTools);
+   add_action(kActionQrCodeGenerator,
+              side_panel::customize_chrome::mojom::CategoryId::kTools);
+   add_action(kActionRouteMedia,
+              side_panel::customize_chrome::mojom::CategoryId::kTools);
+-  add_action(kActionSidePanelShowReadAnything,
+-             side_panel::customize_chrome::mojom::CategoryId::kTools);
+   add_action(kActionCopyUrl,
+              side_panel::customize_chrome::mojom::CategoryId::kTools);
+   add_action(kActionSendTabToSelf,
+--- a/chrome/browser/ui/browser_actions.cc
++++ b/chrome/browser/ui/browser_actions.cc
+@@ -139,8 +139,6 @@
+ #include "chrome/browser/ui/read_anything/read_anything_entry_point_controller.h"
+ #include "chrome/browser/ui/safety_hub/safety_hub_util.h"
+ #include "chrome/browser/ui/search/omnibox_utils.h"
+-#include "chrome/browser/ui/send_tab_to_self/send_tab_to_self_bubble.h"
+-#include "chrome/browser/ui/send_tab_to_self/send_tab_to_self_toolbar_icon_controller.h"
+ #include "chrome/browser/ui/side_panel/side_panel_action_callback.h"
+ #include "chrome/browser/ui/side_panel/side_panel_entry_id.h"
+ #include "chrome/browser/ui/side_panel/side_panel_entry_key.h"
+@@ -172,7 +170,6 @@
+ #include "chrome/browser/ui/views/location_bar/record_replay_page_action_controller.h"
+ #include "chrome/browser/ui/views/media_router/cast_browser_controller.h"
+ #include "chrome/browser/ui/views/page_info/page_info_view_factory.h"
+-#include "chrome/browser/ui/views/send_tab_to_self/send_tab_to_self_toolbar_bubble_controller.h"
+ #include "chrome/browser/ui/views/side_panel/comments/comments_side_panel_coordinator.h"
+ #include "chrome/browser/ui/views/side_panel/history/history_side_panel_coordinator.h"
+ #include "chrome/browser/ui/views/side_panel/history_clusters/history_clusters_side_panel_utils.h"
+@@ -469,13 +466,6 @@ void BrowserActions::InitializeSidePanel
+                   SidePanelEntryKey(SidePanelEntryId::kBookmarks), bwi)))
+           .Build());
+   root_action_item_->AddChild(
+-      SidePanelAction(SidePanelEntryId::kReadingList, IDS_READ_LATER_TITLE,
+-                      IDS_READ_LATER_TITLE,
+-                      features::IsRoundedIconsEnabled() ? kListAltIcon
+-                                                        : kReadingListOldIcon,
+-                      kActionSidePanelShowReadingList, bwi, true)
+-          .Build());
+-  root_action_item_->AddChild(
+       SidePanelAction(SidePanelEntryId::kAboutThisSite,
+                       IDS_PAGE_INFO_ABOUT_THIS_PAGE_TITLE,
+                       IDS_PAGE_INFO_ABOUT_THIS_PAGE_TITLE,
+@@ -491,24 +481,6 @@ void BrowserActions::InitializeSidePanel
+                           : vector_icons::kEditChromeRefreshOldIcon,
+                       kActionSidePanelShowCustomizeChrome, bwi, false)
+           .Build());
+-  root_action_item_->AddChild(
+-      SidePanelAction(SidePanelEntryId::kShoppingInsights,
+-                      IDS_SHOPPING_INSIGHTS_SIDE_PANEL_TITLE,
+-                      IDS_SHOPPING_INSIGHTS_SIDE_PANEL_TITLE,
+-                      features::IsRoundedIconsEnabled()
+-                          ? vector_icons::kShoppingBagIcon
+-                          : vector_icons::kShoppingBagOldIcon,
+-                      kActionSidePanelShowShoppingInsights, bwi, false)
+-          .Build());
+-  root_action_item_->AddChild(
+-      SidePanelAction(
+-          SidePanelEntryId::kMerchantTrust, IDS_MERCHANT_TRUST_SIDE_PANEL_TITLE,
+-          IDS_MERCHANT_TRUST_SIDE_PANEL_TITLE,
+-          features::IsRoundedIconsEnabled() ? vector_icons::kStorefrontIcon
+-                                            : vector_icons::kStorefrontOldIcon,
+-          kActionSidePanelShowMerchantTrust, bwi, false)
+-          .Build());
+-
+   if (side_panel::history_clusters::
+           IsHistoryClustersSidePanelSupportedForProfile(profile) &&
+       !HistorySidePanelCoordinator::IsSupported()) {
+@@ -620,51 +592,6 @@ void BrowserActions::InitializeSidePanel
+           .SetAccelerator(reading_mode_accelerator)
+           .Build());
+ 
+-  if (lens::features::IsLensOverlayEnabled()) {
+-    const gfx::VectorIcon& icon =
+-#if BUILDFLAG(GOOGLE_CHROME_BRANDING)
+-        vector_icons::kGoogleLensMonochromeLogoIcon;
+-#else
+-        features::IsRoundedIconsEnabled()
+-            ? vector_icons::kSearchIcon
+-            : vector_icons::kSearchChromeRefreshOldIcon;
+-#endif
+-    root_action_item_->AddChild(
+-        actions::ActionItem::Builder(
+-            base::BindRepeating(
+-                [](BrowserWindowInterface* bwi, actions::ActionItem* item,
+-                   actions::ActionInvocationContext context) {
+-                  if (!bwi) {
+-                    return;
+-                  }
+-                  lens::LensOverlayEntryPointController::InvokeAction(
+-                      bwi->GetActiveTabInterface(), context);
+-                },
+-                bwi))
+-            .SetActionId(kActionSidePanelShowLensOverlayResults)
+-            .SetText(l10n_util::GetStringUTF16(
+-                lens::GetLensOverlayEntrypointLabelAltIds()))
+-            .SetTooltipText(l10n_util::GetStringUTF16(
+-                lens::GetLensOverlayEntrypointLabelAltIds()))
+-            .SetImage(ui::ImageModel::FromVectorIcon(
+-                icon, ui::kColorIcon, ui::SimpleMenuModel::kDefaultIconSize))
+-            .SetProperty(actions::kActionItemPinnableKey,
+-                         std::underlying_type_t<actions::ActionPinnableState>(
+-                             actions::ActionPinnableState::kPinnable))
+-            .Build());
+-  }
+-
+-  // Create the lens action item. The icon and text are set appropriately in the
+-  // lens side panel coordinator. They have default values here.
+-  root_action_item_->AddChild(
+-      SidePanelAction(SidePanelEntryId::kLens, IDS_LENS_DEFAULT_TITLE,
+-                      IDS_LENS_DEFAULT_TITLE,
+-                      features::IsRoundedIconsEnabled()
+-                          ? vector_icons::kImageSearchIcon
+-                          : vector_icons::kImageSearchOldIcon,
+-                      kActionSidePanelShowLens, bwi, false)
+-          .Build());
+-
+   if (CommentsSidePanelCoordinator::IsSupported()) {
+     root_action_item_->AddChild(
+         SidePanelAction(SidePanelEntryId::kComments,
+@@ -973,68 +900,6 @@ void BrowserActions::InitializePageActio
+           base::BindRepeating(
+               [](BrowserWindowInterface* bwi, actions::ActionItem* item,
+                  actions::ActionInvocationContext context) {
+-                auto* tab_helper = bwi->GetActiveTabInterface()
+-                                       ->GetTabFeatures()
+-                                       ->commerce_ui_tab_helper();
+-                CHECK(tab_helper);
+-
+-                tab_helper->OnPriceInsightsIconClicked();
+-              },
+-              bwi))
+-          .SetActionId(kActionCommercePriceInsights)
+-          // The tooltip text is used as a default text. The
+-          // PriceInsightsPageActionViewController will override it based on its
+-          // state.
+-          .SetText(l10n_util::GetStringUTF16(
+-              IDS_SHOPPING_INSIGHTS_ICON_TOOLTIP_TEXT))
+-          .SetTooltipText(l10n_util::GetStringUTF16(
+-              IDS_SHOPPING_INSIGHTS_ICON_TOOLTIP_TEXT))
+-          .SetImage(ui::ImageModel::FromVectorIcon(
+-              features::IsRoundedIconsEnabled()
+-                  ? vector_icons::kShoppingBagIcon
+-                  : vector_icons::kShoppingBagRefreshOldIcon))
+-          .Build());
+-
+-  root_action_item_->AddChild(
+-      actions::ActionItem::Builder(
+-          base::BindRepeating(
+-              [](BrowserWindowInterface* bwi, actions::ActionItem* item,
+-                 actions::ActionInvocationContext context) {
+-                auto* tab_features =
+-                    bwi->GetActiveTabInterface()->GetTabFeatures();
+-                CHECK(tab_features);
+-                auto* page_action_controller =
+-                    commerce::DiscountsPageActionViewController::From(
+-                        *bwi->GetActiveTabInterface());
+-                CHECK(page_action_controller);
+-                page_action_controller->MaybeShowBubble(/*from_user=*/true);
+-
+-                auto* commerce_ui_tab_helper =
+-                    tab_features->commerce_ui_tab_helper();
+-                CHECK(commerce_ui_tab_helper);
+-
+-                commerce::metrics::DiscountsMetricCollector::
+-                    RecordDiscountsPageActionIconClicked(
+-                        commerce_ui_tab_helper->IsPageActionIconExpanded(
+-                            PageActionIconType::kDiscounts),
+-                        commerce_ui_tab_helper->GetDiscounts());
+-              },
+-              bwi))
+-          .SetActionId(kActionCommerceDiscounts)
+-          .SetText(l10n_util::GetStringUTF16(IDS_DISCOUNT_ICON_EXPANDED_TEXT))
+-          .SetTooltipText(
+-              l10n_util::GetStringUTF16(IDS_DISCOUNT_ICON_EXPANDED_TEXT))
+-          .SetImage(ui::ImageModel::FromVectorIcon(
+-              features::IsRoundedIconsEnabled()
+-                  ? vector_icons::kShoppingmodeIcon
+-                  : vector_icons::kShoppingmodeOldIcon))
+-          .Build());
+-
+-  root_action_item_->AddChild(
+-      actions::ActionItem::Builder(
+-          base::BindRepeating(
+-              [](BrowserWindowInterface* bwi, actions::ActionItem* item,
+-                 actions::ActionInvocationContext context) {
+                 auto* tab_interface = bwi->GetActiveTabInterface();
+                 CHECK(tab_interface);
+ 
+@@ -1055,7 +920,6 @@ void BrowserActions::InitializePageActio
+ 
+ void BrowserActions::InitializeChromeMenuActions() {
+   Profile* const profile = base::to_address(profile_);
+-  TabStripModel* const tab_strip_model = bwi_->GetTabStripModel();
+   BrowserWindowInterface* const bwi = base::to_address(bwi_);
+   const bool is_guest_session = profile->IsGuestSession();
+ 
+@@ -1449,50 +1313,6 @@ void BrowserActions::InitializeChromeMen
+           .SetAccelerator(GetAcceleratorForCommandId(IDC_DEV_TOOLS))
+           .Build());
+ 
+-  if (send_tab_to_self::SendTabToSelfToolbarIconController::CanShowOnBrowser(
+-          bwi)) {
+-    root_action_item_->AddChild(
+-        ChromeMenuAction(
+-            base::BindRepeating(
+-                [](BrowserWindowInterface* bwi, TabStripModel* tab_strip_model,
+-                   actions::ActionItem* item,
+-                   actions::ActionInvocationContext context) {
+-                  if (context.GetProperty(chrome::kActionInvocationSourceKey) ==
+-                      chrome::ActionInvocationSource::kAppMenu) {
+-                    chrome::SendTabToSelf(bwi);
+-                    return;
+-                  }
+-                  auto* const bubble_controller = send_tab_to_self::
+-                      SendTabToSelfToolbarBubbleController::From(bwi);
+-                  if (bubble_controller->IsBubbleShowing()) {
+-                    bubble_controller->HideBubble();
+-                  } else {
+-                    send_tab_to_self::ShowBubble(
+-                        tab_strip_model->GetActiveWebContents(),
+-                        send_tab_to_self::ShareEntryPoint::kToolbarIcon);
+-                  }
+-                },
+-                bwi, tab_strip_model),
+-            kActionSendTabToSelf, IDS_SEND_TAB_TO_SELF, IDS_SEND_TAB_TO_SELF,
+-            features::IsRoundedIconsEnabled() ? kDevicesIcon
+-                                              : kDevicesChromeRefreshOldIcon)
+-            .SetEnabled(chrome::CanSendTabToSelf(bwi))
+-            .SetVisible(!sharing_hub::SharingIsDisabledByPolicy(profile))
+-            .Build());
+-  }
+-
+-  root_action_item_->AddChild(
+-      ChromeMenuAction(
+-          base::BindRepeating(
+-              [](BrowserWindowInterface* bwi, actions::ActionItem* item,
+-                 actions::ActionInvocationContext context) {
+-                chrome::ShowTranslateBubble(bwi);
+-              },
+-              bwi),
+-          kActionShowTranslate, IDS_SHOW_TRANSLATE, IDS_TOOLTIP_TRANSLATE,
+-          vector_icons::kGTranslateIcon)
+-          .Build());
+-
+   root_action_item_->AddChild(
+       actions::ActionItem::Builder(
+           base::BindRepeating(
+@@ -1555,81 +1375,6 @@ void BrowserActions::InitializeChromeMen
+           .SetVisible(!sharing_hub::SharingIsDisabledByPolicy(profile))
+           .Build());
+ 
+-  root_action_item_->AddChild(
+-      ChromeMenuAction(
+-          base::BindRepeating(
+-              [](BrowserWindowInterface* bwi, TabStripModel* tab_strip_model,
+-                 actions::ActionItem* item,
+-                 actions::ActionInvocationContext context) {
+-                auto page_action_trigger =
+-                    context.GetProperty(page_actions::kPageActionTriggerKey);
+-                // If triggered by omnibox page action, do nothing.
+-                if (page_action_trigger !=
+-                    page_actions::kInvalidPageActionTrigger) {
+-                  return;
+-                }
+-
+-                auto* controller = autofill::AddressBubblesIconController::Get(
+-                    tab_strip_model->GetActiveWebContents());
+-                if (controller && controller->GetBubbleView()) {
+-                  controller->GetBubbleView()->Hide();
+-                } else {
+-                  chrome::ShowAddresses(bwi);
+-                }
+-              },
+-              bwi, tab_strip_model),
+-          kActionShowAddressesBubbleOrPage,
+-          IDS_YOUR_SAVED_INFO_CONTACT_INFO_SUBMENU_OPTION,
+-          IDS_YOUR_SAVED_INFO_CONTACT_INFO_SUBMENU_OPTION,
+-          features::IsRoundedIconsEnabled()
+-              ? vector_icons::kLocationOnIcon
+-              : vector_icons::kLocationOnChromeRefreshOldIcon)
+-          .SetEnabled(!is_guest_session)
+-          .Build());
+-
+-  root_action_item_->AddChild(
+-      ChromeMenuAction(
+-          base::BindRepeating(
+-              [](BrowserWindowInterface* bwi, TabStripModel* tab_strip_model,
+-                 actions::ActionItem* item,
+-                 actions::ActionInvocationContext context) {
+-                auto page_action_trigger =
+-                    context.GetProperty(page_actions::kPageActionTriggerKey);
+-                // When page action is migrated, clicking on the omnibox page
+-                // should not close the bubble or navigate to `Payment Methods`
+-                // settings page.
+-                // Page action trigger is a valid value only when this action
+-                // is triggered from the migrated page action icon.
+-                if (page_action_trigger !=
+-                    page_actions::kInvalidPageActionTrigger) {
+-                  return;
+-                }
+-
+-                auto hide_bubble = [tab_strip_model](int command_id) -> bool {
+-                  auto* controller = autofill::SavePaymentIconController::Get(
+-                      tab_strip_model->GetActiveWebContents(), command_id);
+-                  if (controller && controller->GetPaymentBubbleView()) {
+-                    controller->GetPaymentBubbleView()->Hide();
+-                    return true;
+-                  }
+-                  return false;
+-                };
+-                const bool bubble_hidden =
+-                    hide_bubble(IDC_SAVE_CREDIT_CARD_FOR_PAGE) ||
+-                    hide_bubble(IDC_SAVE_IBAN_FOR_PAGE);
+-                if (!bubble_hidden) {
+-                  chrome::ShowPaymentMethods(bwi);
+-                }
+-              },
+-              bwi, tab_strip_model),
+-          kActionShowPaymentsBubbleOrPage,
+-          IDS_YOUR_SAVED_INFO_PAYMENTS_SUBMENU_OPTION,
+-          IDS_YOUR_SAVED_INFO_PAYMENTS_SUBMENU_OPTION,
+-          features::IsRoundedIconsEnabled() ? kCreditCardIcon
+-                                            : kCreditCardChromeRefreshOldIcon)
+-          .SetEnabled(!is_guest_session)
+-          .Build());
+-
+   // TODO(crbug.com/435220196): Ideally this action would have
+   // ChromeLabsCoordinator passed in as a dependency directly.
+   if (IsChromeLabsEnabled() && !web_app::AppBrowserController::IsWebApp(bwi)) {
+@@ -1650,38 +1395,6 @@ void BrowserActions::InitializeChromeMen
+ 
+   root_action_item_->AddChild(
+       ChromeMenuAction(
+-          base::BindRepeating(
+-              [](BrowserWindowInterface* bwi, TabStripModel* tab_strip_model,
+-                 actions::ActionItem* item,
+-                 actions::ActionInvocationContext context) {
+-                content::WebContents* const web_contents =
+-                    tab_strip_model->GetActiveWebContents();
+-                if (PasswordsModelDelegateFromWebContents(web_contents)
+-                        ->GetState() == password_manager::ui::INACTIVE_STATE) {
+-                  chrome::ShowPasswordManager(bwi);
+-                } else {
+-                  auto* const controller =
+-                      ManagePasswordsUIController::FromWebContents(
+-                          web_contents);
+-                  if (controller->IsShowingBubble()) {
+-                    controller->HideBubble(
+-                        /*initiated_by_bubble_manager=*/false);
+-                  } else {
+-                    chrome::ManagePasswordsForPage(bwi);
+-                  }
+-                }
+-              },
+-              bwi, tab_strip_model),
+-          kActionShowPasswordsBubbleOrPage, IDS_VIEW_PASSWORDS,
+-          IDS_VIEW_PASSWORDS,
+-          features::IsRoundedIconsEnabled()
+-              ? vector_icons::kPasswordManagerIcon
+-              : vector_icons::kPasswordManagerOldIcon)
+-          .SetEnabled(!is_guest_session)
+-          .Build());
+-
+-  root_action_item_->AddChild(
+-      ChromeMenuAction(
+           base::BindRepeating([](actions::ActionItem* item,
+                                  actions::ActionInvocationContext context) {
+             profiles::SwitchToGuestProfile();
+--- a/chrome/browser/ui/views/translate/translate_bubble_controller.cc
++++ b/chrome/browser/ui/views/translate/translate_bubble_controller.cc
+@@ -50,11 +50,7 @@ const char kTranslatePartialTranslationS
+ 
+ actions::ActionItem* GetTranslateActionItem(
+     actions::ActionItem* root_action_item) {
+-  actions::ActionItem* translate_action_item =
+-      actions::ActionManager::Get().FindAction(kActionShowTranslate,
+-                                               root_action_item);
+-  CHECK(translate_action_item);
+-  return translate_action_item;
++  return nullptr;
+ }
+ 
+ }  // namespace
+--- a/chrome/browser/ui/web_applications/app_browser_controller.cc
++++ b/chrome/browser/ui/web_applications/app_browser_controller.cc
+@@ -455,12 +455,8 @@ std::vector<actions::ActionId> AppBrowse
+ 
+   std::vector<actions::ActionId> types_enabled = {
+       kActionFind,
+-      kActionShowPasswordsBubbleOrPage,
+-      kActionShowTranslate,
+       kActionShowZoomBubble,
+       kActionShowFileSystemAccess,
+-      kActionShowCookieControls,
+-      kActionShowAddressesBubbleOrPage,
+   };
+ 
+ #if DCHECK_IS_ON()
+@@ -482,10 +478,7 @@ AppBrowserController::GetTitleBarPageAct
+ 
+   std::vector<PageActionIconType> types_enabled;
+   types_enabled.push_back(PageActionIconType::kFind);
+-  types_enabled.push_back(PageActionIconType::kManagePasswords);
+-  types_enabled.push_back(PageActionIconType::kTranslate);
+   types_enabled.push_back(PageActionIconType::kFileSystemAccess);
+-  types_enabled.push_back(PageActionIconType::kSaveCard);
+ 
+   return types_enabled;
+ }
+--- a/chrome/browser/ui/passwords/manage_passwords_ui_controller.cc
++++ b/chrome/browser/ui/passwords/manage_passwords_ui_controller.cc
+@@ -1336,7 +1336,9 @@ void ManagePasswordsUIController::Update
+ 
+   // Update the visibility of the page action based on the current state
+   // and the passwords action item.
+-  controller->UpdateVisibility(state, *this, *passwords_action_item);
++  if (passwords_action_item) {
++    controller->UpdateVisibility(state, *this, *passwords_action_item);
++  }
+ 
+   if (show_bubble) {
+     PasswordBubbleViewBase::CloseCurrentBubble();
+--- a/chrome/browser/ui/autofill/autofill_bubble_controller_base.cc
++++ b/chrome/browser/ui/autofill/autofill_bubble_controller_base.cc
+@@ -121,7 +121,8 @@ void AutofillBubbleControllerBase::Updat
+   // when the logic to show the page action become complex.
+   page_actions::PageActionController* page_action_controller =
+       tab_features->page_action_controller();
+-  if (!page_action_controller) {
++  if (!page_action_controller ||
++      !page_action_controller->ActionExists(*action_id)) {
+     return;
+   }
+ 
+--- a/chrome/browser/ui/lens/lens_overlay_entry_point_controller.cc
++++ b/chrome/browser/ui/lens/lens_overlay_entry_point_controller.cc
+@@ -383,6 +383,9 @@ void LensOverlayEntryPointController::Up
+ 
+   const actions::ActionId page_action_id =
+       kActionSidePanelShowLensOverlayResults;
++  if (!page_action_controller->ActionExists(page_action_id)) {
++    return;
++  }
+ 
+   if (!ShouldShowPageAction(active_tab)) {
+     page_action_controller->Hide(page_action_id);
