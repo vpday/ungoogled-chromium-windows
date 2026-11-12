@@ -164,12 +164,11 @@
    map.AddWebUIConfig(std::make_unique<GCMInternalsUIConfig>());
    map.AddWebUIConfig(
        std::make_unique<
-@@ -360,6 +360,5 @@ void RegisterChromeWebUIConfigs() {
+@@ -360,5 +360,4 @@ void RegisterChromeWebUIConfigs() {
  #endif  // BUILDFLAG(GOOGLE_CHROME_BRANDING)
    map.AddWebUIConfig(std::make_unique<media_router::AccessCodeCastUIConfig>());
 -  map.AddWebUIConfig(std::make_unique<actor::ui::ActorOverlayUIConfig>());
    map.AddWebUIConfig(std::make_unique<AppServiceInternalsUIConfig>());
-   map.AddWebUIConfig(std::make_unique<AutofillMlInternalsUIConfig>());
    map.AddWebUIConfig(std::make_unique<BookmarksSidePanelUIConfig>());
 @@ -527,7 +522,6 @@ void RegisterChromeWebUIConfigs() {
  

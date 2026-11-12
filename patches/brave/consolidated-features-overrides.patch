@@ -81,24 +81,6 @@ diff --git a/chrome/browser/preloading/preloading_features.cc b/chrome/browser/p
  BASE_FEATURE(kPrewarmZeroSuggestTrigger, base::FEATURE_DISABLED_BY_DEFAULT);
  BASE_FEATURE(kPrewarmDisableOnStartup, base::FEATURE_DISABLED_BY_DEFAULT);
  BASE_FEATURE_PARAM(std::string, kPrewarmUrlOverride, &kPrewarm, "");
-diff --git a/chrome/browser/ui/omnibox/omnibox_next_features.cc b/chrome/browser/ui/omnibox/omnibox_next_features.cc
-index 79cfa8e..ee73c1c 100644
---- a/chrome/browser/ui/omnibox/omnibox_next_features.cc
-+++ b/chrome/browser/ui/omnibox/omnibox_next_features.cc
-@@ -45,11 +45,11 @@ namespace omnibox {
- namespace internal {
- 
- // If enabled, shows the omnibox suggestions in the popup in WebUI.
--BASE_FEATURE(kWebUIOmniboxPopup, ENABLED);
-+BASE_FEATURE(kWebUIOmniboxPopup, DISABLED);
- 
- // If enabled, Omnibox popup will transition to AI-Mode with the compose-box
- // panel taking up the whole of the popup, covering the location bar completely.
--BASE_FEATURE(kWebUIOmniboxAimPopup, ENABLED);
-+BASE_FEATURE(kWebUIOmniboxAimPopup, DISABLED);
- 
- // If enabled, the Omnibox Popup will enable a different UI state when on a
- // webpage.
 diff --git a/chrome/browser/ui/ui_features.cc b/chrome/browser/ui/ui_features.cc
 index 1530a17..5f102da 100644
 --- a/chrome/browser/ui/ui_features.cc
@@ -302,16 +284,6 @@ index af08e2530c8..2113acd7eb1 100644
  
  // Auto-dismiss global media controls.
  BASE_FEATURE(kGlobalMediaControlsAutoDismiss, base::FEATURE_ENABLED_BY_DEFAULT);
-@@ -727,8 +727,8 @@ BASE_FEATURE(kInternalMediaSession,
- );
- 
- // Enables the Live Caption feature on supported devices.
--BASE_FEATURE(kLiveCaption, base::FEATURE_ENABLED_BY_DEFAULT);
-+BASE_FEATURE(kLiveCaption, base::FEATURE_DISABLED_BY_DEFAULT);
- 
- // Enable automatic downloading of speech recognition language packs.
- BASE_FEATURE(kLiveCaptionAutomaticLanguageDownload,
-              base::FEATURE_DISABLED_BY_DEFAULT);
 diff --git a/net/base/features.cc b/net/base/features.cc
 index da499bb..78ad6aa 100644
 --- a/net/base/features.cc

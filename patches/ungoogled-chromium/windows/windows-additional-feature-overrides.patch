@@ -851,9 +851,9 @@
 -);
 +BASE_FEATURE(kEnableBoundSessionCredentials, base::FEATURE_DISABLED_BY_DEFAULT);
  bool IsBoundSessionCredentialsEnabled(const PrefService* profile_prefs) {
-   // Enterprise policy takes precedence over the feature value.
-   if (profile_prefs->HasPrefPath(prefs::kBoundSessionCredentialsEnabled)) {
-@@ -487,13 +481,7 @@
+   return base::FeatureList::IsEnabled(kEnableBoundSessionCredentials);
+ }
+@@ -488,13 +482,7 @@
  
  #if BUILDFLAG(ENABLE_DICE_SUPPORT)
  // Enables Chrome refresh tokens binding to a device.
@@ -866,8 +866,8 @@
 -);
 +BASE_FEATURE(kEnableChromeRefreshTokenBinding, base::FEATURE_DISABLED_BY_DEFAULT);
  bool IsChromeRefreshTokenBindingEnabled(const PrefService* profile_prefs) {
-   // Enterprise policy takes precedence over the feature value.
-   if (profile_prefs->HasPrefPath(prefs::kBoundSessionCredentialsEnabled)) {
+   return base::FeatureList::IsEnabled(kEnableChromeRefreshTokenBinding);
+ }
 @@ -863,7 +863,7 @@
  #endif  // BUILDFLAG(IS_ANDROID)
  
@@ -1113,9 +1113,9 @@
  #endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
 --- a/services/network/public/cpp/features.cc
 +++ b/services/network/public/cpp/features.cc
-@@ -16,9 +16,9 @@
+@@ -24,9 +24,9 @@
+              base::FEATURE_DISABLED_BY_DEFAULT);
  
- namespace network::features {
  
 -BASE_FEATURE(kNetworkErrorLogging, base::FEATURE_ENABLED_BY_DEFAULT);
 +BASE_FEATURE(kNetworkErrorLogging, base::FEATURE_DISABLED_BY_DEFAULT);

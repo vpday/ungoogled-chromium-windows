@@ -94,7 +94,7 @@
 
 ### 2.1 Resource De-bloating & AI Pruning
 - `disable-web-platform-ai.patch`: Disables Web Platform AI APIs (`AIPromptAPI`, `AIPromptAPIMultimodalInput`, `AIProofreaderAPI`, `AIRewriterAPI`, `AISummarizationAPI`, and `AIWriterAPI` in `runtime_enabled_features.json5`), preventing web pages from downloading or running on-device AI models.
-- `consolidated-features-overrides.patch`: Disables bookmark and New Tab Page Prerender2 triggers, DevTools Console Insights, DevTools AI code features, WebUI Omnibox Popups, tab hover card thumbnail previews, speculative ZeroSuggest prewarming (`kPrewarm`), mic/camera autoplay escalation (`kAutoplayBypassForMicCamera`), screen-share transient activation (`kGetDisplayMediaConfersActivation`), and Live Caption.
+- `consolidated-features-overrides.patch`: Disables bookmark and New Tab Page Prerender2 triggers, DevTools Console Insights, DevTools AI code features, tab hover card thumbnail previews, speculative ZeroSuggest prewarming (`kPrewarm`), mic/camera autoplay escalation (`kAutoplayBypassForMicCamera`), and screen-share transient activation (`kGetDisplayMediaConfersActivation`).
 - `kill-profile-reset-report-uploader.patch`: Empties `ResetReportUploader::DispatchReport` in `chrome/browser/profile_resetter/reset_report_uploader.cc` to stop telemetry uploads when resetting browser profiles.
 - `chrome-browser-media-webrtc-webrtc_event_log_uploader.cc.patch` & `chrome-browser-media-webrtc-webrtc_log_uploader.cc.patch`: Blocks WebRTC RTP event log and text diagnostic uploads to Google endpoints and cleans up local diagnostic dump files.
 
