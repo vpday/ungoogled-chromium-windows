@@ -252,12 +252,12 @@
 +  return false;
  }
  
- bool RenderViewContextMenu::CanPartiallyTranslateTargetLanguage() {
+ bool RenderViewContextMenu::CanPartiallyTranslate() {
 -  ChromeTranslateClient* chrome_translate_client =
 -      ChromeTranslateClient::FromWebContents(embedder_web_contents_);
 -  return chrome_translate_client &&
 -         chrome_translate_client->GetTranslateManager()
--             ->CanPartiallyTranslateTargetLanguage();
+-             ->CanPartiallyTranslate();
 +  return false;
  }
  
