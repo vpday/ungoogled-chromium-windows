@@ -1,6 +1,6 @@
 --- a/build/config/clang/BUILD.gn
 +++ b/build/config/clang/BUILD.gn
-@@ -286,8 +286,6 @@ clang_lib("compiler_builtins") {
+@@ -289,8 +289,6 @@ clang_lib("compiler_builtins") {
      } else {
        assert(false, "unsupported target_platform=$target_platform")
      }
@@ -8,7 +8,7 @@
 -    libname = "builtins"
    }
  }
- 
+
 --- a/build/rust/allocator/lib.rs
 +++ b/build/rust/allocator/lib.rs
 @@ -114,15 +114,4 @@ mod both_allocators {
@@ -96,8 +96,8 @@
 -        )
 -    return sysroot
 +    return None
- 
- 
+
+
  def GetHostCcTools():
 @@ -65,7 +59,7 @@ def GetHostCcTools():
      On Windows the MSVC-style `clang-cl` driver is both the C and the C++
@@ -109,7 +109,7 @@
          clang_cl = os.path.join(bin_dir, 'clang-cl.exe')
          return clang_cl, clang_cl, os.path.join(bin_dir, 'llvm-lib.exe')
 @@ -78,8 +72,6 @@ def GetHostCcTools():
- 
+
  def GetHostCFlags():
      """Returns the flags for all C and C++ compilations of host tools."""
 -    if sys.platform.startswith('linux'):
@@ -147,5 +147,5 @@
 +        ld_paths.append(cur_ld)
 +    env['LD_LIBRARY_PATH'] = ':'.join(ld_paths)
      return env
- 
- 
+
+
