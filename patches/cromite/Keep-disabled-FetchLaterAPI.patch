@@ -78,7 +78,7 @@ diff --git a/third_party/blink/renderer/core/fetch/fetch_manager.cc b/third_part
  
    // Rejects the promise with the TypeError exception created at construction
    // time. Also optionally passes `devtools_request_id`, `issue_id`, and
-@@ -332,6 +333,12 @@ void ResponseResolver::Reject(DOMException* dom_exception) {
+@@ -334,6 +335,12 @@ void ResponseResolver::Reject(DOMException* dom_exception) {
    Clear();
  }
  
@@ -89,9 +89,9 @@ diff --git a/third_party/blink/renderer/core/fetch/fetch_manager.cc b/third_part
 +}
 +
  void ResponseResolver::RejectBecauseFailed(
-     std::optional<String> devtools_request_id,
+     const String& devtools_request_id,
      std::optional<base::UnguessableToken> issue_id,
-@@ -1306,10 +1313,20 @@ void FetchManager::Loader::Failed(
+@@ -1348,10 +1355,18 @@ void FetchManager::Loader::Failed(
    if (response_resolver_) {
      ScriptState::Scope scope(GetScriptState());
      if (dom_exception) {
@@ -102,13 +102,12 @@ diff --git a/third_party/blink/renderer/core/fetch/fetch_manager.cc b/third_part
 +        response_resolver_->Detach();
 +      }
      } else {
--      response_resolver_->RejectBecauseFailed(
+-      response_resolver_->RejectBecauseFailed(devtools_request_id, issue_id,
+-                                              issue_summary);
 +      if (!GetFetchRequestData()->Keepalive()) {
-+        response_resolver_->RejectBecauseFailed(
-           std::move(devtools_request_id), issue_id, std::move(issue_summary));
++        response_resolver_->RejectBecauseFailed(devtools_request_id, issue_id,
++                                                issue_summary);
 +      } else {
-+        devtools_request_id.reset();
-+        issue_summary.reset();
 +        response_resolver_->Detach();
 +      }
        LogIfKeepalive("Failed");

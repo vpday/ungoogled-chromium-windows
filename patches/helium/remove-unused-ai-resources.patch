@@ -74,10 +74,10 @@
  
 --- a/chrome/browser/extensions/component_loader.cc
 +++ b/chrome/browser/extensions/component_loader.cc
-@@ -813,8 +813,6 @@ void ComponentLoader::AddDefaultComponen
-   }
+@@ -816,8 +816,6 @@ void ComponentLoader::AddDefaultComponen
  
    AddAimEligibilityExtension();
+   AddNewTabPageExtension();
 -  AddGlicExtension();
 -  AddContextualTasksExtension();
  

@@ -1,14 +1,14 @@
 --- a/chrome/browser/download/download_commands.h
 +++ b/chrome/browser/download/download_commands.h
-@@ -47,6 +47,9 @@ class DownloadCommands {
-     OPEN_WITH_MEDIA_APP = 21,  // Open file using the ChromeOS media app.
+@@ -49,6 +49,9 @@ class DownloadCommands {
      EDIT_WITH_MEDIA_APP = 22,  // Open file using the ChromeOS media app with
                                 // an editing hint.
-+    REMOVE_FROM_LIST = 23,
-+    DELETE_LOCAL_FILE = 24,
-+    COPY_DOWNLOAD_LINK = 25,
+     OPEN_WITH = 23,  // Open the system "Open with" dialog. Windows only.
++    REMOVE_FROM_LIST = 24,
++    DELETE_LOCAL_FILE = 25,
++    COPY_DOWNLOAD_LINK = 26,
  
-     kMaxValue = EDIT_WITH_MEDIA_APP,  // Keep last.
+     kMaxValue = OPEN_WITH,  // Keep last.
    };
 --- a/chrome/browser/download/download_item_model.cc
 +++ b/chrome/browser/download/download_item_model.cc

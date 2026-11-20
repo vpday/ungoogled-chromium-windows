@@ -38,8 +38,7 @@
  #include "base/metrics/histogram_functions.h"
  #include "third_party/blink/public/common/permissions/permission_utils.h"
  #include "third_party/blink/public/mojom/page/page.mojom-blink.h"
-@@ -276,7 +277,27 @@ void Permissions::TaskComplete(
-   if (!resolver->GetExecutionContext() ||
+@@ -277,6 +277,26 @@ void Permissions::TaskComplete(
        resolver->GetExecutionContext()->IsContextDestroyed())
      return;
  

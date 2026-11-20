@@ -11,8 +11,7 @@
  #include "base/feature_list.h"
  #include "base/metrics/histogram_functions.h"
  #include "base/notreached.h"
-@@ -1496,7 +1500,61 @@ void MediaDevices::DevicesEnumerated(
-       }
+@@ -1497,6 +1500,60 @@ void MediaDevices::DevicesEnumerated(
      }
    }
  

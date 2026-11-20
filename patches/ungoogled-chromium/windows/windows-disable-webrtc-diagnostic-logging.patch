@@ -1,6 +1,6 @@
 --- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
 +++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
-@@ -5396,7 +5396,8 @@
+@@ -5639,7 +5639,8 @@
      {
        name: "RTCDiagnosticLogging",
        origin_trial_feature_name: "RTCDiagnosticLogging",
@@ -10,3 +10,12 @@
      },
      {
        name: "RTCEncodedAudioFrameConstructor",
+@@ -5688,7 +5689,7 @@
+     {
+       name: "RTCLegacyDiagnosticLogging",
+       origin_trial_feature_name: "RTCDiagnosticLogging",
+-      status: "experimental",
++      base_feature_status: "disabled",
+     },
+     // Enables the use of |RTCRtpEncodingParameters.codec|
+     {

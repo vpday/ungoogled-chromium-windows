@@ -57,7 +57,7 @@
  #include "components/vector_icons/vector_icons.h"
  #include "ui/base/l10n/l10n_util.h"
  #include "ui/base/ui_base_features.h"
-@@ -71,13 +74,15 @@
+@@ -70,13 +73,16 @@
  }
  
  int DefaultBrowserInfoBarDelegate::GetButtons() const {
@@ -67,9 +67,10 @@
  
  std::u16string DefaultBrowserInfoBarDelegate::GetButtonLabel(
      InfoBarButton button) const {
--  DCHECK_EQ(BUTTON_OK, button);
+-  CHECK_EQ(BUTTON_OK, button, base::NotFatalUntil::M162);
 -  return l10n_util::GetStringUTF16(IDS_DEFAULT_BROWSER_INFOBAR_OK_BUTTON_LABEL);
-+  DCHECK(button == BUTTON_OK || button == BUTTON_CANCEL);
++  CHECK(button == BUTTON_OK || button == BUTTON_CANCEL,
++        base::NotFatalUntil::M162);
 +  return l10n_util::GetStringUTF16(
 +    button == BUTTON_OK ? IDS_DEFAULT_BROWSER_INFOBAR_OK_BUTTON_LABEL
 +                        : IDS_CARET_BROWSING_DO_NOT_ASK);

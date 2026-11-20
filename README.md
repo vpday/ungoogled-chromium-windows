@@ -159,7 +159,7 @@ python3 build.py
 5. Create required build tool symlinks (`7za` → `7zz`, system `gperf`, and `esbuild`).
 6. Apply core ungoogled-chromium patches, Windows platform fixes, curated patches (Brave, Helium, Cromite), and any target-specific optimization patches.
 7. Replace Google domains with non-tracking alternatives using domain substitution lists.
-8. Set up Rust and Windows SDK toolchains (`ciopfs` mount), download the cross-compilation `rc` binary, and configure LLVM build environment variables.
+8. Set up Rust and Windows SDK toolchains (`ciopfs` mount), build bindgen and Crubit (`cc_bindings_from_rs`) tools, download the cross-compilation `rc` binary, and configure LLVM build environment variables.
 9. Download V8 Builtins PGO profiles for optimization (skipped in tarball mode).
 10. Generate `args.gn` by combining base and Windows flags, setting `target_cpu`, and injecting architecture-specific options (e.g., Wasm SIMD256 re-vectorization for `x64`, disabling Drumbrake for `x86`, or `chrome_pgo_phase=0` for tarball builds).
 11. Create a `third_party` symlink for out-of-tree GN output directories if required.
@@ -221,7 +221,8 @@ All dependency versions are defined in `downloads.ini`. Dependencies are organiz
 1. Check [7-Zip releases](https://github.com/ip7z/7zip/releases/) for Linux x64 builds
 2. Download `7zVERSION-linux-x64.tar.xz`
 3. Get SHA-256 checksum and update `downloads.ini` section `[7zip-linux]`:
-   - `version = VERSION`
+   - `version = VERSION` (e.g., `2606`)
+   - `url`: update release tag in URL (e.g., `26.06`) to match upstream release
    - `sha256 = CHECKSUM`
 
 ##### Node.js (`nodejs`)
@@ -280,30 +281,34 @@ Used by `tools/typescript/ts_library.gni` for compiling WebUI and DevTools front
 
 The Rust toolchain consists of:
 - Linux Host Rust archive: `rust-x64` (Linux x86_64 host toolchain used across all targets)
+- Host rustc-dev package: `rustc-dev-x64` (`rustc_private` crates required to build Crubit's `cc_bindings_from_rs`)
+- Crubit source archive: `crubit` (Google Crubit C++/Rust FFI binding generator sources)
 - Windows targets: `rust-std-windows-x64`, `rust-std-windows-x86`, `rust-std-windows-arm` (for cross-compilation)
 - Linux target standard library: `rust-std-linux-x86` (for 32-bit Linux host snapshot toolchain `clang_x86` when building target `x86`)
 - Host bindgen tool: Built from source via Chromium's `tools/rust/build_bindgen.py` during toolchain setup, linked with LLVM `libclang` from the prebuilt LLVM toolchain.
+- Host Crubit tool: Built from source (`cc_bindings_from_rs`) via host cargo during toolchain setup, linked with `rustc_private` crates.
 
 The build downloads:
-- Target `x64`: `rust-x64`, `rust-std-windows-x64`
-- Target `x86`: `rust-x64`, `rust-std-windows-x86`, `rust-std-linux-x86`
-- Target `arm64`: `rust-x64`, `rust-std-windows-arm`
+- Target `x64`: `rust-x64`, `rustc-dev-x64`, `crubit`, `rust-std-windows-x64`
+- Target `x86`: `rust-x64`, `rustc-dev-x64`, `crubit`, `rust-std-windows-x86`, `rust-std-linux-x86`
+- Target `arm64`: `rust-x64`, `rustc-dev-x64`, `crubit`, `rust-std-windows-arm`
 
 ##### Rust update process
 
-1. Check `RUST_REVISION` in `build/src/tools/rust/update_rust.py`
+1. Check `RUST_REVISION` and `CRUBIT_REVISION` in `build/src/tools/rust/update_rust.py`
 ```bash
-grep RUST_REVISION build/src/tools/rust/update_rust.py
+grep -E 'RUST_REVISION|CRUBIT_REVISION' build/src/tools/rust/update_rust.py
 ```
 
 2. Get commit date from `https://github.com/rust-lang/rust/commit/RUST_REVISION`
-   - Example: Revision `abc123...` corresponds to date `2026-09-09`
+   - Example: Revision `abc123...` corresponds to date `2026-10-16`
 
-3. Download `https://static.rust-lang.org/dist/2026-09-09/channel-rust-nightly.toml`. Use the matching `xz_hash` value from that manifest as the `sha256` in `downloads.ini` (this is the `.tar.xz` SHA-256, avoiding downloading every archive just to run `sha256sum`).
+3. Download `https://static.rust-lang.org/dist/2026-10-16/channel-rust-nightly.toml`. Use the matching `xz_hash` value from that manifest as the `sha256` in `downloads.ini` (this is the `.tar.xz` SHA-256, avoiding downloading every archive just to run `sha256sum`).
 
 Linux Rust host archive:
 ```text
 rust-nightly-x86_64-unknown-linux-gnu.tar.xz -> [pkg.rust.target.x86_64-unknown-linux-gnu].xz_hash
+rustc-dev-nightly-x86_64-unknown-linux-gnu.tar.xz -> [pkg.rustc-dev.target.x86_64-unknown-linux-gnu].xz_hash
 ```
 
 Windows targets for cross-compilation:
@@ -320,19 +325,22 @@ rust-std-nightly-i686-unknown-linux-gnu.tar.xz -> [pkg.rust-std.target.i686-unkn
 
 4. If you want to verify the nightly version string, download one Linux Rust archive and extract it:
 ```bash
-wget https://static.rust-lang.org/dist/2026-09-09/rust-nightly-x86_64-unknown-linux-gnu.tar.xz
+wget https://static.rust-lang.org/dist/2026-10-16/rust-nightly-x86_64-unknown-linux-gnu.tar.xz
 tar xf rust-nightly-x86_64-unknown-linux-gnu.tar.xz
 ./rust-nightly-x86_64-unknown-linux-gnu/rustc/bin/rustc -V
-# Output: rustc-1.95.0-nightly
+# Output: rustc 1.95.0-nightly (...)
 ```
 
 5. Update `downloads.ini` sections:
-   - `[rust-x64]`: Update `version` and `sha256`
+   - `[rust-x64]`, `[rustc-dev-x64]`: Update `version` and `sha256`
    - `[rust-std-windows-x64]`, `[rust-std-windows-x86]`, `[rust-std-windows-arm]`, `[rust-std-linux-x86]`: Update `version` and `sha256`
 
-6. Update `patches/ungoogled-chromium/windows/windows-fix-building-with-rust.patch`:
-   - Replace the `rustc_version` string with the nightly version string for that toolchain
-   - Example: Change `rustc_version = ""` to `rustc_version = "rustc-1.95.0-nightly"`
+6. Update Crubit sources (`[crubit]` in `downloads.ini`):
+   - Check `CRUBIT_REVISION` in `build/src/tools/rust/update_rust.py`
+   - Update `[crubit]` section with `version = CRUBIT_REVISION` (commit hash) and `sha256` checksum from `https://github.com/google/crubit/archive/VERSION.zip`
+
+7. Note on `rustc_version`:
+   - `build.py` automatically reads the installed Rust version stamp (`INSTALLED_VERSION` or `VERSION`) and injects `rustc_version` into `args.gn` during build generation; no manual patch editing is required.
 
 ### Updating Windows Toolchain
 
@@ -347,7 +355,7 @@ Update `win_toolchain.json` when:
 ```json
 {
   "variables": {
-    "chromium_version": "157.0.8103.26",
+    "chromium_version": "158.0.8127.36",
     "sdk_version": "10.0.28000.0",
     "vs_version": "2026",
     "repo": "vpday/chromium-win-toolchain-builder"
@@ -395,7 +403,7 @@ Update the `variables` section:
 ```json
 {
   "variables": {
-    "chromium_version": "157.0.8103.26",
+    "chromium_version": "158.0.8127.36",
     "sdk_version": "10.0.28000.0",
     "vs_version": "2026"
   }

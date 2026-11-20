@@ -1,29 +1,19 @@
---- a/chrome/browser/chrome_content_browser_client.h
-+++ b/chrome/browser/chrome_content_browser_client.h
-@@ -452,7 +452,9 @@
-   scoped_refptr<network::SharedURLLoaderFactory>
-   GetSystemSharedURLLoaderFactory() override;
-   network::mojom::NetworkContext* GetSystemNetworkContext() override;
-   std::string GetGeolocationApiKey() override;
-+  std::unique_ptr<device::LocationProvider> OverrideSystemLocationProvider()
-+      override;
- 
- #if BUILDFLAG(OS_LEVEL_GEOLOCATION_PERMISSION_SUPPORTED)
-   device::GeolocationSystemPermissionManager*
+diff --git a/chrome/browser/chrome_content_browser_client.cc b/chrome/browser/chrome_content_browser_client.cc
+index 565bd580ba6..bb49b88977d 100644
 --- a/chrome/browser/chrome_content_browser_client.cc
 +++ b/chrome/browser/chrome_content_browser_client.cc
-@@ -240,5 +240,9 @@
+@@ -249,6 +249,10 @@
+ #include "chrome/common/webui_url_constants.h"
  #include "chrome/common/webui_url_utils.h"
  #include "chrome/installer/util/google_update_settings.h"
 +#include <cmath>
 +#include "base/timer/timer.h"
 +#include "services/device/public/cpp/geolocation/location_provider.h"
 +#include "services/device/public/mojom/geoposition.mojom.h"
+ #include "components/actor/core/actor_features.h"
  #include "components/autofill/core/common/autofill_features.h"
  #include "components/autofill/core/common/autofill_switches.h"
- #include "components/blocked_content/popup_blocker.h"
-@@ -2989,7 +2993,17 @@ void ChromeContentBrowserClient::AppendExtraCommandLineSwitches(
-   command_line->AppendSwitchASCII(ash::switches::kHomedir, homedir.value());
+@@ -3154,6 +3158,16 @@ void ChromeContentBrowserClient::AppendExtraCommandLineSwitches(
  #endif
  
    if (process_type == switches::kRendererProcess) {
@@ -40,8 +30,8 @@
      content::RenderProcessHost* process =
          content::RenderProcessHost::FromID(child_process_id);
      if (process) {
-@@ -3877,9 +3891,125 @@ std::string ChromeContentBrowserClient::GetGeolocationApiKey() {
-   return google_apis::GetAPIKey();
+@@ -3907,9 +3921,125 @@ std::string ChromeContentBrowserClient::GetGeolocationApiKey() {
+ #endif
  }
  
 +namespace {
@@ -166,3 +156,16 @@
    return device::GeolocationSystemPermissionManager::GetInstance();
  }
  #endif
+diff --git a/chrome/browser/chrome_content_browser_client.h b/chrome/browser/chrome_content_browser_client.h
+index f363c71769f..4de7a9cfdce 100644
+--- a/chrome/browser/chrome_content_browser_client.h
++++ b/chrome/browser/chrome_content_browser_client.h
+@@ -458,6 +458,8 @@ class ChromeContentBrowserClient : public content::ContentBrowserClient {
+   GetSystemSharedURLLoaderFactory() override;
+   network::mojom::NetworkContext* GetSystemNetworkContext() override;
+   std::string GetGeolocationApiKey() override;
++  std::unique_ptr<device::LocationProvider> OverrideSystemLocationProvider()
++      override;
+ 
+ #if BUILDFLAG(OS_LEVEL_GEOLOCATION_PERMISSION_SUPPORTED)
+   device::GeolocationSystemPermissionManager*

@@ -28,9 +28,9 @@
          </message>
 --- a/components/tabs/public/tab_context_menu_command.h
 +++ b/components/tabs/public/tab_context_menu_command.h
-@@ -39,6 +39,7 @@ enum TabContextMenuCommand {
-   CommandGlicSwitchToRecentConversation,
-   CommandGlicUnshare,
+@@ -42,6 +42,7 @@ enum TabContextMenuCommand {
+   CommandAiModeCreateNewThread,
+   CommandAiModeUnshare,
    CommandToggleFocusGroup,
 +  CommandDiscard,
  };
@@ -38,7 +38,7 @@
  
 --- a/chrome/browser/ui/tabs/tab_strip_model.h
 +++ b/chrome/browser/ui/tabs/tab_strip_model.h
-@@ -1121,6 +1121,10 @@ class TabStripModel {
+@@ -1121,7 +1121,11 @@ class TabStripModel {
    // determine which indices the command applies to. Indices are sorted in
    // increasing order.
    std::vector<int> GetIndicesForCommand(int index) const;
@@ -48,7 +48,8 @@
 +  std::vector<int> GetIndicesDiscardedByCommand(int index) const;
  
    // Returns whether any tab would close when executing the command `id`
-   // (CommandCloseTabsToRight or CommandCloseOtherTabs) for the tab at `index`.
+   // (CommandCloseTabsToRight or CommandCloseOtherTabs) for `context_tab`.
+   bool HasTabsClosedByCommand(tabs::TabHandle context_tab,
 --- a/chrome/browser/ui/tabs/tab_strip_model.cc
 +++ b/chrome/browser/ui/tabs/tab_strip_model.cc
 @@ -45,8 +45,11 @@
@@ -63,10 +64,10 @@
  #include "chrome/browser/resource_coordinator/tab_helper.h"
  #include "chrome/browser/send_tab_to_self/send_tab_to_self_util.h"
  #include "chrome/browser/ui/bookmarks/bookmark_utils.h"
-@@ -91,6 +94,7 @@
- #include "components/content_settings/core/common/content_settings.h"
- #include "components/content_settings/core/common/content_settings_types.h"
+@@ -95,6 +98,7 @@
+ #include "components/contextual_tasks/public/features.h"
  #include "components/feature_engagement/public/feature_constants.h"
+ #include "components/omnibox/common/composebox_features.h"
 +#include "components/performance_manager/public/performance_manager.h"
  #include "components/reading_list/core/reading_list_model.h"
  #include "components/sessions/core/session_id.h"
@@ -150,7 +151,7 @@
 +
      case CommandCloseOtherTabs:
      case CommandCloseTabsToRight: {
-       return HasIndicesClosedByCommand(context_index, command_id);
+       return HasTabsClosedByCommand(context_tab, command_id);
 @@ -2869,6 +2939,28 @@ void TabStripModel::ExecuteContextMenuCo
        break;
      }
@@ -180,7 +181,7 @@
      case CommandCloseTab: {
        base::UmaHistogramCounts1000("Tab.ContextMenu.CloseTab.SelectedTabsCount",
                                     selection_model_.size());
-@@ -3766,6 +3858,32 @@ std::vector<int> TabStripModel::GetIndic
+@@ -3857,6 +3857,32 @@ std::vector<int> TabStripModel::GetIndic
    return std::vector<int>(sel.begin(), sel.end());
  }
  
@@ -210,9 +211,9 @@
 +  return indices;
 +}
 +
- std::vector<tabs::TabInterface*> TabStripModel::GetTabsForCommand(
-     int index) const {
-   if (!ContainsIndex(index)) {
+ std::vector<tabs::TabHandle> TabStripModel::GetTabsForCommand(
+     tabs::TabHandle context_tab) const {
+   tabs::TabInterface* tab = context_tab.Get();
 --- a/chrome/browser/ui/tabs/tab_menu_model.cc
 +++ b/chrome/browser/ui/tabs/tab_menu_model.cc
 @@ -643,6 +643,12 @@ void TabMenuModel::Build(int index) {

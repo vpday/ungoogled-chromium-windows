@@ -58,8 +58,7 @@
    return id;
  }
  
-@@ -1122,7 +1132,8 @@ RenderViewContextMenu::RenderViewContext
-       inspect_submenu_model_(this),
+@@ -1140,6 +1146,7 @@ RenderViewContextMenu::RenderViewContext
        contextual_tasks_submenu_model_(this),
        video_frame_submenu_model_(this),
        accessibility_labels_submenu_model_(this),
@@ -317,12 +316,12 @@
    switch (id) {
      case IDC_CONTENT_CONTEXT_OPENLINKNEWTAB: {
        WindowOpenDisposition new_tab_disposition =
-@@ -4289,53 +4447,11 @@ void RenderViewContextMenu::ExecuteComma
+@@ -4406,54 +4412,12 @@ void RenderViewContextMenu::ExecuteCommand(int id, int event_flags) {
        [[fallthrough]];
      }
      case IDC_CONTENT_CONTEXT_SEARCHWEBFORNEWTAB: {
 -      auto disposition = ui::DispositionFromEventFlags(
--          event_flags, WindowOpenDisposition::NEW_FOREGROUND_TAB);
+-          event_flags, WindowOpenDisposition::kNewForegroundTab);
 -
 -      GURL navigation_url = selection_navigation_url_;
 -      if (google_util::IsGoogleSearchUrl(navigation_url)) {
@@ -354,8 +353,8 @@
 -                    if (content::NavigationEntry* entry =
 -                            web_contents->GetController()
 -                                .GetLastCommittedEntry()) {
--                      tracker->OnCopyRecorded(tab_id, entry->GetUniqueID(),
--                                              selection_text);
+-                      tracker->OnContextMenuSearchRecorded(
+-                          tab_id, entry->GetUniqueID(), selection_text);
 -                    }
 -                  }
 -                }
@@ -375,14 +374,15 @@
 +      break;
      case IDC_CONTENT_CONTEXT_GOTOURL: {
        auto disposition = ui::DispositionFromEventFlags(
-@@ -5620,6 +5736,55 @@ void RenderViewContextMenu::ExecRotateCC
+           event_flags, WindowOpenDisposition::kNewForegroundTab);
+@@ -5646,6 +5646,55 @@
  #endif
  }
  
 +void RenderViewContextMenu::ExecSearchForURL(GURL navigation_url,
 +                                             int event_flags) {
 +  auto disposition = ui::DispositionFromEventFlags(
-+      event_flags, WindowOpenDisposition::NEW_FOREGROUND_TAB);
++      event_flags, WindowOpenDisposition::kNewForegroundTab);
 +
 +  if (google_util::IsGoogleSearchUrl(navigation_url)) {
 +    navigation_url = net::AppendOrReplaceQueryParameter(
@@ -413,8 +413,8 @@
 +                if (content::NavigationEntry* entry =
 +                        web_contents->GetController()
 +                            .GetLastCommittedEntry()) {
-+                  tracker->OnCopyRecorded(tab_id, entry->GetUniqueID(),
-+                                          selection_text);
++                  tracker->OnContextMenuSearchRecorded(
++                      tab_id, entry->GetUniqueID(), selection_text);
 +                }
 +              }
 +            }

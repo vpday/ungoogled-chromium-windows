@@ -1,6 +1,6 @@
 --- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
 +++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
-@@ -1039,7 +1039,7 @@
+@@ -1066,7 +1066,7 @@
        // embed camera and microphone permission request controls directly in the page.
        // https://chromestatus.com/feature/5153829504024576
        name: "CameraAndMicrophoneElements",
@@ -9,7 +9,7 @@
        public: true,
      },
      {
-@@ -3417,7 +3417,7 @@
+@@ -3569,7 +3569,7 @@
      {
        // Tracking bug for the implementation: https://crbug.com/430204832
        name: "GeolocationElement",
@@ -18,7 +18,21 @@
        public: true,
      },
      {
-@@ -6802,19 +6802,20 @@
+@@ -4025,12 +4025,7 @@
+     {
+       // https://chromestatus.com/feature/5152834368700416
+       name: "InstallElement",
+-      status: {
+-        "Android": "",
+-        "iOS": "",
+-        "Fuchsia": "",
+-        "default": "stable",
+-      },
++      base_feature_status: "disabled",
+       public: true,
+     },
+     {
+@@ -7194,7 +7189,7 @@
      },
      {
        name: "UserMediaElement",
@@ -27,7 +41,7 @@
        public: true,
      },
      {
-       // Allowing legacy compatibility paths for usermedia element (such as
+@@ -7202,6 +7197,7 @@
        // the 'type' attribute carried over from older permission element
        // implementations).
        name: "UserMediaElementLegacy",
@@ -35,8 +49,17 @@
        // By mapping this new flag to the existing "UserMediaElement" origin
        // trial name, both features can be evaluated concurrently during the
        // trial phase while preserving a partner-less-effort path for future
-       // deprecation.
-       origin_trial_feature_name: "UserMediaElement",
+@@ -7325,12 +7321,7 @@
+     {
+       // https://chromestatus.com/feature/5183481574850560
+       name: "WebAppInstallation",
+-      status: {
+-        "Android": "",
+-        "iOS": "",
+-        "Fuchsia": "",
+-        "default": "stable",
+-      },
++      base_feature_status: "disabled",
+       public: true,
      },
      {
-       name: "UseShadowHostStyleCheckEditable",

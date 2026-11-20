@@ -348,8 +348,8 @@
  const std::optional<tab_groups::TabGroupId>
  BrowserLiveTabContext::GetGroupIdForSavedGroup(const base::Uuid& saved) const {
    tab_groups::TabGroupSyncService* tab_group_service =
-@@ -365,6 +383,11 @@ sessions::LiveTab* BrowserLiveTabContext
-       tab_strip_model_->SupportsTabGroups() ? tab.group : std::nullopt;
+@@ -383,6 +383,11 @@ sessions::LiveTab* BrowserLiveTabContext
+   }
    std::optional<base::Uuid> saved_group_id = tab.saved_group_id;
    content::WebContents* web_contents = nullptr;
 +  const chrome::RestoredTabLoadPolicy load_policy =
@@ -368,7 +368,7 @@
 +        /*from_session_restore=*/false, /*is_active_browser=*/std::nullopt,
 +        load_policy);
  
-     if (group_id.has_value() &&
+     if (group_id.has_value() && !IsEphemeralTabGroup(group_id.value()) &&
          !tab_group_service->GetGroup(group_id.value()).has_value()) {
 @@ -394,6 +418,8 @@ sessions::LiveTab* BrowserLiveTabContext
                tab.group.value()));
@@ -648,11 +648,12 @@
    std::map<std::string, std::string> GetExtraDataForTab(
        int index) const override;
    std::map<std::string, std::string> GetExtraDataForWindow() const override;
-@@ -89,6 +90,7 @@ class BrowserLiveTabContext : public ses
+@@ -84,7 +85,8 @@ class BrowserLiveTabContext : public ses
        const tab_groups::TabGroupId& group) const override;
    const std::optional<tab_groups::TabGroupId> GetGroupIdForSavedGroup(
        const base::Uuid& saved) const override;
 +  bool HasSavedTabGroup(const base::Uuid& saved) const override;
+   bool IsEphemeralTabGroup(const tab_groups::TabGroupId& group) const override;
    bool IsTabPinned(int index) const override;
    void SetVisualDataForGroup(
        const tab_groups::TabGroupId& group,
@@ -668,13 +669,17 @@
    virtual std::map<std::string, std::string> GetExtraDataForTab(
        int index) const = 0;
    virtual std::map<std::string, std::string> GetExtraDataForWindow() const = 0;
-@@ -66,6 +69,9 @@ class SESSIONS_EXPORT LiveTabContext {
+@@ -67,10 +70,13 @@ class SESSIONS_EXPORT LiveTabContext {
        const tab_groups::TabGroupId& group) const = 0;
    virtual const std::optional<tab_groups::TabGroupId> GetGroupIdForSavedGroup(
        const base::Uuid& saved) const = 0;
 +  // Unlike GetGroupIdForSavedGroup(), also recognizes closed saved groups.
 +  // False means tabs must be restored individually, e.g. for deleted groups.
 +  virtual bool HasSavedTabGroup(const base::Uuid& saved) const { return false; }
+   // Returns whether |group| is an ephemeral tab group used as part of Focus
+   // Selection.
+   virtual bool IsEphemeralTabGroup(
+       const tab_groups::TabGroupId& group) const = 0;
    virtual bool IsTabPinned(int index) const = 0;
    // Update |group|'s metadata. Should only be called for |group| if a tab has
    // been restored in |group| via AddRestoredTab() or ReplaceRestoredTab().

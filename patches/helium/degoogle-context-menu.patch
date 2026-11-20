@@ -51,7 +51,7 @@
  }
  
  void RenderViewContextMenu::AppendOpenWithLinkItems() {
-@@ -2565,55 +2537,6 @@
+@@ -2638,58 +2610,6 @@
                                      IDS_CONTENT_CONTEXT_SAVEPAGEAS);
      menu_model_.AddItemWithStringId(IDC_PRINT, IDS_CONTENT_CONTEXT_PRINT);
  
@@ -81,6 +81,9 @@
 -      // Save to Memory Banks
 -      AppendSaveToMemoryBanksItem();
 -    }
+-
+-    // Indigo (Try it on)
+-    AppendIndigoItem();
 -
 -    // Open in reading mode & Listen to this page
 -    AppendReadAnythingItem();
@@ -115,7 +118,7 @@
  
    if (features::IsReadAnythingMenuShuffleExperimentEnabled()) {
      // This will be set to false in AppendRegionSearchItem() if it is called.
-@@ -2861,45 +2783,7 @@
+@@ -2925,49 +2847,9 @@
    }
  }
  
@@ -131,8 +134,10 @@
 -    return;
 -  }
 -
--  // Show Read Anything option if it's not already open in the side panel.
--  if (IsNormalBrowser() && !IsReadAnythingEntryShowing(GetBrowser())) {
+-  // Show Read Anything option if it's not already open.
+-  if (IsNormalBrowser() &&
+-      !read_anything::ReadAnythingEntryPointController::IsUIShowing(
+-          GetBrowser())) {
 -    menu_model_.AddItemWithStringId(IDC_CONTENT_CONTEXT_OPEN_IN_READING_MODE,
 -                                    IDS_CONTENT_CONTEXT_READING_MODE);
 -
@@ -160,7 +165,9 @@
 -
 +void RenderViewContextMenu::AppendReadAnythingItem() {}
  void RenderViewContextMenu::AppendSaveToMemoryBanksItem() {
-   if (base::FeatureList::IsEnabled(context_hub::features::kMemoryBanks)) {
+   if (base::FeatureList::IsEnabled(context_hub::features::kMemoryBanks) &&
+       !menu_model_.GetIndexOfCommandId(IDC_CONTENT_CONTEXT_SAVE_TO_MEMORY_BANKS)
+            .has_value()) {
      menu_model_.AddItemWithStringId(IDC_CONTENT_CONTEXT_SAVE_TO_MEMORY_BANKS,
 @@ -4273,26 +4162,7 @@
    AddSpellCheckServiceItem(&menu_model_, is_checked);
@@ -240,7 +247,7 @@
  void RenderViewContextMenu::AppendSendTabToSelfItem(bool add_separator) {
    if (!embedder_web_contents_) {
      return;
-@@ -5826,19 +5665,11 @@
+@@ -6084,19 +5913,11 @@ ToastController* RenderViewContextMenu::GetToastController() const {
  }
  
  bool RenderViewContextMenu::CanTranslate(bool menu_logging) {

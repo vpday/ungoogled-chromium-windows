@@ -1,6 +1,6 @@
 --- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
 +++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
-@@ -6686,7 +6686,7 @@
+@@ -7262,7 +7262,7 @@
      },
      {
        name: "ViewportSegments",
@@ -8,4 +8,4 @@
 +      status: "test",
      },
      {
-       name: "ViewTransitionDOMCallbackAfterCommit",
+       name: "ViewTransitionLongCallbackTimeoutForTesting",

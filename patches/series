@@ -19,7 +19,6 @@ ungoogled-chromium/windows/windows-fix-building-with-rust.patch
 ungoogled-chromium/windows/windows-fix-complex-builtins.patch
 ungoogled-chromium/windows/windows-fix-remove-unused-preferences-fields.patch
 ungoogled-chromium/windows/windows-fix-missing-includes.patch
-ungoogled-chromium/windows/windows-fix-unsupported-llvm-flags.patch
 ungoogled-chromium/windows/windows-fix-python.patch
 ungoogled-chromium/windows/windows-fix-typescript-lib-dom.patch
 ungoogled-chromium/windows/windows-fix-files-cfg-case.patch
@@ -27,7 +26,6 @@ ungoogled-chromium/windows/windows-fix-v8-snapshot-toolchain-linux-win-arm64.pat
 ungoogled-chromium/windows/windows-fix-rust-toolchain-compat.patch
 ungoogled-chromium/windows/windows-enable-dtlto.patch
 helium/memory-saving-by-default.patch
-helium/disable-history-clusters.patch
 helium/disable-user-education-nags.patch
 helium/disable-live-caption-completely.patch
 helium/spoof-chrome-ua-brand.patch
@@ -84,7 +82,6 @@ cromite/Lock-Profile-Cookie-Database.patch
 cromite/Media-fingerprinting-mitigations.patch
 cromite/Override-Navigator-Language.patch
 cromite/Disable-Posture-API.patch
-cromite/Disable-Device-Attributes-API.patch
 cromite/Partition-MediaDeviceId-by-default.patch
 cromite/Immediately-destroy-shared-workers-when-closing-the-page.patch
 cromite/Disable-visited-pseudo-class.patch

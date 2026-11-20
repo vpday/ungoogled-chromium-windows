@@ -1,6 +1,6 @@
 --- a/components/embedder_support/user_agent_utils.cc
 +++ b/components/embedder_support/user_agent_utils.cc
-@@ -150,6 +150,7 @@ const std::string& GetUniversalApiContractVersion() {
+@@ -146,7 +146,8 @@
  }
  
  const std::string& GetWindowsPlatformVersion() {
@@ -9,3 +9,4 @@
 +  return *kNormalizedVersion;
  }
  #endif  // BUILDFLAG(IS_WIN)
+ 

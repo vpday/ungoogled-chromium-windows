@@ -1,37 +1,35 @@
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
-@@ -1295,6 +1295,15 @@ config("thinlto_optimize_default") {
-       ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
-       ldflags += [ "-Wl,--lto-CGO3" ]
-     }
-+    if (is_win) {
+@@ -1297,7 +1297,14 @@ config("thinlto_optimize_default") {
+     if (is_win) {
+       ldflags = [ "/opt:lldlto=" + lto_opt_level ]
+       ldflags += [ "-opt:lldltocgo=3" ]
 +      ldflags += [
 +        "/thinlto-distributor:/usr/bin/python3",
 +        "/thinlto-distributor-arg:" +
-+          rebase_path("//tools/dtlto/local_parallel.py", root_build_dir),
++            rebase_path("//tools/dtlto/local_parallel.py", root_build_dir),
 +        "/thinlto-remote-compiler:" +
-+          rebase_path("$clang_base_path/bin/clang", root_build_dir),
++            rebase_path("$clang_base_path/bin/clang", root_build_dir),
 +      ]
-+    }
- 
-     if (toolchain_supports_rust_thin_lto) {
-       # We always point Rust to a linker that performs LTO, so we don't want
-@@ -1332,6 +1341,15 @@ config("thinlto_optimize_max") {
+     } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
        ldflags += [ "-Wl,--lto-CGO3" ]
      }
-+    if (is_win) {
+@@ -1334,7 +1341,14 @@ config("thinlto_optimize_max") {
+     if (is_win) {
+       ldflags = [ "/opt:lldlto=" + lto_opt_level ]
+       ldflags += [ "-opt:lldltocgo=3" ]
 +      ldflags += [
 +        "/thinlto-distributor:/usr/bin/python3",
 +        "/thinlto-distributor-arg:" +
-+          rebase_path("//tools/dtlto/local_parallel.py", root_build_dir),
++            rebase_path("//tools/dtlto/local_parallel.py", root_build_dir),
 +        "/thinlto-remote-compiler:" +
-+          rebase_path("$clang_base_path/bin/clang", root_build_dir),
++            rebase_path("$clang_base_path/bin/clang", root_build_dir),
 +      ]
-+    }
- 
-     if (toolchain_supports_rust_thin_lto) {
-       # We always point Rust to a linker that performs LTO, so we don't want
+     } else {
+       ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
+       ldflags += [ "-Wl,--lto-CGO3" ]
+     }
 --- /dev/null
 +++ b/tools/dtlto/local_parallel.py
 @@ -0,0 +1,47 @@

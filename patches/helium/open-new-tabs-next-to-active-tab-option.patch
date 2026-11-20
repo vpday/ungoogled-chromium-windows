@@ -37,7 +37,7 @@
    registry->RegisterBooleanPref(prefs::kShowHomeButton, false,
 --- a/chrome/browser/ui/tabs/tab_strip_model.cc
 +++ b/chrome/browser/ui/tabs/tab_strip_model.cc
-@@ -80,7 +80,10 @@
+@@ -89,8 +89,11 @@
  #include "chrome/browser/web_applications/policy/web_app_policy_manager.h"
  #include "chrome/browser/web_applications/web_app_provider.h"
  #include "chrome/browser/web_applications/web_app_tab_helper.h"
@@ -46,6 +46,7 @@
 +#include "chrome/common/pref_names.h"
 +#include "components/prefs/pref_service.h"
  #include "chrome/common/webui_url_constants.h"
+ #include "chrome/grit/generated_resources.h"
  #include "components/commerce/core/commerce_utils.h"
  #include "components/content_settings/core/browser/host_content_settings_map.h"
 @@ -1841,7 +1844,23 @@ void TabStripModel::AddTab(std::unique_ptr<tabs::TabModel> tab,

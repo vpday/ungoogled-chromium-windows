@@ -44,15 +44,13 @@
    } else {
 --- a/chrome/browser/ui/tabs/tab_strip_model.cc
 +++ b/chrome/browser/ui/tabs/tab_strip_model.cc
-@@ -2692,6 +2692,7 @@ bool TabStripModel::IsContextMenuCommandEnabled(
-       return delegate_->CanReload();
- 
+@@ -2778,4 +2778,5 @@ bool TabStripModel::IsContextMenuCommandEnabled(
      case CommandCloseOtherTabs:
 +    case CommandCloseTabsToLeft:
      case CommandCloseTabsToRight: {
-       return HasIndicesClosedByCommand(context_index, command_id);
+       return HasTabsClosedByCommand(context_tab, command_id);
      }
-@@ -2895,6 +2896,7 @@ void TabStripModel::ExecuteContextMenuCommand(int context_index,
+@@ -2944,6 +2945,7 @@ void TabStripModel::ExecuteContextMenuCommand(int context_index,
        break;
      }
  
@@ -60,52 +58,17 @@
      case CommandCloseTabsToRight: {
        base::UmaHistogramCounts1000(
            "Tab.ContextMenu.CloseTabsToRight.SelectedTabsCount",
-@@ -3784,15 +3786,22 @@ bool TabStripModel::HasIndicesClosedByCommand(int index,
-   if (!ContainsIndex(index)) {
-     return false;
-   }
--  DCHECK(id == CommandCloseTabsToRight || id == CommandCloseOtherTabs);
-+  DCHECK(id == CommandCloseTabsToRight || id == CommandCloseTabsToLeft ||
-+         id == CommandCloseOtherTabs);
-   bool is_selected = IsTabSelected(index);
-   int last_unclosed_tab = -1;
-+  int first_unclosed_tab = count();
-   if (id == CommandCloseTabsToRight) {
-     last_unclosed_tab = is_selected ? *selection_model()
-                                            .GetListSelectionModel()
-                                            .selected_indices()
-                                            .rbegin()
-                                     : index;
-+  } else if (id == CommandCloseTabsToLeft) {
-+    first_unclosed_tab =
-+        is_selected
-+            ? *selection_model_.GetListSelectionModel().selected_indices().begin()
-+            : index;
-   }
- 
-   // If the tab that the context menu command is invoked on is not selected and
-@@ -3807,6 +3816,10 @@ bool TabStripModel::HasIndicesClosedByCommand(int index,
- 
-   std::optional<tab_groups::TabGroupId> focused_group = GetFocusedGroup();
-   for (int i = count() - 1; i > last_unclosed_tab; --i) {
-+    if (id == CommandCloseTabsToLeft && i >= first_unclosed_tab) {
-+      continue;
-+    }
-+
-     // Skip tabs that are not part of the focused group.
-     if (focused_group.has_value() && GetTabGroupForTab(i) != focused_group) {
-       continue;
-@@ -3826,7 +3839,8 @@ std::vector<tabs::TabInterface*> TabStripModel::GetTabsClosedByCommand(
+@@ -3901,7 +3903,8 @@ std::vector<tabs::TabHandle> TabStripModel::GetTabsClosedByCommand(
      return {};
    }
  
--  DCHECK(id == CommandCloseTabsToRight || id == CommandCloseOtherTabs);
-+  DCHECK(id == CommandCloseTabsToRight || id == CommandCloseTabsToLeft ||
-+         id == CommandCloseOtherTabs);
+-  CHECK(id == CommandCloseTabsToRight || id == CommandCloseOtherTabs,
++  CHECK(id == CommandCloseTabsToRight || id == CommandCloseTabsToLeft ||
++        id == CommandCloseOtherTabs,
+         base::NotFatalUntil::M162);
  
-   tabs::TabInterface* invoked_tab = GetTabAtIndex(index);
- 
-@@ -3849,6 +3861,10 @@ std::vector<tabs::TabInterface*> TabStripModel::GetTabsClosedByCommand(
+   std::vector<tabs::TabHandle> tabs_to_close;
+@@ -3923,6 +3944,10 @@ std::vector<tabs::TabHandle> TabStripModel::GetTabsClosedByCommand(
      }
  
      if (tab == invoked_tab || tab->IsPinned()) {

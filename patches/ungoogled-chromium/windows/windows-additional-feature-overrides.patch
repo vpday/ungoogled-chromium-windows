@@ -78,17 +78,6 @@
  }  // namespace features
  
  class SystemNetworkContextManager::NetworkProcessLaunchWatcher
---- a/chrome/browser/password_manager/password_change/features.cc
-+++ b/chrome/browser/password_manager/password_change/features.cc
-@@ -18,7 +18,7 @@ BASE_FEATURE(kPasswordChangeWithPrivateInferenceLoginCheck,
-              base::FEATURE_DISABLED_BY_DEFAULT);
- 
- BASE_FEATURE(kRecordDiscardedFormsToModelQualityLogs,
--             base::FEATURE_ENABLED_BY_DEFAULT);
-+             base::FEATURE_DISABLED_BY_DEFAULT);
- 
- BASE_FEATURE(kRecheckFormsExponentiallyInChangePasswordFormWaiter,
-              base::FEATURE_ENABLED_BY_DEFAULT);
 --- a/chrome/browser/predictors/predictors_features.cc
 +++ b/chrome/browser/predictors/predictors_features.cc
 @@ -18,11 +18,11 @@ constexpr base::FeatureState kFeatureEnabledOnlyOnAndroid =
@@ -116,16 +105,24 @@
      kFeatureEnabledOnlyOnAndroid;
 --- a/chrome/browser/ui/ui_features.cc
 +++ b/chrome/browser/ui/ui_features.cc
-@@ -64,3 +64,3 @@
- BASE_FEATURE(kTabStripDeclutter, base::FEATURE_DISABLED_BY_DEFAULT);
+@@ -79,7 +79,7 @@ BASE_FEATURE_PARAM(int,
+                    kTabStripDeclutterMaxTabWidthForCloseHide,
+                    &kTabStripDeclutter,
+                    100);
 -BASE_FEATURE(kToolbarGlowUp, base::FEATURE_DISABLED_BY_DEFAULT);
 +BASE_FEATURE(kToolbarGlowUp, base::FEATURE_ENABLED_BY_DEFAULT);
  BASE_FEATURE_PARAM(bool,
-@@ -82,3 +82,3 @@
+                    kToolbarGlowUpReloadEnabled,
+                    &kToolbarGlowUp,
+@@ -97,7 +97,7 @@ BASE_FEATURE_PARAM(bool,
+                    true);
+ BASE_FEATURE(kMenuSimplification, base::FEATURE_DISABLED_BY_DEFAULT);
  BASE_FEATURE(kTabGroupColorRefresh, base::FEATURE_DISABLED_BY_DEFAULT);
 -BASE_FEATURE(kWebuiRefresh2026, base::FEATURE_DISABLED_BY_DEFAULT);
 +BASE_FEATURE(kWebuiRefresh2026, base::FEATURE_ENABLED_BY_DEFAULT);
  BASE_FEATURE(kAppMenuGlowUp, base::FEATURE_DISABLED_BY_DEFAULT);
+ // Enables the redesigned Settings 2026 refresh features and search UX.
+ BASE_FEATURE(kSettingsRefresh2026, base::FEATURE_DISABLED_BY_DEFAULT);
 @@ -165,3 +165,3 @@
  #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
 -BASE_FEATURE(kDseIntegrity, base::FEATURE_ENABLED_BY_DEFAULT);
@@ -140,15 +137,6 @@
  
  // An experiment to reduce the number of navigations when preloading WebUIs.
  BASE_FEATURE(kPreloadTopChromeWebUILessNavigations,
-@@ -296,7 +296,3 @@
- BASE_FEATURE(kSidePanelFlyoverAnimation,
--#if BUILDFLAG(IS_MAC)
--             base::FEATURE_DISABLED_BY_DEFAULT
--#else
--             base::FEATURE_ENABLED_BY_DEFAULT
--#endif
-+             base::FEATURE_DISABLED_BY_DEFAULT
- );
 @@ -379,3 +375,3 @@
  
 -BASE_FEATURE(kNonMilestoneUpdateToast, base::FEATURE_ENABLED_BY_DEFAULT);
@@ -167,8 +155,8 @@
  CloudSyncStatus::CloudSyncStatus() = default;
 --- a/chrome/common/chrome_features.cc
 +++ b/chrome/common/chrome_features.cc
-@@ -181,7 +181,7 @@ bool RemoteActorCredentialSharingEnabled() {
- }
+@@ -173,7 +173,7 @@ BASE_FEATURE(kPreinstalledWebAppAlwaysMigrateForTesting,
+ #endif
  
  // Controls the enablement of structured metrics on Windows, Linux, and Mac.
 -BASE_FEATURE(kChromeStructuredMetrics, base::FEATURE_ENABLED_BY_DEFAULT);
@@ -508,15 +496,6 @@
  
  // If enabled, the authentication requirement for Drive suggestions is based on
  // whether the primary account is available, i.e., the user is signed into
-@@ -412,7 +412,7 @@ BASE_FEATURE(kOmniboxMobileParityUpdate, ENABLED);
- BASE_FEATURE(kOmniboxMobileParityUpdateV2, ENABLED);
- 
- // If enabled, the X-Geo header will include permission granularity.
--BASE_FEATURE(kOmniboxXGeoPermissionGranularity, ENABLED);
-+BASE_FEATURE(kOmniboxXGeoPermissionGranularity, base::FEATURE_DISABLED_BY_DEFAULT);
- 
- // When the first suggestion is a url, the favicon is shown in the status view.
- BASE_FEATURE(kExactMatchFavicons, ENABLED);
 @@ -451,7 +451,7 @@ BASE_FEATURE(kEnableSearchAggregatorPolicy, ENABLED);
  BASE_FEATURE(kUseAgentspace25Logo, ENABLED);
  
@@ -619,26 +598,26 @@
  BASE_FEATURE(kActorLoginConflictingPermissionCleanup,
               base::FEATURE_ENABLED_BY_DEFAULT);
  BASE_FEATURE(kActorLoginLocalClassificationModel,
-@@ -36,7 +36,7 @@ BASE_FEATURE(kActorLoginPermissionsUi, base::FEATURE_ENABLED_BY_DEFAULT);
- #endif
- 
- #if !BUILDFLAG(IS_IOS)
--BASE_FEATURE(kActorLoginQualityLogs, base::FEATURE_ENABLED_BY_DEFAULT);
-+BASE_FEATURE(kActorLoginQualityLogs, base::FEATURE_DISABLED_BY_DEFAULT);
- #endif  // !BUILDFLAG(IS_IOS)
- 
- #if BUILDFLAG(IS_ANDROID)
 --- a/components/payments/core/features.cc
 +++ b/components/payments/core/features.cc
-@@ -37,7 +37,7 @@ BASE_FEATURE(kDelayNativePaymentAppScrimShow,
- 
+@@ -37,7 +37,7 @@
+
  BASE_FEATURE(kEnforceFullDelegation, base::FEATURE_DISABLED_BY_DEFAULT);
- 
+
 -BASE_FEATURE(kGPayAppDynamicUpdate, base::FEATURE_ENABLED_BY_DEFAULT);
 +BASE_FEATURE(kGPayAppDynamicUpdate, base::FEATURE_DISABLED_BY_DEFAULT);
- 
+
  BASE_FEATURE(kSecurePaymentConfirmationCredentialDiscoveryMode,
               base::FEATURE_ENABLED_BY_DEFAULT);
+@@ -96,7 +96,7 @@
+
+ BASE_FEATURE(kSPCLocaleValidation, base::FEATURE_DISABLED_BY_DEFAULT);
+
+-BASE_FEATURE(kThreeDSecureTelemetry, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kThreeDSecureTelemetry, base::FEATURE_DISABLED_BY_DEFAULT);
+
+ BASE_FEATURE(kThreeDSecureTelemetryForIos, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
 --- a/components/performance_manager/features.cc
 +++ b/components/performance_manager/features.cc
 @@ -271,7 +271,7 @@
@@ -726,15 +705,14 @@
  constexpr base::FeatureParam<std::string> kHashPrefixRealTimeLookupsRelayUrl{
      &kHashPrefixRealTimeLookups,
      "SafeBrowsingHashPrefixRealTimeLookupsRelayUrl",
-@@ -428,7 +428,7 @@ BASE_FEATURE(kMovePasswordLeakDetectionToggleIos,
- 
+@@ -465,6 +465,6 @@
  BASE_FEATURE(kNoticeQueueForEsb, base::FEATURE_ENABLED_BY_DEFAULT);
  
 -BASE_FEATURE(kNotificationTelemetry, base::FEATURE_ENABLED_BY_DEFAULT);
 +BASE_FEATURE(kNotificationTelemetry, base::FEATURE_DISABLED_BY_DEFAULT);
  
- BASE_FEATURE(kProactivePasswordProtection, base::FEATURE_DISABLED_BY_DEFAULT);
- const base::FeatureParam<double> kCsdProactivePasswordProtectionSampleRate{
+ BASE_FEATURE(kPrioritizeSafeBrowsingNavigationCallbacks,
+              base::FEATURE_DISABLED_BY_DEFAULT);
 --- a/components/search/ntp_features.cc
 +++ b/components/search/ntp_features.cc
 @@ -78,16 +78,6 @@ BASE_FEATURE(kNtpBackgroundImageErrorDetection,
@@ -838,7 +816,7 @@
  BASE_FEATURE(kLightningTakeoverEdition, base::FEATURE_ENABLED_BY_DEFAULT);
 --- a/components/signin/public/base/signin_switches.cc
 +++ b/components/signin/public/base/signin_switches.cc
-@@ -463,13 +463,7 @@
+@@ -484,13 +484,7 @@
  
  #if BUILDFLAG(ENABLE_BOUND_SESSION_CREDENTIALS)
  // Enable experimental binding session credentials to the device.
@@ -853,7 +831,7 @@
  bool IsBoundSessionCredentialsEnabled(const PrefService* profile_prefs) {
    return base::FeatureList::IsEnabled(kEnableBoundSessionCredentials);
  }
-@@ -488,13 +482,7 @@
+@@ -504,13 +498,7 @@
  
  #if BUILDFLAG(ENABLE_DICE_SUPPORT)
  // Enables Chrome refresh tokens binding to a device.
@@ -868,7 +846,7 @@
  bool IsChromeRefreshTokenBindingEnabled(const PrefService* profile_prefs) {
    return base::FeatureList::IsEnabled(kEnableChromeRefreshTokenBinding);
  }
-@@ -863,7 +863,7 @@
+@@ -886,7 +874,7 @@
  #endif  // BUILDFLAG(IS_ANDROID)
  
  #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
@@ -1118,14 +1096,15 @@
  
  
 -BASE_FEATURE(kNetworkErrorLogging, base::FEATURE_ENABLED_BY_DEFAULT);
-+BASE_FEATURE(kNetworkErrorLogging, base::FEATURE_DISABLED_BY_DEFAULT);
- 
+-
 -BASE_FEATURE(kReporting, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kNetworkErrorLogging, base::FEATURE_DISABLED_BY_DEFAULT);
++
 +BASE_FEATURE(kReporting, base::FEATURE_DISABLED_BY_DEFAULT);
  
  // Based on the field trial parameters, this feature will override the value of
  // the maximum number of delayable requests allowed in flight. The number of
-@@ -308,7 +308,7 @@ bool ShouldBlockAcceptClientHintsFor(const url::Origin& origin) {
+@@ -289,7 +289,7 @@
  //     true.
  //   * The network service may register a HTTP response as a dictionary if the
  //     response header contains a `use-as-dictionary` header.
@@ -1134,16 +1113,16 @@
  
  // When this feature is enabled, preloaded dictionaries will not be used for
  // network requests if the binary has not yet been preloaded.
-@@ -437,7 +437,7 @@
-              base::FEATURE_ENABLED_BY_DEFAULT);
+@@ -443,7 +443,7 @@
+              base::FEATURE_DISABLED_BY_DEFAULT);
  
  BASE_FEATURE(kCacheSharingForPervasiveResources,
 -             base::FEATURE_ENABLED_BY_DEFAULT);
 +             base::FEATURE_DISABLED_BY_DEFAULT);
  
- BASE_FEATURE(kPervasiveSharedDictionaries, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kPervasiveSharedDictionaries, base::FEATURE_ENABLED_BY_DEFAULT);
  
-@@ -541,7 +541,7 @@ BASE_FEATURE_PARAM(int,
+@@ -531,7 +531,7 @@
                     /*default_value=*/base::MiB(350).InBytes());
  
  BASE_FEATURE(kReportingApiEnableVariationsHeaders,
@@ -1237,13 +1216,13 @@
    return base::FeatureList::IsEnabled(kSplitViewHorizontal) &&
 --- a/ui/base/ui_base_features.cc
 +++ b/ui/base/ui_base_features.cc
-@@ -522,7 +522,7 @@
+@@ -501,7 +501,7 @@
  BASE_FEATURE_PARAM(bool, kGlassExpandOnHoverEnabled, &kGlassFrame, true);
  BASE_FEATURE_PARAM(bool, kGlassFrameEnabledByDefault, &kGlassFrame, true);
  
 -BASE_FEATURE(kRoundedIcons, base::FEATURE_DISABLED_BY_DEFAULT);
 +BASE_FEATURE(kRoundedIcons, base::FEATURE_ENABLED_BY_DEFAULT);
- BASE_FEATURE(kWebUIRoundedIcons, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kWebUIRoundedIcons, base::FEATURE_ENABLED_BY_DEFAULT);
  
  // Updates the default dark neutrals for the theme palette.
 --- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
@@ -1263,7 +1242,7 @@
      },
      {
        name: "DeferLineBoxHitTestToBackground",
-@@ -7408,24 +7407,21 @@
+@@ -7646,30 +7646,26 @@
        origin_trial_feature_name: "WebMCP",
        origin_trial_allows_third_party: true,
        public: true,
@@ -1272,9 +1251,15 @@
        copied_from_base_feature_if: "overridden",
        // Note that `depends_on` isn't supported by origin trials.
        implied_by: [
+         "WebMCPContinuations",
          "WebMCPDeclarativeFileInput",
          "WebMCPFormAssociatedCustomElements"
        ],
+-      status: "experimental",
+     },
+     {
+       name: "WebMCPContinuations",
+       public: true,
 -      status: "experimental",
      },
      {

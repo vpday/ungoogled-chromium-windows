@@ -205,15 +205,17 @@ index 0928e76..e4a27cb 100644
  
  BASE_FEATURE(kPermissionsAIv4, base::FEATURE_DISABLED_BY_DEFAULT);
  
-@@ -94,7 +94,7 @@ BASE_FEATURE(kRecordChooserPermissionLastVisitedTimestamps,
- BASE_FEATURE(kShowRelatedWebsiteSetsPermissionGrants,
+@@ -86,9 +86,9 @@
               base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ #endif  // BUILDFLAG(IS_ANDROID)
  
 -BASE_FEATURE(kCpssUseTfliteSignatureRunner, base::FEATURE_ENABLED_BY_DEFAULT);
 +BASE_FEATURE(kCpssUseTfliteSignatureRunner, base::FEATURE_DISABLED_BY_DEFAULT);
  
  BASE_FEATURE(kGlicActorPermissionsAutoReject, base::FEATURE_ENABLED_BY_DEFAULT);
  
+ BASE_FEATURE(kSafetyHubUnusedPermissionRevocationForAllSurfaces,
 diff --git a/components/segmentation_platform/public/features.cc b/components/segmentation_platform/public/features.cc
 index e1449a2..10d3950 100644
 --- a/components/segmentation_platform/public/features.cc
