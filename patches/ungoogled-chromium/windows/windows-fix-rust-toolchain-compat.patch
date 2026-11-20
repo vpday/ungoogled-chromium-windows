@@ -9,6 +9,19 @@
  
  # Platform support for the Rust toolchain.
  chromium_toolchain_supports_platform = !is_wasm
+--- a/build/rust/std/BUILD.gn
++++ b/build/rust/std/BUILD.gn
+@@ -52,6 +52,10 @@ if (toolchain_has_rust) {
+       # https://github.com/rust-lang/rust/issues/151776 is resolved.
+       "memchr",
+       "object",
++      "addr2line",
++      "gimli",
++      "miniz_oxide",
++      "adler2",
+     ]
+   }
+ 
 --- a/tools/rust/build_bindgen.py
 +++ b/tools/rust/build_bindgen.py
 @@ -234,7 +234,7 @@
