@@ -26,6 +26,8 @@
 - `windows-clipboard-off-the-record.patch`: Isolates text and links copied in incognito mode from the Windows 10/11 clipboard history (`Win + V`) and cloud clipboard synchronization.
 - `windows-block-tsf-recall-learning.patch`: Signals Windows Text Services Framework to block Windows 11 Copilot+ Recall OCR screen capture and cloud IME dictionary harvesting.
 - `windows-keep-window-open-on-last-tab.patch`: Automatically opens a new blank tab when closing the last tab, preventing accidental browser window termination.
+- `windows-disable-reading-mode.patch`: Completely disables broken Reading Mode (Read Anything) entry points, address bar chips, background optimization guide polling, and WebUI routes.
+- `windows-force-context-menu-on-shift-right-click.patch`: Forces the native context menu on Shift + Right-Click even when overridden by web scripts, preserving text selection and search context actions while safeguarding interactive Canvas and WebGL elements.
 
 ## 2. Curated Brave Patches (`patches/brave/`)
 
@@ -87,7 +89,6 @@
 - `remove-experimental-webui.patch`: Disables experimental WebUI popups and prunes unused WebUI resource bundles.
 
 ### 3.4 Ergonomics & Web Content Control
-- `shift-right-click-context-menu.patch`: Forces the browser's native context menu to open on Shift + Right-Click, bypassing page right-click blocks.
 - `force-paste-action.patch`: Forces paste operations to work in input fields that attempt to block clipboard pasting.
 - `close-tabs-to-left.patch`: Adds a "Close tabs to the left" option to the tab context menu.
 - `open-new-tabs-next-to-active-tab-option.patch`: Adds an option to open new tabs directly next to the active tab rather than at the end of the strip.

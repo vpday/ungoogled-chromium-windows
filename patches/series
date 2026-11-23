@@ -34,7 +34,7 @@ helium/close-tabs-to-left.patch
 helium/disable-annoying-infobars.patch
 helium/force-paste-action.patch
 ungoogled-chromium/windows/windows-multiple-search-engines-context-menu.patch
-helium/shift-right-click-context-menu.patch
+ungoogled-chromium/windows/windows-force-context-menu-on-shift-right-click.patch
 helium/disable-non-standard-auth-features.patch
 helium/lazy-session-restore.patch
 helium/hide-pip-live-caption-button.patch
@@ -145,3 +145,4 @@ ungoogled-chromium/windows/windows-geolocation-override.patch
 ungoogled-chromium/windows/windows-clipboard-off-the-record.patch
 ungoogled-chromium/windows/windows-block-tsf-recall-learning.patch
 ungoogled-chromium/windows/windows-keep-window-open-on-last-tab.patch
+ungoogled-chromium/windows/windows-disable-reading-mode.patch

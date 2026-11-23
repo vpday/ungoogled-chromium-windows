@@ -1,0 +1,249 @@
+--- a/ui/accessibility/accessibility_features.cc
++++ b/ui/accessibility/accessibility_features.cc
+@@ -375,7 +375,7 @@ bool IsReadAnythingReadAloudPhraseHighlightingEnabled() {
+       ::features::kReadAnythingReadAloudPhraseHighlighting);
+ }
+ 
+-BASE_FEATURE(kReadAnythingOmniboxChip, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kReadAnythingOmniboxChip, base::FEATURE_DISABLED_BY_DEFAULT);
+ bool IsReadAnythingOmniboxChipEnabled() {
+   return base::FeatureList::IsEnabled(::features::kReadAnythingOmniboxChip);
+ }
+--- a/chrome/browser/ui/browser_actions.cc
++++ b/chrome/browser/ui/browser_actions.cc
+@@ -140,7 +140,6 @@
+ #include "chrome/browser/ui/performance_controls/memory_saver_bubble_controller.h"
+ #include "chrome/browser/ui/profiles/profile_picker.h"
+ #include "chrome/browser/ui/profiles/profile_view_utils.h"
+-#include "chrome/browser/ui/read_anything/read_anything_entry_point_controller.h"
+ #include "chrome/browser/ui/safety_hub/safety_hub_util.h"
+ #include "chrome/browser/ui/search/omnibox_utils.h"
+ #include "chrome/browser/ui/side_panel/side_panel_action_callback.h"
+@@ -511,86 +510,6 @@ void BrowserActions::InitializeSidePanelActions() {
+             .Build());
+   }
+ 
+-  ui::Accelerator reading_mode_accelerator;
+-  std::u16string reading_mode_shortcut;
+-  if (GetAcceleratorForCommandId(IDC_SHOW_READING_MODE_KEYBOARD,
+-                                 &reading_mode_accelerator)) {
+-    reading_mode_shortcut = reading_mode_accelerator.GetShortcutText();
+-  }
+-
+-  root_action_item_->AddChild(
+-      actions::ActionItem::Builder(
+-          base::BindRepeating(
+-              [](BrowserWindowInterface* bwi, actions::ActionItem* item,
+-                 actions::ActionInvocationContext context) {
+-                read_anything::ReadAnythingEntryPointController::
+-                    InvokePageAction(bwi, context);
+-              },
+-              bwi))
+-          .SetActionId(kActionSidePanelShowReadAnything)
+-          .SetText(l10n_util::GetStringUTF16(IDS_READING_MODE_TITLE))
+-          .SetTooltipText(l10n_util::GetStringFUTF16(IDS_READING_MODE_TOOLTIP,
+-                                                     reading_mode_shortcut))
+-          .SetImage(ui::ImageModel::FromVectorIcon(
+-              features::IsRoundedIconsEnabled() ? kMenuBookIcon
+-                                                : kMenuBookChromeRefreshOldIcon,
+-              ui::kColorIcon))
+-          .SetProperty(
+-              actions::kActionItemPinnableKey,
+-              static_cast<std::underlying_type_t<actions::ActionPinnableState>>(
+-                  actions::ActionPinnableState::kPinnable))
+-          .Build());
+-
+-  root_action_item_->AddChild(
+-      actions::ActionItem::Builder(
+-          base::BindRepeating(
+-              [](BrowserWindowInterface* bwi, actions::ActionItem* item,
+-                 actions::ActionInvocationContext context) {
+-                read_anything::ReadAnythingEntryPointController::ToggleUI(
+-                    bwi, read_anything::mojom::ReadAnythingOpenTrigger::
+-                             kKeyboardShortcut);
+-              },
+-              bwi))
+-          .SetActionId(kActionShowReadingModeKeyboard)
+-          .SetText(l10n_util::GetStringUTF16(IDS_READING_MODE_TITLE))
+-          .SetTooltipText(l10n_util::GetStringFUTF16(IDS_READING_MODE_TOOLTIP,
+-                                                     reading_mode_shortcut))
+-          .SetImage(ui::ImageModel::FromVectorIcon(
+-              features::IsRoundedIconsEnabled() ? kMenuBookIcon
+-                                                : kMenuBookChromeRefreshOldIcon,
+-              ui::kColorIcon))
+-          .Build());
+-
+-  root_action_item_->AddChild(
+-      actions::ActionItem::Builder(
+-          base::BindRepeating(
+-              [](BrowserWindowInterface* bwi, actions::ActionItem* item,
+-                 actions::ActionInvocationContext context) {
+-                const SidePanelOpenTrigger side_panel_trigger =
+-                    static_cast<SidePanelOpenTrigger>(
+-                        context.GetProperty(kSidePanelOpenTriggerKey));
+-                const read_anything::mojom::ReadAnythingOpenTrigger
+-                    open_trigger =
+-                        side_panel_trigger == SidePanelOpenTrigger::kUnknown
+-                            ? read_anything::mojom::ReadAnythingOpenTrigger::
+-                                  kAppMenu
+-                            : read_anything::SidePanelToReadAnythingOpenTrigger(
+-                                  side_panel_trigger);
+-                read_anything::ReadAnythingEntryPointController::ShowUI(
+-                    bwi, open_trigger);
+-              },
+-              bwi))
+-          .SetActionId(kActionShowReadingModeSidePanel)
+-          .SetText(l10n_util::GetStringUTF16(IDS_READING_MODE_TITLE))
+-          .SetTooltipText(l10n_util::GetStringFUTF16(IDS_READING_MODE_TOOLTIP,
+-                                                     reading_mode_shortcut))
+-          .SetImage(ui::ImageModel::FromVectorIcon(
+-              features::IsRoundedIconsEnabled() ? kMenuBookIcon
+-                                                : kMenuBookChromeRefreshOldIcon,
+-              ui::kColorIcon))
+-          .SetAccelerator(reading_mode_accelerator)
+-          .Build());
+-
+   if (base::FeatureList::IsEnabled(
+           collaboration::features::kCollaborationComments)) {
+     root_action_item_->AddChild(
+--- a/chrome/browser/ui/toolbar/app_menu_model.cc
++++ b/chrome/browser/ui/toolbar/app_menu_model.cc
+@@ -979,15 +979,6 @@ void ToolsMenuModel::Build(BrowserWindowInterface* browser) {
+   AddSeparator(ui::NORMAL_SEPARATOR);
+ 
+   AddItemWithStringIdAndVectorIcon(
+-      this, IDC_SHOW_READING_MODE, IDS_SHOW_READING_MODE_SIDE_PANEL,
+-      features::IsRoundedIconsEnabled() ? kMenuBookIcon
+-                                        : kMenuBookChromeRefreshOldIcon);
+-  SetElementIdentifierAt(GetIndexOfCommandId(IDC_SHOW_READING_MODE).value(),
+-                         kReadingModeMenuItem);
+-
+-  AddSeparator(ui::NORMAL_SEPARATOR);
+-
+-  AddItemWithStringIdAndVectorIcon(
+       this, IDC_PERFORMANCE, IDS_SHOW_PERFORMANCE,
+       features::IsRoundedIconsEnabled() ? kSpeedIcon : kPerformanceOldIcon);
+   SetElementIdentifierAt(GetIndexOfCommandId(IDC_PERFORMANCE).value(),
+@@ -1158,7 +1149,6 @@ void AppMenuModel::ExecuteCommand(int command_id, int event_flags) {
+   switch (command_id) {
+     case IDC_SHOW_BOOKMARK_SIDE_PANEL:
+     case IDC_SHOW_HISTORY_CLUSTERS_SIDE_PANEL:
+-    case IDC_SHOW_READING_MODE:
+     case IDC_READING_LIST_MENU_SHOW_UI:
+     case IDC_SHOW_CUSTOMIZE_CHROME_SIDE_PANEL: {
+       actions::ActionInvocationContext context =
+@@ -1538,13 +1528,6 @@ void AppMenuModel::LogMenuMetrics(int command_id) {
+       }
+       LogMenuAction(MENU_ACTION_SHOW_HISTORY_CLUSTER_SIDE_PANEL);
+       break;
+-    case IDC_SHOW_READING_MODE:
+-      if (!uma_action_recorded_) {
+-        base::UmaHistogramMediumTimes(
+-            "WrenchMenu.TimeToAction.ShowReadingModeSidePanel", delta);
+-      }
+-      LogMenuAction(MENU_ACTION_SHOW_READING_MODE_SIDE_PANEL);
+-      break;
+     case IDC_SHOW_CUSTOMIZE_CHROME_SIDE_PANEL:
+       if (!uma_action_recorded_) {
+         base::UmaHistogramMediumTimes(
+@@ -1948,14 +1931,6 @@ bool AppMenuModel::GetAcceleratorForCommandId(
+                                                  accelerator);
+   }
+ 
+-  // Reading mode uses different command IDs for different ways of opening
+-  // it, so adjust to use the command ID for the keyboard shortcut to grab
+-  // the proper accelerator.
+-  if (command_id == IDC_SHOW_READING_MODE) {
+-    return provider_->GetAcceleratorForCommandId(IDC_SHOW_READING_MODE_KEYBOARD,
+-                                                 accelerator);
+-  }
+-
+   if (command_id == IDC_NEW_INCOGNITO_WINDOW) {
+     if (!IncognitoModePrefs::IsIncognitoAllowed(browser_->GetProfile())) {
+       return false;
+--- a/chrome/browser/ui/views/app_menu/action_app_menu_manager.cc
++++ b/chrome/browser/ui/views/app_menu/action_app_menu_manager.cc
+@@ -1140,10 +1140,6 @@ void ActionAppMenuManager::AddToolsAndActionsActions(
+ 
+               sub.AddDivider()
+                   .AddAction(
+-                      kActionShowReadingModeSidePanel,
+-                      {.element_id = ToolsMenuModel::kReadingModeMenuItem})
+-                  .AddDivider()
+-                  .AddAction(
+                       kActionPerformance,
+                       {.element_id = ToolsMenuModel::kPerformanceMenuItem})
+                   .AddAction(kActionTaskManagerAppMenu);
+--- a/chrome/browser/ui/accelerator_table.cc
++++ b/chrome/browser/ui/accelerator_table.cc
+@@ -175,8 +175,6 @@ constexpr AcceleratorMapping kDesktopOnlyAcceleratorMap[] = {
+ #endif  // BUILDFLAG(ENABLE_PRINTING)
+     {ui::VKEY_A, ui::EF_SHIFT_DOWN | ui::EF_ALT_DOWN,
+      IDC_FOCUS_INACTIVE_POPUP_FOR_ACCESSIBILITY},
+-    {ui::VKEY_R, ui::EF_SHIFT_DOWN | ui::EF_ALT_DOWN,
+-     IDC_SHOW_READING_MODE_KEYBOARD},
+ #if !BUILDFLAG(IS_CHROMEOS)
+     {ui::VKEY_LMENU, ui::EF_NONE, IDC_FOCUS_MENU_BAR},
+     {ui::VKEY_MENU, ui::EF_NONE, IDC_FOCUS_MENU_BAR},
+--- a/chrome/browser/ui/browser_command_controller.cc
++++ b/chrome/browser/ui/browser_command_controller.cc
+@@ -80,8 +80,6 @@
+ #include "chrome/browser/ui/passwords/ui_utils.h"
+ #include "chrome/browser/ui/profiles/profile_picker.h"
+ #include "chrome/browser/ui/profiles/profile_view_utils.h"
+-#include "chrome/browser/ui/read_anything/read_anything_controller.h"
+-#include "chrome/browser/ui/read_anything/read_anything_entry_point_controller.h"
+ #include "chrome/browser/ui/side_panel/side_panel_entry_id.h"
+ #include "chrome/browser/ui/side_panel/side_panel_ui.h"
+ #include "chrome/browser/ui/singleton_tabs.h"
+@@ -1577,20 +1575,6 @@ void BrowserCommandController::HandleCommandWithDisposition(
+                                         SidePanelOpenTrigger::kAppMenu);
+       break;
+ 
+-    case IDC_SHOW_READING_MODE: {
+-      // Yes. This is a separate feature from the reading list.
+-      read_anything::ReadAnythingEntryPointController::ShowUI(
+-          browser_, read_anything::mojom::ReadAnythingOpenTrigger::kAppMenu);
+-      break;
+-    }
+-
+-    case IDC_SHOW_READING_MODE_KEYBOARD: {
+-      read_anything::ReadAnythingEntryPointController::ToggleUI(
+-          browser_,
+-          read_anything::mojom::ReadAnythingOpenTrigger::kKeyboardShortcut);
+-      break;
+-    }
+-
+     case IDC_SHOW_CUSTOMIZE_CHROME_SIDE_PANEL: {
+       ShowCustomizeChromeSidePanel(SidePanelOpenTrigger::kAppMenu,
+                                    CustomizeChromeSection::kAppearance);
+@@ -1948,8 +1932,8 @@ void BrowserCommandController::InitCommandState() {
+   command_updater_->UpdateCommandEnabled(IDC_SHOW_COMMENTS_SIDE_PANEL, true);
+   command_updater_->UpdateCommandEnabled(IDC_FIND_AND_EDIT_MENU, true);
+   command_updater_->UpdateCommandEnabled(IDC_SAVE_AND_SHARE_MENU, true);
+-  command_updater_->UpdateCommandEnabled(IDC_SHOW_READING_MODE, true);
+-  command_updater_->UpdateCommandEnabled(IDC_SHOW_READING_MODE_KEYBOARD, true);
++  command_updater_->UpdateCommandEnabled(IDC_SHOW_READING_MODE, false);
++  command_updater_->UpdateCommandEnabled(IDC_SHOW_READING_MODE_KEYBOARD, false);
+   command_updater_->UpdateCommandEnabled(IDC_SHOW_CUSTOMIZE_CHROME_SIDE_PANEL,
+                                          true);
+   command_updater_->UpdateCommandEnabled(IDC_SHOW_CUSTOMIZE_CHROME_TOOLBAR,
+--- a/chrome/browser/ui/webui/chrome_untrusted_web_ui_configs.cc
++++ b/chrome/browser/ui/webui/chrome_untrusted_web_ui_configs.cc
+@@ -12,7 +12,6 @@
+ 
+ #if defined(TOOLKIT_VIEWS)
+ #include "chrome/browser/ui/webui/data_sharing/data_sharing_ui.h"
+-#include "chrome/browser/ui/webui/side_panel/read_anything/read_anything_untrusted_ui.h"
+ #endif  // defined(TOOLKIT_VIEWS)
+ 
+ #if BUILDFLAG(ENABLE_PRINT_PREVIEW)
+@@ -57,8 +56,6 @@ void RegisterChromeUntrustedWebUIConfigs() {
+         // BUILDFLAG(IS_ANDROID)
+ 
+ #if defined(TOOLKIT_VIEWS)
+-  map.AddUntrustedWebUIConfig(
+-      std::make_unique<ReadAnythingUIUntrustedConfig>());
+   map.AddUntrustedWebUIConfig(std::make_unique<DataSharingUIConfig>());
+ 
+ #endif  // defined(TOOLKIT_VIEWS)
