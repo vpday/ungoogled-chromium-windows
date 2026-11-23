@@ -11,7 +11,16 @@
 
 --- a/build/rust/allocator/lib.rs
 +++ b/build/rust/allocator/lib.rs
-@@ -114,15 +114,4 @@ mod both_allocators {
+@@ -88,8 +88,6 @@
+ ///
+ /// TODO(https://crbug.com/410596442): Stop using internal features here.
+ mod both_allocators {
+-    use alloc_error_handler_impl_ffi::root::rust_allocator_internal as ffi;
+-
+     /// As part of rustc's contract for using `#[global_allocator]` without
+     /// rustc-generated shims we must define this symbol, since we are opting in
+     /// to unstable functionality. See https://github.com/rust-lang/rust/issues/123015
+@@ -114,15 +112,4 @@
      fn __rust_alloc_error_handler_should_panic() -> u8 {
          0
      }
