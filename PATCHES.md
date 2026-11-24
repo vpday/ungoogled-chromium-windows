@@ -73,8 +73,15 @@
 - `toolbar-window-frame-hit-test.patch`: Allows clicking and dragging the window from empty non-interactive areas in the top toolbar.
 - `remove-toolbar-dividers.patch`: Removes redundant vertical dividers between extension icons and pinned toolbar items.
 - `improve-flags-webui.patch`: Improves `chrome://flags` search box styling and highlights modified flags.
+- `status-bubble.patch`: Redesigns the bottom-left URL status bubble into a modern floating capsule with 16px rounded corners, subtle drop shadow, and 8px floating margins.
+- `toast.patch`: Compacts notification toasts to an 8px rounded container with smooth scaling animations to minimize viewport occlusion.
+- `bookmark-button-bg-fix.patch`: Restores classic 6px rounded rectangle hover highlights on bookmark bar buttons.
 
 ### 3.3 Privacy, Degoogling & Network Layer Hardening
+- `crash-reporter-privacy-tweaks.patch`: Disables Crashpad automatic uploads, zeroes client UUID, limits crash dump sizes, and strips sensitive values from command-line crash annotations.
+- `remove-history-sync-promo.patch`: Removes the sign-in and sync promotional banner from the `chrome://history` page.
+- `clear-browsing-data-popup.patch`: Removes the Google account data management link from the Clear Browsing Data dialog and defaults data types to expanded.
+- `disable-history-clusters.patch`: Disables History Clusters (Journeys) grouping and background analysis.
 - `split-clienthello.patch`: Randomly splits TLS ClientHello packets to resist TLS fingerprinting and SNI-based blocking.
 - `spoof-chrome-ua-brand.patch`: Replaces Google Chrome brand tokens with generic identifiers in Client Hints.
 - `reduce-accept-language-headers.patch`: Trims `Accept-Language` headers to reduce language-based fingerprinting.
@@ -109,6 +116,9 @@
 - `bookmark-open-all-confirmation-flag.patch`: Prompts for confirmation when opening 15 or more bookmarks simultaneously.
 - `add-default-browser-reject-button.patch`: Adds a permanent "Don't ask again" button to the default browser prompt.
 - `remove-devtools-annoyances.patch`: Removes AI promotional banners, feedback surveys, and Google account sync sections from DevTools.
+- `disable-side-panel-flyover.patch`: Uses continuous frame resizing for side-panel animations to eliminate jerky layout reflows on Windows.
+- `simplify-side-panel-position.patch`: Disables experimental ContextualTasks panels and simplifies side-panel alignment to a straightforward left/right radio setting.
+- `fix-tab-sync-unreached-error.patch`: Removes redundant tab selection sync checks when closing tabs in saved tab groups, preventing potential main process crashes.
 
 ## 4. Curated Cromite Patches (`patches/cromite/`)
 

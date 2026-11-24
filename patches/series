@@ -20,6 +20,7 @@ ungoogled-chromium/windows/windows-fix-v8-snapshot-toolchain-linux-win-arm64.pat
 ungoogled-chromium/windows/windows-fix-rust-toolchain-compat.patch
 ungoogled-chromium/windows/windows-enable-dtlto.patch
 helium/memory-saving-by-default.patch
+helium/disable-history-clusters.patch
 helium/disable-user-education-nags.patch
 helium/disable-live-caption-completely.patch
 helium/spoof-chrome-ua-brand.patch
@@ -71,6 +72,15 @@ helium/add-default-browser-reject-button.patch
 helium/remove-unused-ai-resources.patch
 helium/remove-experimental-webui.patch
 helium/remove-devtools-annoyances.patch
+helium/crash-reporter-privacy-tweaks.patch
+helium/remove-history-sync-promo.patch
+helium/clear-browsing-data-popup.patch
+helium/disable-side-panel-flyover.patch
+helium/status-bubble.patch
+helium/toast.patch
+helium/simplify-side-panel-position.patch
+helium/bookmark-button-bg-fix.patch
+helium/fix-tab-sync-unreached-error.patch
 cromite/Disable-support-for-pointer-device-id.patch
 cromite/Lock-Profile-Cookie-Database.patch
 cromite/Media-fingerprinting-mitigations.patch

@@ -1,0 +1,39 @@
+--- a/chrome/browser/ui/webui/history/browsing_history_handler.cc
++++ b/chrome/browser/ui/webui/history/browsing_history_handler.cc
+@@ -727,35 +727,7 @@
+ #elif !BUILDFLAG(IS_CHROMEOS)
+ void BrowsingHistoryHandler::ShouldShowHistoryPageHistorySyncPromo(
+     ShouldShowHistoryPageHistorySyncPromoCallback callback) {
+-  const int promo_shown_count = GetHistoryPageHistorySyncPromoShownCount();
+-
+-  // If the promo has been shown more than the threshold, the promo should not
+-  // be shown.
+-  if (promo_shown_count >= kHistorySyncPromoShownThreshold) {
+-    std::move(callback).Run(false);
+-    return;
+-  }
+-
+-  const bool shown_after_dismissal =
+-      IsHistoryPageHistorySyncPromoShownAfterDismissal();
+-  // If the promo was dismissed and shown once after dismissal, the promo should
+-  // not be shown anymore.
+-  if (shown_after_dismissal) {
+-    std::move(callback).Run(false);
+-    return;
+-  }
+-  const base::Time last_dismissed_timestamp =
+-      GetHistoryPageHistorySyncPromoLastDismissedTimestamp();
+-  const bool was_dismissed = !last_dismissed_timestamp.is_null();
+-  // If the promo was dismissed and the cooldown has not passed, the promo
+-  // should not be shown.
+-  if (was_dismissed &&
+-      clock_->Now() < last_dismissed_timestamp + kHistorySyncPromoCooldown) {
+-    std::move(callback).Run(false);
+-    return;
+-  }
+-
+-  std::move(callback).Run(true);
++  std::move(callback).Run(false);
+ }
+ 
+ void BrowsingHistoryHandler::RecordHistoryPageHistorySyncPromoDismissed() {

@@ -1,0 +1,11 @@
+--- a/chrome/browser/ui/views/animations/common_animation_values.h
++++ b/chrome/browser/ui/views/animations/common_animation_values.h
+@@ -31,7 +31,7 @@ constexpr PanelAnimationType GetPanelAni
+   return PanelAnimationType::kContinuousFrameResize;
+ #endif
+ #else
+-  return PanelAnimationType::kClipAndSingleReflow;
++  return PanelAnimationType::kContinuousFrameResize;
+ #endif
+ }
+ 
