@@ -1104,6 +1104,15 @@
  
  // Based on the field trial parameters, this feature will override the value of
  // the maximum number of delayable requests allowed in flight. The number of
+@@ -239,7 +239,7 @@
+ //
+ // Spec: https://wicg.github.io/local-network-access/
+ BASE_FEATURE(kLocalNetworkAccessChecksWebRTC,
+-             base::FEATURE_DISABLED_BY_DEFAULT);
++             base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // Enables the Network Service to use an existing Mojo data pipe producer
+ // handle for the response body, instead of creating its own. This is primarily
 @@ -289,7 +289,7 @@
  //     true.
  //   * The network service may register a HTTP response as a dictionary if the
@@ -1319,3 +1328,16 @@
  #if defined(ARCH_CPU_X86_FAMILY) && \
      (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS))
    base::ThreadPool::PostTask(FROM_HERE, kBestEffortTaskTraits,
+--- a/storage/browser/quota/quota_features.cc
++++ b/storage/browser/quota/quota_features.cc
+@@ -37,9 +37,9 @@
+ // A kill switch for the new reported quota being a static value.
+ BASE_FEATURE(kStaticStorageQuota, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kIncreaseIncognitoStorageQuota,
+              "IncreaseIncognitoStorageQuota",
+-             base::FEATURE_DISABLED_BY_DEFAULT);
++             base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ }  // namespace features
+ }  // namespace storage

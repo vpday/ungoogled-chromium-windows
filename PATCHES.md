@@ -116,6 +116,10 @@
 - `Fonts-fingerprinting-mitigation.patch`: Restricts local font enumeration to mitigate font-based tracking.
 - `Media-fingerprinting-mitigations.patch`: Restricts video decoder capability probing in WebCodecs to prevent hardware codec fingerprinting.
 - `Reduce-input-capability-fingerprinting-through-normalization.patch`: Normalizes reported mouse, pen, and touch capabilities to reduce device diversity.
+- `Prevent-mouse-wheel-fingerprinting-on-Windows.patch`: Normalizes Windows mouse wheel tick delta to `+1` / `-1` to eliminate high-entropy hardware scroll wheel fingerprinting.
+- `PublicKeyCredential-fingerprinting-mitigations.patch`: Masks Windows Hello biometric availability and checks permissions before background BLE device discovery.
+- `Disable-UA-full-version.patch`: Reduces client hints `uaFullVersion` and brand version list to major version only (`X.0.0.0`).
+- `Remove-navigator.connection-info.patch`: Overrides `navigator.connection` network type, RTT, and bandwidth with static default values to block network status fingerprinting.
 - `Disable-support-for-pointer-device-id.patch`: Disables stylus pen device ID reporting.
 - `Keyboard-protection-flag.patch`: Adds a flag to block websites from querying physical keyboard layout mappings.
 - `Set-caret-blink-interval-to-default.patch`: Uses a fixed caret blink interval to prevent cursor timing fingerprinting.
@@ -139,12 +143,17 @@
 - `Clear-CORS-Preflight-Cache-on-clearing-data.patch`: Clears the CORS preflight cache whenever browsing data is deleted.
 - `Disable-Service-and-Shared-workers-on-3P-iframe.patch`: Blocks Service Workers and Shared Workers inside third-party iframes.
 - `Disable-Sticky-User-Activation-Across-Same-Origin-Navigation.patch`: Resets user gesture activation state when navigating between same-origin pages.
+- `Disable-third-party-origin-trials.patch`: Completely disables third-party origin trials by invalidating the public key and forcing supported status to `false`.
+- `Disable-text-fragments-by-default.patch`: Disables Scroll-to-Text Fragments (`#:~:text=`) by default to prevent cross-origin sensitive text side-channel probing.
 
 ### 4.3 Network & Protocol Hardening
 - `Reduce-HTTP-headers-in-DoH-requests-to-bare-minimum.patch`: Strips non-essential HTTP headers from DNS-over-HTTPS (DoH) queries.
 - `Replace-DoH-probe-domain-with-RIPE-domain.patch`: Replaces the default Google DoH probe domain with neutral RIPE NCC servers.
 - `Disable-requests-for-single-word-Omnibar-searches.patch`: Stops single-word omnibox queries from triggering local intranet DNS lookups.
 - `Enable-Global-Privacy-Control.patch`: Sends `Sec-GPC: 1` on web requests and sets `navigator.globalPrivacyControl` to `true`.
+- `Remove-auth-header-upon-cross-origin-redirect.patch`: Strips the `Authorization` header on cross-origin HTTP redirects to avoid credential leakage.
+- `Disable-TLS-resumption.patch`: Disables TLS 1.2/1.3 session tickets and session caching to prevent long-lived cross-network tracking without cookies.
+- `Enable-Do-Not-Track-by-default.patch`: Enables the `DNT: 1` header by default alongside existing Global Privacy Control protection.
 
 ### 4.4 Windows Ecosystem & Compatibility Support
 - `Override-the-MV2-deprecation.patch`: Overrides Manifest V2 deprecation, allowing classic extensions (such as uBlock Origin MV2) to run normally.

@@ -1,0 +1,52 @@
+--- a/net/http/http_network_session.cc
++++ b/net/http/http_network_session.cc
+@@ -217,6 +217,7 @@ HttpNetworkSession::HttpNetworkSession(const HttpNetworkSessionParams& params,
+ 
+   next_protos_.push_back(NextProto::kProtoHTTP11);
+ 
++  http_server_properties_->SetMaxServerConfigsStoredInProperties(0);
+   http_server_properties_->SetMaxServerConfigsStoredInProperties(
+       context.quic_context->params()->max_server_configs_stored_in_properties);
+   http_server_properties_->SetBrokenAlternativeServicesDelayParams(
+--- a/net/quic/quic_session_pool.cc
++++ b/net/quic/quic_session_pool.cc
+@@ -406,6 +406,19 @@ base::TimeDelta GetAdditionalDelayForMainJob() {
+   return quic::kMaxOutgoingPacketSize * 20;
+ }
+ 
++class BromiteSessionCache : public quic::QuicClientSessionCache {
++ public:
++  BromiteSessionCache() = default;
++  ~BromiteSessionCache() override = default;
++
++  void Insert(const quic::QuicServerId& server_id,
++              bssl::UniquePtr<SSL_SESSION> session,
++              const quic::TransportParameters& params,
++              const quic::ApplicationState* application_state) override {
++    SSL_SESSION_set_timeout(session.get(), 0);
++  }
++};
++
+ }  // namespace
+ 
+ QuicSessionRequest::QuicSessionRequest(QuicSessionPool* pool) : pool_(pool) {}
+@@ -2955,7 +2968,7 @@ QuicSessionPool::CreateCryptoConfigHandle(
+               cert_verifier_, transport_security_state_, sct_auditing_delegate_,
+               std::move(hostnames_to_allow_unknown_roots),
+               key.network_anonymization_key),
+-          std::make_unique<quic::QuicClientSessionCache>(
++          std::make_unique<BromiteSessionCache>(
+               kDefaultQuicSessionCacheSize),
+           kDefaultQuicSessionCacheSize, this);
+ 
+--- a/net/socket/ssl_client_socket_impl.cc
++++ b/net/socket/ssl_client_socket_impl.cc
+@@ -1658,7 +1658,7 @@
+ }
+ 
+ bool SSLClientSocketImpl::IsCachingEnabled() const {
+-  return context_->ssl_client_session_cache() != nullptr;
++  return false;
+ }
+ 
+ void SSLClientSocketImpl::MaybeClearEarlyDataCache(int error) {

@@ -1,0 +1,55 @@
+--- a/third_party/blink/renderer/core/frame/navigator_ua_data.cc
++++ b/third_party/blink/renderer/core/frame/navigator_ua_data.cc
+@@ -10,6 +10,9 @@
+ #include "base/compiler_specific.h"
+ #include "base/numerics/safe_conversions.h"
+ #include "base/task/single_thread_task_runner.h"
++#include "base/version.h"
++#include "base/strings/strcat.h"
++#include "base/strings/string_number_conversions.h"
+ #include "services/network/public/mojom/permissions_policy/permissions_policy_feature.mojom-blink.h"
+ #include "third_party/blink/public/common/features.h"
+ #include "third_party/blink/public/mojom/use_counter/metrics/web_feature.mojom-blink.h"
+@@ -23,6 +26,16 @@ namespace blink {
+ 
+ namespace {
+ 
++const String GetReducedVersionNumber(const std::string& fullVersion) {
++  base::Version version(fullVersion);
++  std::string version_str;
++  const std::vector<uint32_t>& components = version.components();
++  if (components.size() > 0) {
++    version_str = base::StrCat({base::NumberToString(components[0]), ".0.0.0"});
++  }
++  return String::FromUtf8(version_str);
++}
++
+ NavigatorUABrandVersion* MakeBrandVersion(const String& brand,
+                                           const String& version) {
+   NavigatorUABrandVersion* dict = NavigatorUABrandVersion::Create();
+@@ -49,7 +62,15 @@ void NavigatorUAData::SetBrandVersionList(
+ 
+ void NavigatorUAData::SetFullVersionList(
+     const UserAgentBrandList& full_version_list) {
+-  AppendBrandVersions(full_version_list, full_version_list_);
++  UserAgentBrandList reduced_list = full_version_list;
++  for (auto& item : reduced_list) {
++    base::Version version(item.version);
++    const auto& comps = version.components();
++    if (!comps.empty()) {
++      item.version = base::StrCat({base::NumberToString(comps[0]), ".0.0.0"});
++    }
++  }
++  AppendBrandVersions(reduced_list, full_version_list_);
+ }
+ 
+ void NavigatorUAData::SetMobile(bool mobile) {
+@@ -69,7 +90,7 @@ void NavigatorUAData::SetModel(String model) {
+ }
+ 
+ void NavigatorUAData::SetUAFullVersion(String ua_full_version) {
+-  ua_full_version_ = std::move(ua_full_version);
++  ua_full_version_ = GetReducedVersionNumber(ua_full_version.Ascii());
+ }
+ 
+ void NavigatorUAData::SetBitness(String bitness) {

@@ -1,0 +1,256 @@
+--- a/android_webview/common/aw_content_client.cc
++++ b/android_webview/common/aw_content_client.cc
+@@ -150,7 +150,6 @@ blink::OriginTrialPolicy* AwContentClient::GetOriginTrialPolicy() {
+   // flag to true after construction. This will work because trial token
+   // validator will always get the current instance of policy when needed.
+   if (IsDisableOriginTrialsSafeModeActionOn()) {
+-    origin_trial_policy_->SetAllowOnlyDeprecationTrials(true);
+   }
+   return origin_trial_policy_.get();
+ }
+diff --git a/components/embedder_support/origin_trials/origin_trial_policy_impl.cc b/components/embedder_support/origin_trials/origin_trial_policy_impl.cc
+--- a/components/embedder_support/origin_trials/origin_trial_policy_impl.cc
++++ b/components/embedder_support/origin_trials/origin_trial_policy_impl.cc
+@@ -24,10 +24,10 @@
+ 
+ namespace embedder_support {
+ 
+-// This is the default public key used for validating signatures.
++// This is an invalid public key that will match no origin trial signature
+ static const blink::OriginTrialPublicKey kDefaultPublicKey = {
+     0x7c, 0xc4, 0xb8, 0x9a, 0x93, 0xba, 0x6e, 0xe2, 0xd0, 0xfd, 0x03,
+-    0x1d, 0xfb, 0x32, 0x66, 0xc7, 0x3b, 0x72, 0xfd, 0x54, 0x3a, 0x07,
++    0x1d, 0xfb, 0x32, 0x66, 0x00, 0x01, 0x02, 0xfd, 0x54, 0x3a, 0x07,
+     0x51, 0x14, 0x66, 0xaa, 0x02, 0x53, 0x4e, 0x33, 0xa1, 0x15,
+ };
+ 
+@@ -61,7 +61,8 @@ OriginTrialPolicyImpl::OriginTrialPolicyImpl() {
+ OriginTrialPolicyImpl::~OriginTrialPolicyImpl() = default;
+ 
+ bool OriginTrialPolicyImpl::IsOriginTrialsSupported() const {
+-  return true;
++  // third-party origin trials are always disabled
++  return false;
+ }
+ 
+ const std::vector<blink::OriginTrialPublicKey>&
+diff --git a/components/embedder_support/origin_trials/origin_trial_policy_impl.h b/components/embedder_support/origin_trials/origin_trial_policy_impl.h
+--- a/components/embedder_support/origin_trials/origin_trial_policy_impl.h
++++ b/components/embedder_support/origin_trials/origin_trial_policy_impl.h
+@@ -34,6 +34,7 @@ class OriginTrialPolicyImpl : public blink::OriginTrialPolicy {
+   bool IsTokenDisabled(std::string_view token_signature) const override;
+   bool IsOriginSecure(const GURL& url) const override;
+ 
++ private:
+   bool SetPublicKeysFromASCIIString(const std::string& ascii_public_key);
+   bool SetDisabledFeatures(const std::string& disabled_feature_list);
+   bool SetDisabledTokens(const std::vector<std::string>& tokens);
+@@ -44,7 +45,6 @@ class OriginTrialPolicyImpl : public blink::OriginTrialPolicy {
+   bool GetAllowOnlyDeprecationTrials() const;
+   const std::set<std::string>* GetDisabledTokensForTesting() const override;
+ 
+- private:
+   std::vector<blink::OriginTrialPublicKey> public_keys_;
+   std::set<std::string> disabled_features_;
+   std::set<std::string> disabled_tokens_;
+diff --git a/content/browser/renderer_host/navigation_request.cc b/content/browser/renderer_host/navigation_request.cc
+--- a/content/browser/renderer_host/navigation_request.cc
++++ b/content/browser/renderer_host/navigation_request.cc
+@@ -10838,7 +10838,6 @@ void NavigationRequest::SetSourceSiteInstanceToInitiatorIfNeeded() {
+ void NavigationRequest::ForceEnableOriginTrials(
+     const std::vector<std::string>& trials) {
+   CHECK(!HasCommitted());
+-  commit_params_->force_enabled_origin_trials = trials;
+ }
+ 
+ network::CrossOriginEmbedderPolicy
+diff --git a/content/browser/renderer_host/origin_trial_state_host_impl.cc b/content/browser/renderer_host/origin_trial_state_host_impl.cc
+--- a/content/browser/renderer_host/origin_trial_state_host_impl.cc
++++ b/content/browser/renderer_host/origin_trial_state_host_impl.cc
+@@ -110,25 +110,6 @@ void OriginTrialStateHostImpl::ApplyFeatureDiffForOriginTrial(
+   // This issue should be revisited to avoid silently dropping any feature
+   // overrides that are stored in the RFSDocumentData, in these corner cases
+   // when the data has become a nullptr.
+-  RuntimeFeatureStateDocumentData* document_data =
+-      RuntimeFeatureStateDocumentData::GetForCurrentDocument(
+-          &render_frame_host());
+-  if (!document_data) {
+-    // We can't use
+-    // RuntimeFeatureStateDocumentData::GetOrCreateForCurrentDocument() because
+-    // that creates an empty RuntimeFeatureStateReadContext which will hit some
+-    // internal CHECKs if used because all its member fields are empty. Passing
+-    // in a RuntimeFeatureStateContext() will initialize those member fields.
+-    RuntimeFeatureStateDocumentData::CreateForCurrentDocument(
+-        &render_frame_host(), blink::RuntimeFeatureStateContext());
+-    document_data = RuntimeFeatureStateDocumentData::GetForCurrentDocument(
+-        &render_frame_host());
+-  }
+-  CHECK(document_data);
+-  document_data
+-      ->GetMutableRuntimeFeatureStateReadContext(
+-          base::PassKey<OriginTrialStateHostImpl>())
+-      .ApplyFeatureChange(validated_features, possible_third_party_features);
+ }
+ 
+ void OriginTrialStateHostImpl::EnablePersistentTrial(
+diff --git a/content/renderer/render_frame_impl.cc b/content/renderer/render_frame_impl.cc
+--- a/content/renderer/render_frame_impl.cc
++++ b/content/renderer/render_frame_impl.cc
+@@ -543,10 +543,6 @@ void FillNavigationParamsRequest(
+         common_params.initiator_origin.value();
+   }
+ 
+-  navigation_params->initiator_origin_trial_features = {
+-      common_params.initiator_origin_trial_features.begin(),
+-      common_params.initiator_origin_trial_features.end()};
+-
+   navigation_params->was_discarded = commit_params.was_discarded;
+   navigation_params->document_ukm_source_id =
+       commit_params.document_ukm_source_id;
+@@ -569,8 +565,8 @@ void FillNavigationParamsRequest(
+   navigation_params->had_transient_user_activation =
+       common_params.has_possibly_filtered_user_gesture;
+ 
+-  navigation_params->force_enabled_origin_trials = base::ToVector(
+-      commit_params.force_enabled_origin_trials, &WebString::FromAscii);
++  std::vector<WebString> force_enabled_origin_trials;
++  navigation_params->force_enabled_origin_trials = force_enabled_origin_trials;
+ 
+   navigation_params->early_hints_preloaded_resources.reserve(
+       commit_params.early_hints_preloaded_resources.size());
+@@ -686,7 +682,7 @@ blink::mojom::CommonNavigationParamsPtr MakeCommonNavigationParams(
+       info->url_request.HasUserGesture(),
+       info->url_request.HasTextFragmentToken(),
+       info->should_check_main_world_content_security_policy,
+-      info->initiator_origin_trial_features, info->href_translate.Latin1(),
++      /*initiator_origin_trial_features*/std::vector<int>(), info->href_translate.Latin1(),
+       is_history_navigation_in_new_child_frame, info->input_start,
+       request_destination);
+ }
+diff --git a/content/shell/common/shell_origin_trial_policy.cc b/content/shell/common/shell_origin_trial_policy.cc
+--- a/content/shell/common/shell_origin_trial_policy.cc
++++ b/content/shell/common/shell_origin_trial_policy.cc
+@@ -14,13 +14,10 @@ namespace content {
+ 
+ namespace {
+ 
+-// This is the public key which the content shell will use to enable origin
+-// trial features. Trial tokens for use in web tests can be created with the
+-// tool in /tools/origin_trials/generate_token.py, using the private key
+-// contained in /tools/origin_trials/eftest.key.
++// This is an invalid public key that does not allow any origin trial verification
+ static const blink::OriginTrialPublicKey kOriginTrialPublicKey = {
+     0x75, 0x10, 0xac, 0xf9, 0x3a, 0x1c, 0xb8, 0xa9, 0x28, 0x70, 0xd2,
+-    0x9a, 0xd0, 0x0b, 0x59, 0xe1, 0xac, 0x2b, 0xb7, 0xd5, 0xca, 0x1f,
++    0x9a, 0xd0, 0x00, 0x01, 0x02, 0xac, 0x2b, 0xb7, 0xd5, 0xca, 0x1f,
+     0x64, 0x90, 0x08, 0x8e, 0xa8, 0xe0, 0x56, 0x3a, 0x04, 0xd0,
+ };
+ 
+@@ -33,7 +30,8 @@ ShellOriginTrialPolicy::ShellOriginTrialPolicy() {
+ ShellOriginTrialPolicy::~ShellOriginTrialPolicy() {}
+ 
+ bool ShellOriginTrialPolicy::IsOriginTrialsSupported() const {
+-  return true;
++  // third-party origin trials are always disabled
++  return false;
+ }
+ 
+ const std::vector<blink::OriginTrialPublicKey>&
+diff --git a/third_party/blink/common/origin_trials/trial_token_validator.cc b/third_party/blink/common/origin_trials/trial_token_validator.cc
+--- a/third_party/blink/common/origin_trials/trial_token_validator.cc
++++ b/third_party/blink/common/origin_trials/trial_token_validator.cc
+@@ -427,6 +427,7 @@ TrialTokenValidator::GetValidTokens(const url::Origin& origin,
+ 
+ // static
+ bool TrialTokenValidator::IsTrialPossibleOnOrigin(const GURL& url) {
++  return false;
+   OriginTrialPolicy* policy = PolicyGetter().Run();
+   return policy && policy->IsOriginTrialsSupported() &&
+          policy->IsOriginSecure(url);
+diff --git a/third_party/blink/renderer/core/loader/document_loader.cc b/third_party/blink/renderer/core/loader/document_loader.cc
+--- a/third_party/blink/renderer/core/loader/document_loader.cc
++++ b/third_party/blink/renderer/core/loader/document_loader.cc
+@@ -206,13 +206,6 @@ namespace {
+ Vector<mojom::blink::OriginTrialFeature> CopyInitiatorOriginTrials(
+     const std::vector<int>& initiator_origin_trial_features) {
+   Vector<mojom::blink::OriginTrialFeature> result;
+-  for (auto feature : initiator_origin_trial_features) {
+-    // Convert from int to OriginTrialFeature. These values are passed between
+-    // blink navigations. OriginTrialFeature isn't visible outside of blink (and
+-    // doesn't need to be) so the values are transferred outside of blink as
+-    // ints and casted to OriginTrialFeature once being processed in blink.
+-    result.push_back(static_cast<mojom::blink::OriginTrialFeature>(feature));
+-  }
+   return result;
+ }
+ 
+@@ -226,16 +219,13 @@ std::vector<int> CopyInitiatorOriginTrials(
+ Vector<String> CopyForceEnabledOriginTrials(
+     const std::vector<WebString>& force_enabled_origin_trials) {
+   Vector<String> result;
+-  result.ReserveInitialCapacity(
+-      base::checked_cast<wtf_size_t>(force_enabled_origin_trials.size()));
+-  for (const auto& trial : force_enabled_origin_trials)
+-    result.push_back(trial);
+   return result;
+ }
+ 
+ std::vector<WebString> CopyForceEnabledOriginTrials(
+     const Vector<String>& force_enabled_origin_trials) {
+-  return base::ToVector(force_enabled_origin_trials, ToWebString);
++  std::vector<WebString> result;
++  return result;
+ }
+ 
+ bool IsPagePopupRunningInWebTest(LocalFrame* frame) {
+@@ -3476,10 +3466,6 @@ void DocumentLoader::CreateParserPostCommit() {
+           mojom::blink::OriginTrialFeature::kTouchEventFeatureDetection);
+     }
+ 
+-    // Enable any origin trials that have been force enabled for this commit.
+-    window->GetOriginTrialContext()->AddForceEnabledTrials(
+-        force_enabled_origin_trials_);
+-
+     OriginTrialContext::ActivateNavigationFeaturesFromInitiator(
+         window, &initiator_origin_trial_features_);
+   }
+diff --git a/third_party/blink/renderer/core/loader/http_equiv.cc b/third_party/blink/renderer/core/loader/http_equiv.cc
+--- a/third_party/blink/renderer/core/loader/http_equiv.cc
++++ b/third_party/blink/renderer/core/loader/http_equiv.cc
+@@ -114,7 +114,7 @@ void HttpEquiv::ProcessHttpEquivDefaultStyle(Document& document,
+ 
+ void HttpEquiv::ProcessHttpEquivOriginTrial(LocalDOMWindow* window,
+                                             const AtomicString& content) {
+-  if (!window)
++  return;
+     return;
+   // For meta tags injected by script, process the token with the origin of the
+   // external script, if available. Get the top 3 script urls from the stack, as
+diff --git a/third_party/blink/renderer/core/origin_trials/origin_trial_context.cc b/third_party/blink/renderer/core/origin_trials/origin_trial_context.cc
+--- a/third_party/blink/renderer/core/origin_trials/origin_trial_context.cc
++++ b/third_party/blink/renderer/core/origin_trials/origin_trial_context.cc
+@@ -311,6 +311,7 @@ void OriginTrialContext::AddToken(const String& token) {
+ void OriginTrialContext::AddTokenFromExternalScript(
+     const String& token,
+     const Vector<scoped_refptr<SecurityOrigin>>& external_origins) {
++  return;
+   Vector<OriginInfo> script_origins;
+   for (const scoped_refptr<SecurityOrigin>& origin : external_origins) {
+     OriginInfo origin_info = {.origin = origin,
+@@ -450,8 +453,6 @@ bool OriginTrialContext::InstallFeatures(
+ }
+ 
+ void OriginTrialContext::AddFeature(mojom::blink::OriginTrialFeature feature) {
+-  enabled_features_.insert(feature);
+-  InitializePendingFeatures();
+ }
+ 
+ bool OriginTrialContext::IsFeatureEnabled(
+@@ -495,6 +496,7 @@ void OriginTrialContext::AddForceEnabledTrials(
+ }
+ 
+ bool OriginTrialContext::CanEnableTrialFromName(const StringView& trial_name) {
++  return false;
+   if (trial_name == "FencedFrames")
+     return base::FeatureList::IsEnabled(features::kFencedFrames);
+ 

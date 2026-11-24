@@ -125,6 +125,15 @@ cromite/Disable-prefers-reduced-transparency-media-query.patch
 cromite/Keyboard-protection-flag.patch
 cromite/WIN-Add-some-prefs-to-secure-preferences.patch
 cromite/Disable-requests-for-single-word-Omnibar-searches.patch
+cromite/Prevent-mouse-wheel-fingerprinting-on-Windows.patch
+cromite/PublicKeyCredential-fingerprinting-mitigations.patch
+cromite/Remove-auth-header-upon-cross-origin-redirect.patch
+cromite/Disable-third-party-origin-trials.patch
+cromite/Enable-Do-Not-Track-by-default.patch
+cromite/Disable-text-fragments-by-default.patch
+cromite/Disable-UA-full-version.patch
+cromite/Disable-TLS-resumption.patch
+cromite/Remove-navigator.connection-info.patch
 ungoogled-chromium/windows/windows-disable-digital-credentials.patch
 ungoogled-chromium/windows/windows-disable-jumplist-history.patch
 ungoogled-chromium/windows/windows-normalize-user-agent-platform-version.patch

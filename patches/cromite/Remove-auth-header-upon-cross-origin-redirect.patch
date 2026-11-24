@@ -1,0 +1,24 @@
+--- a/third_party/blink/renderer/platform/loader/fetch/resource_loader.cc
++++ b/third_party/blink/renderer/platform/loader/fetch/resource_loader.cc
+@@ -536,6 +536,9 @@ bool ResourceLoader::WillFollowRedirect(
+                                      new_url)) {
+     fetcher_->GetUseCounter().CountUse(
+         mojom::WebFeature::kAuthorizationCrossOrigin);
++    if (removed_headers) {
++      removed_headers->push_back(net::HttpRequestHeaders::kAuthorization);
++    }
+   }
+ 
+   // TODO(https://crbug.com/471397, https://crbug.com/1406737): Reconsider
+--- a/third_party/blink/renderer/platform/loader/fetch/url_loader/sync_load_context.cc
++++ b/third_party/blink/renderer/platform/loader/fetch/url_loader/sync_load_context.cc
+@@ -201,6 +201,9 @@ void SyncLoadContext::FollowRedirect(std::vector<std::string> removed_headers,
+     CancelRedirect();
+     return;
+   }
++  if (response_->has_authorization_header_between_cross_origin_redirect_) {
++    removed_headers.push_back(net::HttpRequestHeaders::kAuthorization);
++  }
+ 
+   response_->redirect_info = net::RedirectInfo();
+   *context_for_redirect_ = nullptr;

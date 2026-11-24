@@ -1,0 +1,11 @@
+--- a/ui/events/blink/web_input_event_builders_win.cc
++++ b/ui/events/blink/web_input_event_builders_win.cc
+@@ -297,6 +297,8 @@ WebMouseWheelEvent WebMouseWheelEventBuilder::Build(
+   // |wheel_delta| is expressed in multiples or divisions of WHEEL_DELTA,
+   // divide this out here to get the number of wheel ticks.
+   float num_ticks = wheel_delta / WHEEL_DELTA;
++  if (num_ticks > 0) num_ticks = 1;
++  else if (num_ticks < 0) num_ticks = -1;
+   float scroll_delta = num_ticks;
+   if (horizontal_scroll) {
+     unsigned long scroll_chars = kDefaultScrollCharsPerWheelDelta;
