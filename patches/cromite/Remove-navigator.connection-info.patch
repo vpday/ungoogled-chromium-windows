@@ -67,7 +67,7 @@
      NetworkStateNotifier::ObserverType type,
 --- a/third_party/blink/renderer/platform/network/network_state_notifier.h
 +++ b/third_party/blink/renderer/platform/network/network_state_notifier.h
-@@ -124,6 +124,6 @@ class PLATFORM_EXPORT NetworkStateNotifier {
+@@ -124,7 +124,7 @@ class PLATFORM_EXPORT NetworkStateNotifier {
      const ObserverListUniqueId id_;
    };
  
@@ -75,3 +75,4 @@
 +  NetworkStateNotifier();
    NetworkStateNotifier(const NetworkStateNotifier&) = delete;
    NetworkStateNotifier& operator=(const NetworkStateNotifier&) = delete;
+ 
