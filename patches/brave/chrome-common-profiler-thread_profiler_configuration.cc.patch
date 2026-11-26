@@ -1,0 +1,16 @@
+--- a/chrome/common/profiler/thread_profiler_configuration.cc
++++ b/chrome/common/profiler/thread_profiler_configuration.cc
+@@ -91,11 +91,8 @@ bool ThreadProfilerConfiguration::IsBrowserTestModeEnabled() const {
+ }
+ 
+ bool ThreadProfilerConfiguration::IsProfilerEnabledForCurrentProcessAndThread(
+-    sampling_profiler::ProfilerThreadType thread) const {
+-  return IsProfilerEnabledForCurrentProcess() &&
+-         platform_configuration_->IsEnabledForThread(
+-             GetProfilerProcessType(*base::CommandLine::ForCurrentProcess()),
+-             thread, GetReleaseChannel());
++    sampling_profiler::ProfilerThreadType) const {
++  return false;
+ }
+ 
+ bool ThreadProfilerConfiguration::GetSyntheticFieldTrial(

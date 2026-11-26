@@ -1122,14 +1122,17 @@
  
  // When this feature is enabled, preloaded dictionaries will not be used for
  // network requests if the binary has not yet been preloaded.
-@@ -443,7 +443,7 @@
+@@ -440,9 +440,9 @@
               base::FEATURE_DISABLED_BY_DEFAULT);
  
  BASE_FEATURE(kCacheSharingForPervasiveResources,
 -             base::FEATURE_ENABLED_BY_DEFAULT);
 +             base::FEATURE_DISABLED_BY_DEFAULT);
  
- BASE_FEATURE(kPervasiveSharedDictionaries, base::FEATURE_ENABLED_BY_DEFAULT);
+-BASE_FEATURE(kPervasiveSharedDictionaries, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kPervasiveSharedDictionaries, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kSendSameSiteLaxForFedCM, base::FEATURE_DISABLED_BY_DEFAULT);
  
 @@ -531,7 +531,7 @@
                     /*default_value=*/base::MiB(350).InBytes());

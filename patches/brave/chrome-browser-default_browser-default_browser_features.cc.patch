@@ -1,0 +1,11 @@
+--- a/chrome/browser/default_browser/default_browser_features.cc
++++ b/chrome/browser/default_browser/default_browser_features.cc
+@@ -155,7 +155,7 @@ GURL GetDefaultBrowserVisualGuideURL() {
+ 
+ BASE_FEATURE(kDefaultBrowserFramework, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+-BASE_FEATURE(kDefaultBrowserPromptSurfaces, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kDefaultBrowserPromptSurfaces, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ constexpr inline auto kDefaultBrowserPromptSurfaceOptions =
+     std::to_array<base::FeatureParam<DefaultBrowserPromptSurface>::Option>({

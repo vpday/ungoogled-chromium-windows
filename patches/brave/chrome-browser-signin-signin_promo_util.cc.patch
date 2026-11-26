@@ -1,0 +1,29 @@
+--- a/chrome/browser/signin/signin_promo_util.cc
++++ b/chrome/browser/signin/signin_promo_util.cc
+@@ -781,23 +781,10 @@ bool CanOfferSignInForPromos(Profile& profile) {
+ }
+ 
+ void ComputeProfileMenuAvatarButtonPromoInfo(
+-    Profile& profile,
++    Profile&,
+     base::OnceCallback<void(ProfileMenuAvatarButtonPromoInfo)> result_callback,
+-    bool allow_batch_upload_promos) {
+-  BatchUploadService* batch_upload =
+-      BatchUploadServiceFactory::GetForProfile(&profile);
+-  if (!batch_upload) {
+-    std::move(result_callback).Run(ProfileMenuAvatarButtonPromoInfo{});
+-    return;
+-  }
+-
+-  // Note: `GetLocalDataDescriptionsForAvailableTypes()` will return no data
+-  // if the SyncService is not initialized.
+-  batch_upload->GetLocalDataDescriptionsForAvailableTypes(
+-      base::BindOnce(
+-          &ComputeProfileMenuAvatarButtonPromoInfoWithBatchUploadResult,
+-          &profile, allow_batch_upload_promos)
+-          .Then(std::move(result_callback)));
++    bool) {
++  std::move(result_callback).Run(ProfileMenuAvatarButtonPromoInfo{});
+ }
+ 
+ AvatarButtonPromoManager::AvatarButtonPromoManager(

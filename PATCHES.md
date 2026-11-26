@@ -28,6 +28,7 @@
 - `windows-keep-window-open-on-last-tab.patch`: Automatically opens a new blank tab when closing the last tab, preventing accidental browser window termination.
 - `windows-disable-reading-mode.patch`: Completely disables broken Reading Mode (Read Anything) entry points, address bar chips, background optimization guide polling, and WebUI routes.
 - `windows-force-context-menu-on-shift-right-click.patch`: Forces the native context menu on Shift + Right-Click even when overridden by web scripts, preserving text selection and search context actions while safeguarding interactive Canvas and WebGL elements.
+- `windows-utility-process-start-hidden.patch`: Launches unsandboxed Windows utility processes with `start_hidden = true` to prevent transient console window flashing when running with `--no-sandbox`.
 
 ## 2. Curated Brave Patches (`patches/brave/`)
 
@@ -36,11 +37,34 @@
 - `consolidated-features-overrides.patch`: Disables bookmark and NTP pre-rendering, DevTools AI code features, and tab hover card thumbnail previews to conserve background resources.
 - `kill-profile-reset-report-uploader.patch`: Stops sending diagnostic telemetry reports to Google when resetting browser profiles.
 - `chrome-browser-media-webrtc-webrtc_event_log_uploader.cc.patch` & `chrome-browser-media-webrtc-webrtc_log_uploader.cc.patch`: Blocks WebRTC event and diagnostic log uploads to Google servers and cleans up local dump files.
+- `third_party-blink-renderer-platform-runtime_enabled_features.json5.patch`: Disables JS Self-Profiling (`ProfilerAPI`), extension script tracking (`ExtensionScriptTagging`), and renderer-side Speculation Rules pre-rendering (`Prerender2`).
+- `chrome-browser-glic-public-features.cc.patch` & `chrome-browser-glic-public-glic_enabling.cc.patch`: Disables Glic text selection context menus and hard-codes global criteria checks to return false.
+- `chrome-browser-optimization_guide-chrome_browser_main_extra_parts_optimization_guide.cc.patch`: Prevents creation of OptimizationGuideGlobalState during browser startup.
+- `components-optimization_guide-core-delivery-prediction_model_component_configs.cc.patch`: Disables optimization guide prediction model component delivery.
+- `chrome-browser-predictors-loading_predictor_config.cc.patch`: Hard-disables loading predictor database and worker thread initialization.
+- `chrome-browser-component_updater-trust_token_key_commitments_component_installer.cc.patch`: Disables registration of Trust Token Key Commitments component installer.
+- `chrome-browser-ui-hats-hats_service_desktop.cc.patch`: Blocks Happiness Tracking Surveys (HaTS) desktop launch checks.
+- `chrome-common-profiler-thread_profiler_configuration.cc.patch`: Completely disables background thread sampling profiler data collection.
+- `components-heap_profiling-in_process-heap_profiler_parameters.cc.patch`: Disables in-process heap profiling metrics reporting.
+- `components-history_clusters-core-features.cc.patch` & `components-history_clusters-core-on_device_clustering_features.cc.patch`: Disables Journeys images, navigation context clustering, on-device clustering engine, and keyword filtering.
 
 ### 2.2 System Security & Process Hardening
 - `crashpad-prune-win-environment-block.patch`: Strips system environment variables from Windows crash minidumps to avoid leaking sensitive tokens and user data.
 - `fsa-restrict-to-opfs.patch`: Restricts the File System Access API to the Origin Private File System sandbox, preventing sites from requesting access to arbitrary host directories.
 - `defer-permission-prompts-to-load.patch`: Defers permission prompts until pages finish loading to prevent clickjacking and accidental authorizations.
+- `content-browser-background_fetch-background_fetch_delegate_proxy.cc.patch`: Blocks Background Fetch API requests in Off-the-Record (Incognito) sessions to prevent first-party and cross-site cookie leakage.
+- `components-password_manager-core-browser-password_form_filling.cc.patch`: Requires explicit user interaction (click or focus) before autofilling saved passwords to prevent hidden forms from harvesting credentials.
+- `components-policy-core-common-cloud-cloud_policy_util.cc.patch`: Bypasses synchronous WLAN API queries in `GetNetworkName()` on Windows 11 24H2+ to prevent thread hangs and block Wi-Fi SSID reporting.
+- `chrome-browser-external_protocol-external_protocol_handler.cc.patch`: Removes special privilege bypass for `mailto:` protocol to require user confirmation before launching external mail handlers.
+- `components-privacy_sandbox-privacy_sandbox_features.cc.patch`: Disables Privacy Sandbox attestations check and enforcement.
+- `services-device-public-cpp-device_features.cc.patch`: Enables the Allow/Ask/Block three-state permission model for Generic Sensors.
+- `components-password_manager-core-browser-features-password_features.cc.patch`: Disables on-device password encryption metrics reporting.
+- `components-one_time_tokens-core-common-one_time_token_features.cc.patch`: Disables Gmail OTP retrieval service in Autofill.
+- `third_party-blink-common-features.cc.patch`: Disables eager and moderate viewport heuristics preloading.
+- `chrome-browser-enterprise-data_protection-data_protection_features.cc.patch`: Disables enterprise forced download to cloud default feature.
+- `chrome-browser-default_browser-default_browser_features.cc.patch`: Disables default browser prompt surfaces.
+- `components-autofill-core-browser-studies-autofill_experiments.cc.patch`: Hard-disables credit card upload to Google Payments.
+- `chrome-browser-autofill-autofill_image_fetcher_factory.cc.patch`: Returns nullptr for AutofillImageFetcher to prevent remote fetching of credit card and merchant issuer icons.
 
 ### 2.3 Tab Management & Desktop Ergonomics
 - `tab-close-button-threshold.patch`: Lowers the tab close button visibility threshold to avoid accidental closures when numerous tabs are open.
@@ -50,6 +74,10 @@
 - `hide-cookie-controls-location-bar-icon.patch`: Hides the third-party cookie blocking icon from the address bar to reduce visual clutter.
 - `disable-global-signin-promos.patch`: Removes first-run account selection prompts and desktop sign-in promotional banners.
 - `chrome-browser-ui-tabs-recent_tabs_sub_menu_model.cc.patch`: Removes Google sign-in promotional items from the recent tabs submenu when signed out.
+- `chrome-browser-ui-webui-theme_source.cc.patch`: Adds null-check protection for ThemeService in `ThemeSource::SendColorsCss` to prevent crashes in SystemProfile and Profile Picker.
+- `ui-gfx-image-image_skia.cc.patch`: Returns original image rep if `skia::ImageOperations::Resize` yields empty bitmap (`drawsNothing()`) to avoid downstream crashes.
+- `components-omnibox-browser-omnibox_popup_selection.cc.patch`: Hides thumbs up/down feedback button focus states in Omnibox HistoryEmbeddings matches.
+- `chrome-browser-signin-signin_promo_util.cc.patch`: Bypasses BatchUploadService queries in profile menu avatar button promo info.
 
 ## 3. Curated Helium Patches (`patches/helium/`)
 

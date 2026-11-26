@@ -1,0 +1,10 @@
+--- a/chrome/browser/optimization_guide/chrome_browser_main_extra_parts_optimization_guide.cc
++++ b/chrome/browser/optimization_guide/chrome_browser_main_extra_parts_optimization_guide.cc
+@@ -8,6 +8,4 @@
+ 
+ // Ensures global state initialization, so we can have reliable logging of
+ // on-device model metrics post start-up.
+-void ChromeBrowserMainExtraPartsOptimizationGuide::PostBrowserStart() {
+-  optimization_guide::OptimizationGuideGlobalState::CreateOrGet();
+-}
++void ChromeBrowserMainExtraPartsOptimizationGuide::PostBrowserStart() {}

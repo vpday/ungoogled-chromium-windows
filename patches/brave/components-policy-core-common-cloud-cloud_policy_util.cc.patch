@@ -1,0 +1,16 @@
+--- a/components/policy/core/common/cloud/cloud_policy_util.cc
++++ b/components/policy/core/common/cloud/cloud_policy_util.cc
+@@ -271,8 +271,13 @@
+   return net::GetHostName();
+ }
+ 
+ std::string GetNetworkName() {
++#if BUILDFLAG(IS_WIN)
++  if (base::win::GetVersion() >= base::win::Version::WIN11_24H2) {
++    return std::string();
++  }
++#endif  // BUILDFLAG(IS_WIN)
+   return net::GetWifiSSID();
+ }
+ 
+ #if BUILDFLAG(IS_WIN)

@@ -1,0 +1,20 @@
+--- a/third_party/blink/common/features.cc
++++ b/third_party/blink/common/features.cc
+@@ -1832,7 +1832,7 @@ BASE_FEATURE_PARAM(base::TimeDelta,
+                    "hover_dwell_time",
+                    base::Milliseconds(10));
+ BASE_FEATURE(kPreloadingEagerViewportHeuristics,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE_PARAM(bool,
+                    kPreloadingEagerViewportHeuristicsForDevToolsEmulation,
+                    &kPreloadingEagerViewportHeuristics,
+@@ -1844,7 +1844,7 @@ BASE_FEATURE_PARAM(base::TimeDelta,
+                    base::Milliseconds(50));
+ 
+ BASE_FEATURE(kPreloadingModerateViewportHeuristics,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE_PARAM(bool,
+                    kPreloadingModerateViewportHeuristicsEnactCandidates,
+                    &kPreloadingModerateViewportHeuristics,

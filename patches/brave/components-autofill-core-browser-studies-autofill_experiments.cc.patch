@@ -1,0 +1,140 @@
+--- a/components/autofill/core/browser/studies/autofill_experiments.cc
++++ b/components/autofill/core/browser/studies/autofill_experiments.cc
+@@ -91,132 +91,11 @@ const char* const kAutofillUpstreamLaunchedCountries[] = {
+     "ZW"};
+ 
+ bool IsCreditCardUploadEnabled(
+-    const syncer::SyncService* sync_service,
+-    const std::string& user_country,
+-    AutofillMetrics::PaymentsSigninState signin_state_for_metrics,
+-    LogManager* log_manager) {
+-  if (!sync_service) {
+-    // If credit card sync is not active, we're not offering to upload cards.
+-    autofill_metrics::LogCardUploadEnabledMetric(
+-        autofill_metrics::CardUploadEnabled::kSyncServiceNull,
+-        signin_state_for_metrics);
+-    LogCardUploadDisabled(log_manager, "SYNC_SERVICE_NULL");
+-    return false;
+-  }
+-
+-  if (sync_service->GetTransportState() ==
+-      syncer::SyncService::TransportState::PAUSED) {
+-    autofill_metrics::LogCardUploadEnabledMetric(
+-        autofill_metrics::CardUploadEnabled::kSyncServicePaused,
+-        signin_state_for_metrics);
+-    LogCardUploadDisabled(log_manager, "SYNC_SERVICE_PAUSED");
+-    return false;
+-  }
+-
+-  if (!sync_service->GetActiveDataTypes().Has(syncer::AUTOFILL_WALLET_DATA)) {
+-    autofill_metrics::LogCardUploadEnabledMetric(
+-        autofill_metrics::CardUploadEnabled::
+-            kSyncServiceMissingAutofillWalletDataActiveType,
+-        signin_state_for_metrics);
+-    LogCardUploadDisabled(
+-        log_manager, "SYNC_SERVICE_MISSING_AUTOFILL_WALLET_ACTIVE_DATA_TYPE");
+-    // Log the specific reason sync was not active. Note that this is
+-    // best-effort, as Sync also takes ~10 seconds for the data types to become
+-    // active after starting the browser.
+-    autofill_metrics::SyncDisabledReason reason;
+-    if (sync_service->GetDisableReasons().Has(
+-            syncer::SyncService::DISABLE_REASON_NOT_SIGNED_IN)) {
+-      reason = autofill_metrics::SyncDisabledReason::kNotSignedIn;
+-    } else if (sync_service->GetDisableReasons().Has(
+-                   syncer::SyncService::DISABLE_REASON_ENTERPRISE_POLICY)) {
+-      reason = autofill_metrics::SyncDisabledReason::kSyncDisabledByPolicy;
+-    } else if (sync_service->GetUserSettings()->GetSelectedTypes().Has(
+-                   syncer::UserSelectableType::kPayments)) {
+-      // A mismatch between the kPayments type being "selected" vs. "active".
+-      // Should be rare due to checking if Sync was active above, but good to
+-      // check to prove these values are generally interchangeable for our case.
+-      reason = autofill_metrics::SyncDisabledReason::kSelectedButNotActive;
+-    } else if (sync_service->GetUserSettings()->IsTypeManagedByPolicy(
+-                   syncer::UserSelectableType::kPayments)) {
+-      reason = autofill_metrics::SyncDisabledReason::kTypeDisabledByPolicy;
+-    } else if (sync_service->GetUserSettings()->IsTypeManagedByCustodian(
+-                   syncer::UserSelectableType::kPayments)) {
+-      reason = autofill_metrics::SyncDisabledReason::kTypeDisabledByCustodian;
+-    } else {
+-      // By process of elimination, if the toggle is not disabled for any of the
+-      // above reasons, it is reasonable to expect that it was due to an
+-      // explicit choice by the user.
+-      reason =
+-          autofill_metrics::SyncDisabledReason::kTypeProbablyDisabledByUser;
+-    }
+-    LogAutofillPaymentsSyncDisabled(reason);
+-    return false;
+-  }
+-
+-  // In sync settings, address and payment toggles are independent. However,
+-  // since address information is uploaded during the server card saving flow,
+-  // credit card upload is not available when address sync is disabled.
+-  if (!sync_service->GetUserSettings()->GetSelectedTypes().Has(
+-          syncer::UserSelectableType::kAutofill)) {
+-    autofill_metrics::LogCardUploadEnabledMetric(
+-        autofill_metrics::CardUploadEnabled::
+-            kSyncServiceMissingAutofillSelectedType,
+-        signin_state_for_metrics);
+-    LogCardUploadDisabled(log_manager,
+-                          "SYNC_SERVICE_MISSING_AUTOFILL_SELECTED_TYPE");
+-    return false;
+-  }
+-
+-  // Also don't offer upload for users that have an explicit sync passphrase.
+-  // Users who have enabled a passphrase have chosen to not make their sync
+-  // information accessible to Google. Since upload makes credit card data
+-  // available to other Google systems, disable it for passphrase users.
+-  if (sync_service->GetUserSettings()->IsUsingExplicitPassphrase()) {
+-    autofill_metrics::LogCardUploadEnabledMetric(
+-        autofill_metrics::CardUploadEnabled::kUsingExplicitSyncPassphrase,
+-        signin_state_for_metrics);
+-    LogCardUploadDisabled(log_manager, "USER_HAS_EXPLICIT_SYNC_PASSPHRASE");
+-    return false;
+-  }
+-
+-  // Don't offer upload for users that are only syncing locally, since they
+-  // won't receive the cards back from Google Payments.
+-  if (sync_service->IsLocalSyncEnabled()) {
+-    autofill_metrics::LogCardUploadEnabledMetric(
+-        autofill_metrics::CardUploadEnabled::kLocalSyncEnabled,
+-        signin_state_for_metrics);
+-    LogCardUploadDisabled(log_manager, "USER_ONLY_SYNCING_LOCALLY");
+-    return false;
+-  }
+-
+-  if (base::FeatureList::IsEnabled(features::kAutofillUpstream)) {
+-    // Feature flag is enabled, so continue regardless of the country. This is
+-    // required for the ability to continue to launch to more countries as
+-    // necessary.
+-    autofill_metrics::LogCardUploadEnabledMetric(
+-        autofill_metrics::CardUploadEnabled::kEnabledByFlag,
+-        signin_state_for_metrics);
+-    LogCardUploadEnabled(log_manager);
+-    return true;
+-  }
+-
+-  std::string country_code = base::ToUpperASCII(user_country);
+-  auto* const* country_iter =
+-      std::ranges::find(kAutofillUpstreamLaunchedCountries, country_code);
+-  if (country_iter == std::end(kAutofillUpstreamLaunchedCountries)) {
+-    // |country_code| was not found in the list of launched countries.
+-    autofill_metrics::LogCardUploadEnabledMetric(
+-        autofill_metrics::CardUploadEnabled::kUnsupportedCountry,
+-        signin_state_for_metrics);
+-    LogCardUploadDisabled(log_manager, "UNSUPPORTED_COUNTRY");
+-    return false;
+-  }
+-
+-  autofill_metrics::LogCardUploadEnabledMetric(
+-      autofill_metrics::CardUploadEnabled::kEnabledForCountry,
+-      signin_state_for_metrics);
+-  LogCardUploadEnabled(log_manager);
+-  return true;
++    const syncer::SyncService*,
++    const std::string&,
++    AutofillMetrics::PaymentsSigninState,
++    LogManager*) {
++  return false;
+ }
+ 
+ bool IsInAutofillSuggestionsDisabledExperiment() {

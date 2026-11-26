@@ -1,0 +1,14 @@
+--- a/chrome/browser/autofill/autofill_image_fetcher_factory.cc
++++ b/chrome/browser/autofill/autofill_image_fetcher_factory.cc
+@@ -52,9 +52,8 @@ AutofillImageFetcherFactory::~AutofillImageFetcherFactory() = default;
+ 
+ std::unique_ptr<KeyedService>
+ AutofillImageFetcherFactory::BuildServiceInstanceForBrowserContext(
+-    content::BrowserContext* context) const {
+-  return std::make_unique<AutofillImageFetcherImpl>(
+-      Profile::FromBrowserContext(context)->GetProfileKey());
++    content::BrowserContext*) const {
++  return nullptr;
+ }
+ 
+ #if BUILDFLAG(IS_ANDROID)

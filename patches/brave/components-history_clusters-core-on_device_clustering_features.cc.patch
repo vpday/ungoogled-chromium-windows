@@ -1,0 +1,20 @@
+--- a/components/history_clusters/core/on_device_clustering_features.cc
++++ b/components/history_clusters/core/on_device_clustering_features.cc
+@@ -16,7 +16,7 @@ namespace features {
+ 
+ BASE_FEATURE(kOnDeviceClustering,
+              "HistoryClustersOnDeviceClustering",
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kOnDeviceClusteringBlocklists,
+              "JourneysOnDeviceClusteringBlocklist",
+@@ -24,7 +24,7 @@ BASE_FEATURE(kOnDeviceClusteringBlocklists,
+ 
+ BASE_FEATURE(kOnDeviceClusteringKeywordFiltering,
+              "JourneysKeywordFiltering",
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ }  // namespace features
+ }  // namespace history_clusters

@@ -1,0 +1,20 @@
+--- a/components/history_clusters/core/features.cc
++++ b/components/history_clusters/core/features.cc
+@@ -13,7 +13,7 @@ namespace history_clusters {
+ 
+ namespace internal {
+ 
+-BASE_FEATURE(kJourneysImages, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kJourneysImages, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ const base::FeatureParam<bool> kJourneysImagesCover{
+     &kJourneysImages, "JourneysImagesCover", true};
+@@ -35,7 +35,7 @@ BASE_FEATURE(kHistoryClustersInternalsPage, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kHistoryClustersVisitDeduping, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kHistoryClustersNavigationContextClustering,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ }  // namespace internal
+ 

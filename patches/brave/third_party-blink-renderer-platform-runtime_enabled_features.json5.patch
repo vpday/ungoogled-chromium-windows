@@ -1,0 +1,29 @@
+--- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
++++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
+@@ -2955,7 +2955,7 @@
+     {
+       name: "ExtensionScriptTagging",
+       public: true,
+-      status: "stable",
++      base_feature_status: "disabled",
+       base_feature: "ExtensionScriptTagging",
+     },
+     {
+@@ -5241,7 +5241,7 @@
+       //
+       // It also has some feature params defined throughout the codebase.
+       name: "Prerender2",
+-      status: "stable",
++      base_feature_status: "disabled",
+     },
+     {
+       // Used to allow prerender cross-origin iframes with an opt-in response
+@@ -5314,7 +5314,7 @@
+     },
+     {
+       name: "ProfilerAPI",
+-      status: "stable",
++      base_feature_status: "disabled",
+     },
+     {
+       // When enabled, dedicated workers can use profiler API

@@ -1,0 +1,34 @@
+--- a/components/optimization_guide/core/delivery/prediction_model_component_configs.cc
++++ b/components/optimization_guide/core/delivery/prediction_model_component_configs.cc
+@@ -19,7 +19,7 @@
+ namespace optimization_guide {
+ 
+ BASE_FEATURE(kPredictionModelComponentDelivery,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ const base::FeatureParam<std::string> kPredictionModelTargets{
+     &kPredictionModelComponentDelivery, "targets", "20"};
+@@ -124,20 +124,8 @@ bool IsTargetEnabledForComponentDelivery(proto::OptimizationTarget target) {
+ }  // namespace
+ 
+ std::optional<PredictionModelComponentConfig> GetPredictionModelComponentConfig(
+-    proto::OptimizationTarget target) {
+-  if (!IsTargetEnabledForComponentDelivery(target)) {
+-    return std::nullopt;
+-  }
+-
+-  const ComponentConfigEntry* entry = FindConfigEntry(target);
+-  if (!entry) {
+-    return std::nullopt;
+-  }
+-
+-  return PredictionModelComponentConfig(
+-      entry->component_name,
+-      std::vector<uint8_t>(entry->public_key_sha256.begin(),
+-                           entry->public_key_sha256.end()));
++    proto::OptimizationTarget) {
++  return std::nullopt;
+ }
+ 
+ std::vector<proto::OptimizationTarget> GetPredictionModelTargets() {

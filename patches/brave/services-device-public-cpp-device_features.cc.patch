@@ -1,0 +1,11 @@
+--- a/services/device/public/cpp/device_features.cc
++++ b/services/device/public/cpp/device_features.cc
+@@ -19,7 +19,7 @@ BASE_FEATURE(kGenericSensorExtraClasses, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Enables an Allow/Ask/Block set of default permissions for sensors.
+ BASE_FEATURE(kSensorsAllowAskBlockPermissionModel,
+-             base::FEATURE_DISABLED_BY_DEFAULT);
++             base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // Enables browser-side privacy mitigations for generic sensors.
+ BASE_FEATURE(kSensorPrivacyMitigations, base::FEATURE_ENABLED_BY_DEFAULT);

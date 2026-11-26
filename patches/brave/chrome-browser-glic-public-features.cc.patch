@@ -1,0 +1,11 @@
+--- a/chrome/browser/glic/public/features.cc
++++ b/chrome/browser/glic/public/features.cc
+@@ -110,7 +110,7 @@ BASE_FEATURE(kGlicContextMenuBelowSearch, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kGlicDynamicChromeTools, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kGlicTextSelectionContextMenu,
+-             FEATURE_ENABLED_BY_DEFAULT_NON_ANDROID);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ const base::FeatureParam<bool> kGlicTextSelectionContextMenuMessageFirstFre{
+     &kGlicTextSelectionContextMenu, "message_first_fre", false};
+ const base::FeatureParam<bool> kGlicTextSelectionContextMenuAutoSubmit{

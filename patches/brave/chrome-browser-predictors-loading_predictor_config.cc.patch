@@ -1,0 +1,14 @@
+--- a/chrome/browser/predictors/loading_predictor_config.cc
++++ b/chrome/browser/predictors/loading_predictor_config.cc
+@@ -10,9 +10,8 @@
+ 
+ namespace predictors {
+ 
+-bool IsLoadingPredictorEnabled(Profile* profile) {
+-  // Disabled for off-the-record. Policy choice, not a technical limitation.
+-  return profile && !profile->IsOffTheRecord();
++bool IsLoadingPredictorEnabled(Profile*) {
++  return false;
+ }
+ 
+ bool IsPreconnectAllowed(Profile* profile) {

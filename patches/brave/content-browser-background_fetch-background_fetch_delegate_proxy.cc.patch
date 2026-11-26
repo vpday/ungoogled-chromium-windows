@@ -1,0 +1,14 @@
+--- a/content/browser/background_fetch/background_fetch_delegate_proxy.cc
++++ b/content/browser/background_fetch/background_fetch_delegate_proxy.cc
+@@ -62,6 +62,11 @@ void BackgroundFetchDelegateProxy::GetPermissionForOrigin(
+     RenderFrameHostImpl* rfh,
+     GetPermissionForOriginCallback callback) {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
++  if (auto* browser_context = GetBrowserContext();
++      browser_context && browser_context->IsOffTheRecord()) {
++    std::move(callback).Run(BackgroundFetchPermission::BLOCKED);
++    return;
++  }
+ 
+   // Permissions need to go through the DownloadRequestLimiter for top level
+   // frames. (This may be missing in unit tests.)

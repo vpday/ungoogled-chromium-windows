@@ -1,0 +1,11 @@
+--- a/components/privacy_sandbox/privacy_sandbox_features.cc
++++ b/components/privacy_sandbox/privacy_sandbox_features.cc
+@@ -9,7 +9,7 @@
+ namespace privacy_sandbox {
+ 
+ BASE_FEATURE(kEnforcePrivacySandboxAttestations,
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kDefaultAllowPrivacySandboxAttestations,
+              base::FEATURE_DISABLED_BY_DEFAULT);
