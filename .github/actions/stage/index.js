@@ -379,7 +379,7 @@ async function run() {
             console.log(`Creating archive: ${archivePath}`);
             console.log('Compression started...');
             await exec.exec('tar', [
-                '-I', 'zstd -10 -T0',
+                '-I', 'zstd -3 -T0',
                 '-cf', archivePath,
                 '-C', BUILD_DIR,
                 '--exclude=src/third_party/depot_tools/win_toolchain/vs_files',
