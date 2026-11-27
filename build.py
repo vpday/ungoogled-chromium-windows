@@ -549,6 +549,10 @@ def _step_write_gn_args(
             out_dir.mkdir(parents=True, exist_ok=True)
             gn_flags = _generate_gn_flags(target, is_tarball, source_tree)
             (out_dir / 'args.gn').write_text(gn_flags, encoding=ENCODING)
+        args_gn_path = out_dir / 'args.gn'
+        if args_gn_path.exists():
+            args_gn = args_gn_path.read_text(encoding=ENCODING)
+            get_logger().info('Effective GN args:\n%s', args_gn.rstrip())
 
 
 def _step_setup_out_dir_symlinks(source_tree: Path, out_dir: Path) -> None:
