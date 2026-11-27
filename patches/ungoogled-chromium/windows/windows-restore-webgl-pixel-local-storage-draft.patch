@@ -1,0 +1,11 @@
+--- a/third_party/blink/renderer/modules/webgl/webgl2_rendering_context.cc
++++ b/third_party/blink/renderer/modules/webgl/webgl2_rendering_context.cc
+@@ -120,7 +120,7 @@ void WebGL2RenderingContext::RegisterContextExtensions() {
+   RegisterExtension<WebGLPolygonMode>();
+   RegisterExtension<WebGLProvokingVertex>();
+   RegisterExtension<WebGLRenderSharedExponent>();
+-  RegisterExtension<WebGLShaderPixelLocalStorage>();
++  RegisterExtension<WebGLShaderPixelLocalStorage>(kDraftExtension);
+   RegisterExtension<WebGLStencilTexturing>();
+ }
+ 

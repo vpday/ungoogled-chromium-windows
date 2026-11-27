@@ -177,6 +177,7 @@ ungoogled-chromium/windows/windows-disable-digital-credentials.patch
 ungoogled-chromium/windows/windows-disable-jumplist-history.patch
 ungoogled-chromium/windows/windows-normalize-user-agent-platform-version.patch
 ungoogled-chromium/windows/windows-disable-antivirus-metrics-provider.patch
+ungoogled-chromium/windows/windows-disable-default-browser-startup-metrics.patch
 ungoogled-chromium/windows/windows-disable-pepc-elements.patch
 ungoogled-chromium/windows/windows-disable-ai-page-content-tracking.patch
 ungoogled-chromium/windows/windows-disable-webrtc-diagnostic-logging.patch
@@ -184,6 +185,7 @@ ungoogled-chromium/windows/windows-hide-navigator-webdriver.patch
 ungoogled-chromium/windows/windows-spoof-webgpu-adapter-info.patch
 ungoogled-chromium/windows/windows-deterministic-canvas-noise.patch
 ungoogled-chromium/windows/windows-spoof-webgl-params.patch
+ungoogled-chromium/windows/windows-restore-webgl-pixel-local-storage-draft.patch
 ungoogled-chromium/windows/windows-timezone-sandbox.patch
 ungoogled-chromium/windows/windows-permissions-consistency.patch
 ungoogled-chromium/windows/windows-font-fallback-filter.patch

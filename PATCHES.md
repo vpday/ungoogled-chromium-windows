@@ -10,6 +10,7 @@
 - `windows-disable-jumplist-history.patch`: Prevents writing frequently visited sites and recently closed tabs to the Windows taskbar JumpList to avoid unencrypted OS-level browsing history leaks.
 - `windows-normalize-user-agent-platform-version.patch`: Masks the Windows OS build version to a static 10.0.0 in Client Hints to prevent exact operating system version probing.
 - `windows-disable-antivirus-metrics-provider.patch`: Removes startup WMI queries for third-party antivirus states and eliminates unnecessary background utility processes.
+- `windows-disable-default-browser-startup-metrics.patch`: Removes the Windows startup beacon reads and UserChoice registry timestamp collection used by default-browser transition metrics.
 - `windows-disable-pepc-elements.patch`: Disables in-page declarative permission and app installation elements to prevent clickjacking and deceptive permission prompts.
 - `windows-disable-ai-page-content-tracking.patch`: Disables heuristic scanning of password fields, SVGs, and layout trees for on-device AI content extraction.
 - `windows-disable-webrtc-diagnostic-logging.patch`: Disables WebRTC diagnostic logging and removes related debugging interfaces to eliminate fingerprinting surfaces.
@@ -17,6 +18,7 @@
 - `windows-spoof-webgpu-adapter-info.patch`: Normalizes WebGPU adapter information and aligns it with WebGL disclosures to avoid hardware contradictions.
 - `windows-deterministic-canvas-noise.patch`: Applies deterministic edge micro-noise to Canvas rendering, defeating canvas fingerprinting while preserving solid color geometries.
 - `windows-spoof-webgl-params.patch`: Normalizes over 80 WebGL parameters and applies readback protection to weaken hardware fingerprinting.
+- `windows-restore-webgl-pixel-local-storage-draft.patch`: Restores `WEBGL_shader_pixel_local_storage` to the draft-extension gate so it is not exposed to ordinary pages.
 - `windows-timezone-sandbox.patch`: Supports setting an isolated browser timezone via `--timezone` that resists system clock updates.
 - `windows-permissions-consistency.patch`: Aligns browser-internal permission states with JavaScript queries when custom permission policies are specified.
 - `windows-font-fallback-filter.patch`: Restricts local system font enumeration via `--font-blacklist` to mitigate font-based tracking.
