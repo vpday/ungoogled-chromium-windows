@@ -1,0 +1,350 @@
+diff --git a/third_party/blink/renderer/core/editing/dom_selection.cc b/third_party/blink/renderer/core/editing/dom_selection.cc
+index 70d6fd8e898..6e173848a24 100644
+--- a/third_party/blink/renderer/core/editing/dom_selection.cc
++++ b/third_party/blink/renderer/core/editing/dom_selection.cc
+@@ -33,6 +33,7 @@
+ #include "third_party/blink/renderer/core/dom/document.h"
+ #include "third_party/blink/renderer/core/dom/node.h"
+ #include "third_party/blink/renderer/core/dom/range.h"
++#include "third_party/blink/renderer/core/frame/settings.h"
+ #include "third_party/blink/renderer/core/dom/tree_scope.h"
+ #include "third_party/blink/renderer/core/editing/editing_utilities.h"
+ #include "third_party/blink/renderer/core/editing/ephemeral_range.h"
+@@ -361,8 +362,14 @@ void DomSelection::collapseToStart(ExceptionState& exception_state) {
+ }
+ 
+ void DomSelection::empty() {
+-  if (IsAvailable())
++  if (IsAvailable()) {
++    if (DomWindow() && DomWindow()->GetFrame() &&
++        DomWindow()->GetFrame()->GetSettings() &&
++        DomWindow()->GetFrame()->GetSettings()->GetForceTextSelectionUnlocked()) {
++      return;
++    }
+     Selection().Clear();
++  }
+ }
+ 
+ // https://www.w3.org/TR/selection-api/#dom-selection-setbaseandextent
+@@ -741,8 +748,14 @@ void DomSelection::removeRange(Range* range, ExceptionState& exception_state) {
+ }
+ 
+ void DomSelection::removeAllRanges() {
+-  if (IsAvailable())
++  if (IsAvailable()) {
++    if (DomWindow() && DomWindow()->GetFrame() &&
++        DomWindow()->GetFrame()->GetSettings() &&
++        DomWindow()->GetFrame()->GetSettings()->GetForceTextSelectionUnlocked()) {
++      return;
++    }
+     Selection().Clear();
++  }
+ }
+ 
+ void DomSelection::addRange(Range* new_range) {
+diff --git a/third_party/blink/renderer/core/editing/iterators/text_iterator.cc b/third_party/blink/renderer/core/editing/iterators/text_iterator.cc
+index 05d44af8c2a..d74c3f689e1 100644
+--- a/third_party/blink/renderer/core/editing/iterators/text_iterator.cc
++++ b/third_party/blink/renderer/core/editing/iterators/text_iterator.cc
+@@ -40,6 +40,7 @@
+ #include "third_party/blink/renderer/core/editing/visible_position.h"
+ #include "third_party/blink/renderer/core/editing/visible_units.h"
+ #include "third_party/blink/renderer/core/frame/local_frame_view.h"
++#include "third_party/blink/renderer/core/frame/settings.h"
+ #include "third_party/blink/renderer/core/frame/web_feature.h"
+ #include "third_party/blink/renderer/core/html/forms/html_input_element.h"
+ #include "third_party/blink/renderer/core/html/forms/html_legend_element.h"
+@@ -392,7 +393,11 @@ void TextIteratorAlgorithm<Strategy>::Advance() {
+ 
+       // Handle the current node according to its type.
+       if (iteration_progress_ < kHandledNode) {
+-        if (!SkipsUnselectableContent() || layout_object->IsSelectable()) {
++        const bool force_unlocked =
++            node_->GetDocument().GetSettings() &&
++            node_->GetDocument().GetSettings()->GetForceTextSelectionUnlocked();
++        if (!SkipsUnselectableContent() || layout_object->IsSelectable() ||
++            force_unlocked) {
+           auto* html_element = DynamicTo<HTMLElement>(*node_);
+           if (layout_object->IsText() &&
+               node_->getNodeType() ==
+diff --git a/third_party/blink/renderer/core/editing/selection_controller.cc b/third_party/blink/renderer/core/editing/selection_controller.cc
+index e131df5fed5..ec96af17b30 100644
+--- a/third_party/blink/renderer/core/editing/selection_controller.cc
++++ b/third_party/blink/renderer/core/editing/selection_controller.cc
+@@ -660,7 +660,13 @@ WebInputEventResult SelectionController::UpdateSelectionForMouseDrag(
+   // done in handleMousePressEvent, but not if the mouse press was on an
+   // existing selection.
+ 
++  const bool force_unlocked =
++      (frame_->GetSettings() &&
++       frame_->GetSettings()->GetForceTextSelectionUnlocked()) ||
++      mouse_down_may_start_select_;
++
+   if (selection_state_ == SelectionState::kHaveNotStartedSelection &&
++      !force_unlocked &&
+       DispatchSelectStart(target) != DispatchEventResult::kNotCanceled) {
+     return WebInputEventResult::kHandledApplication;
+   }
+@@ -730,13 +736,19 @@ bool SelectionController::UpdateSelectionForMouseDownDispatchingSelectStart(
+       return false;
+     }
+   }
+-  if (target_node && target_node->GetLayoutObject() &&
++  const bool force_unlocked =
++      (frame_->GetSettings() &&
++       frame_->GetSettings()->GetForceTextSelectionUnlocked()) ||
++      mouse_down_may_start_select_;
++
++  if (!force_unlocked && target_node && target_node->GetLayoutObject() &&
+       !target_node->GetLayoutObject()->IsSelectable())
+     return false;
+ 
+   {
+     SelectionInFlatTree::InvalidSelectionResetter resetter(selection);
+-    if (DispatchSelectStart(target_node) != DispatchEventResult::kNotCanceled)
++    if (!force_unlocked &&
++        DispatchSelectStart(target_node) != DispatchEventResult::kNotCanceled)
+       return false;
+   }
+ 
+@@ -774,8 +786,13 @@ bool SelectionController::SelectClosestWordFromHitTestResult(
+     SelectInputEventType select_input_event_type) {
+   Node* const inner_node = result.InnerPossiblyPseudoNode();
+ 
++  const bool force_unlocked =
++      (frame_->GetSettings() &&
++       frame_->GetSettings()->GetForceTextSelectionUnlocked()) ||
++      mouse_down_may_start_select_;
++
+   if (!inner_node || !inner_node->GetLayoutObject() ||
+-      !inner_node->GetLayoutObject()->IsSelectable())
++      (!force_unlocked && !inner_node->GetLayoutObject()->IsSelectable()))
+     return false;
+ 
+   // Special-case image local offset to always be zero, to avoid triggering
+@@ -1173,9 +1190,14 @@ bool SelectionController::HandleMousePressEvent(
+ 
+   // If we got the event back, that must mean it wasn't prevented,
+   // so it's allowed to start a drag or selection if it wasn't in a scrollbar.
+-  mouse_down_may_start_select_ = (CanMouseDownStartSelect(event.InnerNode()) ||
+-                                  IsSelectionOverLink(event)) &&
+-                                 !event.GetScrollbar();
++  const bool force_unlocked =
++      (event.Event().GetModifiers() & WebInputEvent::Modifiers::kAltKey) ||
++      (frame_->GetSettings() &&
++       frame_->GetSettings()->GetForceTextSelectionUnlocked());
++  mouse_down_may_start_select_ =
++      (force_unlocked || CanMouseDownStartSelect(event.InnerNode()) ||
++       IsSelectionOverLink(event)) &&
++      !event.GetScrollbar();
+   // Don't start selection when clicking an activation-behavior pseudo-element
+   // (e.g. ::scroll-marker, ::interest-button). These act as interactive
+   // controls and clearing the selection on mousedown already happens in
+@@ -1216,8 +1238,17 @@ WebInputEventResult SelectionController::HandleMouseDraggedEvent(
+ 
+   if (!Selection().IsAvailable())
+     return WebInputEventResult::kNotHandled;
++  const bool force_unlocked =
++      (frame_->GetSettings() &&
++       frame_->GetSettings()->GetForceTextSelectionUnlocked()) ||
++      mouse_down_may_start_select_;
+   if (selection_state_ != SelectionState::kExtendedSelection) {
+-    HitTestRequest request(HitTestRequest::kReadOnly | HitTestRequest::kActive);
++    HitTestRequest::HitTestRequestType hit_type =
++        HitTestRequest::kReadOnly | HitTestRequest::kActive;
++    if (force_unlocked) {
++      hit_type |= HitTestRequest::kIgnoreZeroOpacityObjects;
++    }
++    HitTestRequest request(hit_type);
+     HitTestLocation location(mouse_down_pos);
+     HitTestResult result(request, location);
+     frame_->GetDocument()->GetLayoutView()->HitTest(location, result);
+@@ -1238,8 +1269,17 @@ void SelectionController::UpdateSelectionForMouseDrag(
+   if (!layout_view)
+     return;
+ 
+-  HitTestRequest request(HitTestRequest::kReadOnly | HitTestRequest::kActive |
+-                         HitTestRequest::kMove);
++  const bool force_unlocked =
++      (frame_->GetSettings() &&
++       frame_->GetSettings()->GetForceTextSelectionUnlocked()) ||
++      mouse_down_may_start_select_;
++  HitTestRequest::HitTestRequestType hit_type =
++      HitTestRequest::kReadOnly | HitTestRequest::kActive |
++      HitTestRequest::kMove;
++  if (force_unlocked) {
++    hit_type |= HitTestRequest::kIgnoreZeroOpacityObjects;
++  }
++  HitTestRequest request(hit_type);
+   HitTestLocation location(
+       view->ConvertFromRootFrame(last_known_mouse_position_in_root_frame));
+   HitTestResult result(request, location);
+diff --git a/third_party/blink/renderer/core/highlight/highlight_style_utils.cc b/third_party/blink/renderer/core/highlight/highlight_style_utils.cc
+index fe989abb75e..a0ebdb28541 100644
+--- a/third_party/blink/renderer/core/highlight/highlight_style_utils.cc
++++ b/third_party/blink/renderer/core/highlight/highlight_style_utils.cc
+@@ -16,6 +16,7 @@
+ #include "third_party/blink/renderer/core/dom/text.h"
+ #include "third_party/blink/renderer/core/editing/frame_selection.h"
+ #include "third_party/blink/renderer/core/frame/local_frame.h"
++#include "third_party/blink/renderer/core/frame/settings.h"
+ #include "third_party/blink/renderer/core/layout/layout_object.h"
+ #include "third_party/blink/renderer/core/layout/layout_text.h"
+ #include "third_party/blink/renderer/core/layout/layout_theme.h"
+@@ -365,8 +366,12 @@ Color HighlightStyleUtils::HighlightBackgroundColor(
+     bool is_read_back_allowed_rendering,
+     SearchTextIsActiveMatch search_text_is_active_match,
+     const AtomicString& pseudo_argument) {
++  const bool force_unlocked =
++      document.GetSettings() &&
++      document.GetSettings()->GetForceTextSelectionUnlocked();
++
+   if (pseudo == kPseudoIdSelection) {
+-    if (node && !style.IsSelectable()) {
++    if (node && !style.IsSelectable() && !force_unlocked) {
+       return Color::kTransparent;
+     }
+   }
+@@ -384,6 +389,10 @@ Color HighlightStyleUtils::HighlightBackgroundColor(
+       return result.BlendWithWhite();
+     }
+     if (result.IsFullyTransparent()) {
++      if (force_unlocked) {
++        return LayoutTheme::GetTheme().ActiveSelectionBackgroundColor(
++            style.UsedColorScheme());
++      }
+       return Color::kTransparent;
+     }
+     if (UseDefaultHighlightColors(pseudo_style, pseudo,
+diff --git a/third_party/blink/renderer/core/input/event_handler.cc b/third_party/blink/renderer/core/input/event_handler.cc
+index b87c4ea1247..40b5d362ad1 100644
+--- a/third_party/blink/renderer/core/input/event_handler.cc
++++ b/third_party/blink/renderer/core/input/event_handler.cc
+@@ -871,7 +871,15 @@ WebInputEventResult EventHandler::HandleMousePressEvent(
+   if (!frame_->View())
+     return WebInputEventResult::kNotHandled;
+ 
+-  HitTestRequest request(HitTestRequest::kActive);
++  const bool force_unlocked =
++      (mouse_event.GetModifiers() & WebInputEvent::Modifiers::kAltKey) ||
++      (frame_->GetSettings() &&
++       frame_->GetSettings()->GetForceTextSelectionUnlocked());
++  HitTestRequest::HitTestRequestType hit_type = HitTestRequest::kActive;
++  if (force_unlocked) {
++    hit_type |= HitTestRequest::kIgnoreZeroOpacityObjects;
++  }
++  HitTestRequest request(hit_type);
+   // Save the document point we generate in case the window coordinate is
+   // invalidated by what happens when we dispatch the event.
+   PhysicalOffset document_point = frame_->View()->ConvertFromRootFrame(
+@@ -1008,14 +1016,18 @@ WebInputEventResult EventHandler::HandleMousePressEvent(
+   if (PassMousePressEventToScrollbar(mev))
+     event_result = WebInputEventResult::kHandledSystem;
+ 
+-  if (event_result == WebInputEventResult::kNotHandled) {
++  if (event_result == WebInputEventResult::kNotHandled || force_unlocked) {
+     if (ShouldRefetchEventTarget(mev)) {
+       HitTestRequest read_only_request(HitTestRequest::kReadOnly |
+                                        HitTestRequest::kActive);
+       mev = frame_->GetDocument()->PerformMouseEventHitTest(
+           read_only_request, document_point, mouse_event);
+     }
+-    event_result = mouse_event_manager_->HandleMousePressEvent(mev);
++    WebInputEventResult press_result =
++        mouse_event_manager_->HandleMousePressEvent(mev);
++    if (event_result == WebInputEventResult::kNotHandled) {
++      event_result = press_result;
++    }
+   }
+ 
+   if (mev.GetHitTestResult().InnerNode() &&
+@@ -1137,10 +1149,17 @@ WebInputEventResult EventHandler::HandleMouseMoveOrLeaveEvent(
+     return WebInputEventResult::kHandledSystem;
+   }
+ 
++  const bool force_unlocked =
++      (mouse_event.GetModifiers() & WebInputEvent::Modifiers::kAltKey) ||
++      (frame_->GetSettings() &&
++       frame_->GetSettings()->GetForceTextSelectionUnlocked());
+   HitTestRequest::HitTestRequestType hit_type = HitTestRequest::kMove;
+   if (mouse_event_manager_->MousePressed()) {
+     hit_type |= HitTestRequest::kActive;
+   }
++  if (force_unlocked) {
++    hit_type |= HitTestRequest::kIgnoreZeroOpacityObjects;
++  }
+ 
+   // Treat any mouse move events as readonly if the user is currently touching
+   // the screen.
+@@ -1315,7 +1334,14 @@ WebInputEventResult EventHandler::HandleMouseReleaseEvent(
+ 
+   // Mouse events simulated from touch should not hit-test again.
+   DCHECK(!mouse_event.FromTouch());
++  const bool force_unlocked =
++      (mouse_event.GetModifiers() & WebInputEvent::Modifiers::kAltKey) ||
++      (frame_->GetSettings() &&
++       frame_->GetSettings()->GetForceTextSelectionUnlocked());
+   HitTestRequest::HitTestRequestType hit_type = HitTestRequest::kRelease;
++  if (force_unlocked) {
++    hit_type |= HitTestRequest::kIgnoreZeroOpacityObjects;
++  }
+   HitTestRequest request(hit_type);
+   MouseEventWithHitTestResults mev = GetMouseEventTarget(request, mouse_event);
+   LocalFrame* subframe = event_handling_util::GetTargetSubframe(mev);
+@@ -1329,11 +1355,16 @@ WebInputEventResult EventHandler::HandleMouseReleaseEvent(
+                                                             *frame_)) {
+     event_result = WebInputEventResult::kHandledSuppressed;
+   } else {
++    const bool skip_click =
++        GetSelectionController().HasExtendedSelection() &&
++        (IsSelectionOverLink(mev) ||
++         (mouse_event.GetModifiers() & WebInputEvent::Modifiers::kAltKey) ||
++         (frame_->GetSettings() &&
++          frame_->GetSettings()->GetForceTextSelectionUnlocked()));
+     event_result = DispatchMousePointerEvent(
+         WebInputEvent::Type::kPointerUp, mev.InnerPossiblyPseudoElement(),
+         mev.Event(), Vector<WebMouseEvent>(), Vector<WebMouseEvent>(),
+-        (GetSelectionController().HasExtendedSelection() &&
+-         IsSelectionOverLink(mev)));
++        skip_click);
+   }
+   scroll_manager_->ClearResizeScrollableArea(false);
+ 
+diff --git a/third_party/blink/renderer/core/input/mouse_event_manager.cc b/third_party/blink/renderer/core/input/mouse_event_manager.cc
+index db8237277b2..5330ec27771 100644
+--- a/third_party/blink/renderer/core/input/mouse_event_manager.cc
++++ b/third_party/blink/renderer/core/input/mouse_event_manager.cc
+@@ -799,7 +799,15 @@ DragHandlingResult MouseEventManager::HandleDragDropIfPossible(
+       modifiers | WebInputEvent::Modifiers::kLeftButtonDown |
+           WebInputEvent::Modifiers::kIsCompatibilityEventForTouch,
+       base::TimeTicks::Now(), pointer_id);
+-  HitTestRequest request(HitTestRequest::kReadOnly);
++  const bool force_unlocked =
++      (gesture_event.GetModifiers() & WebInputEvent::Modifiers::kAltKey) ||
++      (frame_->GetSettings() &&
++       frame_->GetSettings()->GetForceTextSelectionUnlocked());
++  HitTestRequest::HitTestRequestType hit_type = HitTestRequest::kReadOnly;
++  if (force_unlocked) {
++    hit_type |= HitTestRequest::kIgnoreZeroOpacityObjects;
++  }
++  HitTestRequest request(hit_type);
+   MouseEventWithHitTestResults mev =
+       event_handling_util::PerformMouseEventHitTest(frame_, request,
+                                                     mouse_drag_event);
+@@ -939,7 +947,15 @@ DragHandlingResult MouseEventManager::HandleDrag(
+   }
+ 
+   if (mouse_down_may_start_drag_) {
+-    HitTestRequest request(HitTestRequest::kReadOnly);
++    const bool force_unlocked =
++        (event.Event().GetModifiers() & WebInputEvent::Modifiers::kAltKey) ||
++        (frame_->GetSettings() &&
++         frame_->GetSettings()->GetForceTextSelectionUnlocked());
++    HitTestRequest::HitTestRequestType hit_type = HitTestRequest::kReadOnly;
++    if (force_unlocked) {
++      hit_type |= HitTestRequest::kIgnoreZeroOpacityObjects;
++    }
++    HitTestRequest request(hit_type);
+     HitTestLocation location(mouse_down_pos_);
+     HitTestResult result(request, location);
+     frame_->ContentLayoutObject()->HitTest(location, result);

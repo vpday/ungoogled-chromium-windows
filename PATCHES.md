@@ -31,6 +31,8 @@
 - `windows-disable-reading-mode.patch`: Completely disables broken Reading Mode (Read Anything) entry points, address bar chips, background optimization guide polling, and WebUI routes.
 - `windows-force-context-menu-on-shift-right-click.patch`: Forces the native context menu on Shift + Right-Click even when overridden by web scripts, preserving text selection and search context actions while safeguarding interactive Canvas and WebGL elements.
 - `windows-utility-process-start-hidden.patch`: Launches unsandboxed Windows utility processes with `start_hidden = true` to prevent transient console window flashing when running with `--no-sandbox`.
+- `windows-force-text-selection.patch`: Bypasses webpage-imposed text selection restrictions, enabling native mouse dragging and double-click word selection; supports instant penetration via the Alt key while suppressing accidental "Save Link As" downloads, penetrates transparent overlay masks, restores selectable text extraction in TextIterator, suppresses script-driven selection clearing, and provides theme-colored highlight fallbacks.
+- `windows-anti-clipboard-hijack.patch`: Prevents webpages from hijacking clipboard copy operations; rescues Ctrl+C keydown cancellation, auto-heals wiped selections, automatically strips trailing copyright notices and URLs via normalized structural prefix and boundary detection across plain text and HTML, filters tracking watermarks while preserving emojis and non-Latin scripts, enforces strict exemptions for developer code-copy buttons and productivity suites (Google Docs, VS Code Web), blocks asynchronous clipboard overwrites, and provides a per-tab toggle via Ctrl + Shift + F8 with page-navigation auto-reset.
 
 ## 2. Curated Brave Patches (`patches/brave/`)
 

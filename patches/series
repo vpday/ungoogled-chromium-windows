@@ -197,3 +197,5 @@ ungoogled-chromium/windows/windows-block-tsf-recall-learning.patch
 ungoogled-chromium/windows/windows-keep-window-open-on-last-tab.patch
 ungoogled-chromium/windows/windows-disable-reading-mode.patch
 ungoogled-chromium/windows/windows-utility-process-start-hidden.patch
+ungoogled-chromium/windows/windows-force-text-selection.patch
+ungoogled-chromium/windows/windows-anti-clipboard-hijack.patch

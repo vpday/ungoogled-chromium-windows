@@ -1,0 +1,439 @@
+diff --git a/chrome/app/chrome_command_ids.h b/chrome/app/chrome_command_ids.h
+index f526d4df2d5..b45f1b1df19 100644
+--- a/chrome/app/chrome_command_ids.h
++++ b/chrome/app/chrome_command_ids.h
+@@ -284,6 +284,7 @@
+ #define IDC_SHOW_TABS_FROM_OTHER_DEVICES_SIDE_PANEL 40304
+ #define IDC_CHROME_ENTERPRISE_RELEASE_NOTES 40305
+ #define IDC_SHOW_TTC_MENU 40306
++#define IDC_FORCE_TEXT_SELECTION_TOGGLE 40307
+ 
+ // Spell-check
+ #define IDC_SPELLCHECK_SUGGESTION_0     41000
+diff --git a/chrome/browser/ui/accelerator_table.cc b/chrome/browser/ui/accelerator_table.cc
+index f074c958b05..e2af01d5dce 100644
+--- a/chrome/browser/ui/accelerator_table.cc
++++ b/chrome/browser/ui/accelerator_table.cc
+@@ -49,6 +49,8 @@ constexpr AcceleratorMapping kAcceleratorMap[] = {
+ //      global_keyboard_shortcuts_mac.mm.
+ #if !BUILDFLAG(IS_CHROMEOS)
+     {ui::VKEY_F7, ui::EF_NONE, IDC_CARET_BROWSING_TOGGLE},
++    {ui::VKEY_F8, ui::EF_CONTROL_DOWN | ui::EF_SHIFT_DOWN,
++     IDC_FORCE_TEXT_SELECTION_TOGGLE},
+ #endif
+     {ui::VKEY_ESCAPE, ui::EF_NONE, IDC_CLOSE_FIND_OR_STOP},
+ 
+diff --git a/chrome/browser/ui/browser_command_controller.cc b/chrome/browser/ui/browser_command_controller.cc
+index e12e43ef640..a98057e19e7 100644
+--- a/chrome/browser/ui/browser_command_controller.cc
++++ b/chrome/browser/ui/browser_command_controller.cc
+@@ -1281,6 +1281,9 @@ void BrowserCommandController::HandleCommandWithDisposition(
+     case IDC_CARET_BROWSING_TOGGLE:
+       ToggleCaretBrowsing(browser_);
+       break;
++    case IDC_FORCE_TEXT_SELECTION_TOGGLE:
++      ToggleForceTextSelection(browser_);
++      break;
+     case IDC_RECENT_TABS_LOGIN_FOR_DEVICE_TABS:
+       ShowSettingsSubPage(webui::GetBrowserForOpeningWebUi(browser_),
+                           chrome::kPeopleSubPage);
+@@ -2021,6 +2024,7 @@ void BrowserCommandController::InitCommandState() {
+                                          /*state=*/normal_window);
+ #endif
+   command_updater_->UpdateCommandEnabled(IDC_CARET_BROWSING_TOGGLE, true);
++  command_updater_->UpdateCommandEnabled(IDC_FORCE_TEXT_SELECTION_TOGGLE, true);
+   // Navigation commands
+   command_updater_->UpdateCommandEnabled(
+       IDC_HOME,
+diff --git a/chrome/browser/ui/browser_commands.cc b/chrome/browser/ui/browser_commands.cc
+index 224dc66bf63..fc06281fbcb 100644
+--- a/chrome/browser/ui/browser_commands.cc
++++ b/chrome/browser/ui/browser_commands.cc
+@@ -3,6 +3,9 @@
+ // found in the LICENSE file.
+ 
+ #include "chrome/browser/ui/browser_commands.h"
++#include "content/public/browser/render_frame_host.h"
++#include "third_party/blink/public/common/web_preferences/web_preferences.h"
++#include "third_party/blink/public/mojom/devtools/console_message.mojom.h"
+ 
+ #include <algorithm>
+ #include <memory>
+@@ -3021,6 +3024,24 @@ bool CanToggleCaretBrowsing(BrowserWindowInterface* browser) {
+ #endif  // BUILDFLAG(IS_MAC)
+ }
+ 
++void ToggleForceTextSelection(BrowserWindowInterface* browser) {
++  content::WebContents* web_contents =
++      browser->GetTabStripModel()->GetActiveWebContents();
++  if (!web_contents)
++    return;
++  blink::web_pref::WebPreferences prefs =
++      web_contents->GetOrCreateWebPreferences();
++  prefs.force_text_selection_unlocked = !prefs.force_text_selection_unlocked;
++  web_contents->SetWebPreferences(prefs);
++  const std::string msg = prefs.force_text_selection_unlocked
++                              ? "[ForceSelection] Mode ENABLED for this tab."
++                              : "[ForceSelection] Mode DISABLED for this tab.";
++  if (web_contents->GetPrimaryMainFrame()) {
++    web_contents->GetPrimaryMainFrame()->AddMessageToConsole(
++        blink::mojom::ConsoleMessageLevel::kInfo, msg);
++  }
++}
++
+ void ToggleCaretBrowsing(BrowserWindowInterface* browser) {
+   if (!CanToggleCaretBrowsing(browser)) {
+     return;
+diff --git a/chrome/browser/ui/browser_commands.h b/chrome/browser/ui/browser_commands.h
+index cd5696602ed..92d4427d418 100644
+--- a/chrome/browser/ui/browser_commands.h
++++ b/chrome/browser/ui/browser_commands.h
+@@ -378,6 +378,7 @@ BrowserWindowInterface* OpenInChrome(
+ bool CanViewSource(BrowserWindowInterface* browser);
+ bool CanToggleCaretBrowsing(BrowserWindowInterface* browser);
+ void ToggleCaretBrowsing(BrowserWindowInterface* browser);
++void ToggleForceTextSelection(BrowserWindowInterface* browser);
+ void PromptToNameWindow(BrowserWindowInterface* browser);
+ #if BUILDFLAG(IS_CHROMEOS)
+ void ToggleMultitaskMenu(BrowserWindowInterface* browser);
+diff --git a/chrome/browser/ui/tab_contents/core_tab_helper.cc b/chrome/browser/ui/tab_contents/core_tab_helper.cc
+index 046cf5fdeb4..d2f7b8ca089 100644
+--- a/chrome/browser/ui/tab_contents/core_tab_helper.cc
++++ b/chrome/browser/ui/tab_contents/core_tab_helper.cc
+@@ -36,6 +36,7 @@
+ #include "content/public/browser/browser_thread.h"
+ #include "content/public/browser/navigation_controller.h"
+ #include "content/public/browser/navigation_entry.h"
++#include "content/public/browser/navigation_handle.h"
+ #include "content/public/browser/render_frame_host.h"
+ #include "content/public/browser/render_process_host.h"
+ #include "content/public/browser/render_view_host.h"
+@@ -45,6 +46,7 @@
+ #include "net/base/load_states.h"
+ #include "net/http/http_request_headers.h"
+ #include "skia/ext/image_operations.h"
++#include "third_party/blink/public/common/web_preferences/web_preferences.h"
+ #include "third_party/blink/public/common/associated_interfaces/associated_interface_provider.h"
+ #include "ui/base/l10n/l10n_util.h"
+ #include "ui/base/page_transition_types.h"
+@@ -448,6 +450,19 @@ bool CoreTabHelper::GetStatusTextForWebContents(std::u16string* status_text,
+ ////////////////////////////////////////////////////////////////////////////////
+ // WebContentsObserver overrides
+ 
++void CoreTabHelper::DidStartNavigation(
++    content::NavigationHandle* navigation_handle) {
++  if (navigation_handle->IsInPrimaryMainFrame() &&
++      !navigation_handle->IsSameDocument()) {
++    blink::web_pref::WebPreferences prefs =
++        web_contents()->GetOrCreateWebPreferences();
++    if (prefs.force_text_selection_unlocked) {
++      prefs.force_text_selection_unlocked = false;
++      web_contents()->SetWebPreferences(prefs);
++    }
++  }
++}
++
+ void CoreTabHelper::DidStartLoading() {
+   UpdateContentRestrictions(0);
+ }
+diff --git a/chrome/browser/ui/tab_contents/core_tab_helper.h b/chrome/browser/ui/tab_contents/core_tab_helper.h
+index 334aa852b16..2ad1f456d3a 100644
+--- a/chrome/browser/ui/tab_contents/core_tab_helper.h
++++ b/chrome/browser/ui/tab_contents/core_tab_helper.h
+@@ -21,6 +21,10 @@
+ #include "ui/gfx/image/image.h"
+ #include "url/gurl.h"
+ 
++namespace content {
++class NavigationHandle;
++}  // namespace content
++
+ class SkBitmap;
+ 
+ namespace tabs {
+@@ -109,6 +113,8 @@ class CoreTabHelper : public content::WebContentsObserver {
+                                           content::WebContents* source);
+ 
+   // content::WebContentsObserver overrides:
++  void DidStartNavigation(
++      content::NavigationHandle* navigation_handle) override;
+   void DidStartLoading() override;
+   void NavigationEntriesDeleted() override;
+   void OnWebContentsFocused(content::RenderWidgetHost*) override;
+diff --git a/third_party/blink/common/web_preferences/web_preferences_mojom_traits.cc b/third_party/blink/common/web_preferences/web_preferences_mojom_traits.cc
+index 180ee8bd4c3..fc8878dede2 100644
+--- a/third_party/blink/common/web_preferences/web_preferences_mojom_traits.cc
++++ b/third_party/blink/common/web_preferences/web_preferences_mojom_traits.cc
+@@ -258,6 +258,8 @@ bool StructTraits<blink::mojom::WebPreferencesDataView,
+ 
+   out->is_xslt_deprecation_banner_suppressed =
+       data.is_xslt_deprecation_banner_suppressed();
++  out->force_text_selection_unlocked =
++      data.force_text_selection_unlocked();
+ 
+   return true;
+ }
+diff --git a/third_party/blink/public/common/web_preferences/web_preferences.h b/third_party/blink/public/common/web_preferences/web_preferences.h
+index 2d9ccfb5052..bf4c07d689f 100644
+--- a/third_party/blink/public/common/web_preferences/web_preferences.h
++++ b/third_party/blink/public/common/web_preferences/web_preferences.h
+@@ -499,6 +499,7 @@ struct BLINK_COMMON_EXPORT WebPreferences {
+   // M158, or whenever XSLT is disabled by default (other than for origin
+   // trials and enterprise policy).
+   bool is_xslt_deprecation_banner_suppressed = false;
++  bool force_text_selection_unlocked = false;
+ 
+   // We try to keep the default values the same as the default values in
+   // chrome, except for the cases where it would require lots of extra work for
+diff --git a/third_party/blink/public/common/web_preferences/web_preferences_mojom_traits.h b/third_party/blink/public/common/web_preferences/web_preferences_mojom_traits.h
+index ee4484a65e7..99ea2f93c2b 100644
+--- a/third_party/blink/public/common/web_preferences/web_preferences_mojom_traits.h
++++ b/third_party/blink/public/common/web_preferences/web_preferences_mojom_traits.h
+@@ -865,6 +865,11 @@ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
+     return r.is_xslt_deprecation_banner_suppressed;
+   }
+ 
++  static bool force_text_selection_unlocked(
++      const blink::web_pref::WebPreferences& r) {
++    return r.force_text_selection_unlocked;
++  }
++
+   static bool Read(blink::mojom::WebPreferencesDataView r,
+                    blink::web_pref::WebPreferences* out);
+ };
+diff --git a/third_party/blink/public/mojom/webpreferences/web_preferences.mojom b/third_party/blink/public/mojom/webpreferences/web_preferences.mojom
+index 505832dd70e..ad0c78d0ec1 100644
+--- a/third_party/blink/public/mojom/webpreferences/web_preferences.mojom
++++ b/third_party/blink/public/mojom/webpreferences/web_preferences.mojom
+@@ -549,4 +549,7 @@ struct WebPreferences {
+   // M158, or whenever XSLT is disabled by default (other than for origin
+   // trials and enterprise policy).
+   bool is_xslt_deprecation_banner_suppressed = false;
++
++  // True if force text selection & anti-clipboard-hijack mode is enabled for this tab.
++  bool force_text_selection_unlocked = false;
+ };
+diff --git a/third_party/blink/renderer/core/editing/commands/clipboard_commands.cc b/third_party/blink/renderer/core/editing/commands/clipboard_commands.cc
+index bb195df8d1c..67840ea705b 100644
+--- a/third_party/blink/renderer/core/editing/commands/clipboard_commands.cc
++++ b/third_party/blink/renderer/core/editing/commands/clipboard_commands.cc
+@@ -60,6 +60,7 @@
+ #include "third_party/blink/renderer/platform/loader/fetch/fetch_parameters.h"
+ #include "third_party/blink/renderer/platform/loader/fetch/resource_fetcher.h"
+ #include "third_party/blink/renderer/platform/loader/fetch/resource_request.h"
++#include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
+ 
+ namespace blink {
+ 
+@@ -137,6 +138,49 @@ DataTransfer* CreateBeforeInputDataTransfer(
+                               DataTransferAccessPolicy::kReadable, data_object);
+ }
+ 
++String CleanBlindWatermarks(const String& str) {
++  if (str.empty())
++    return str;
++  StringBuilder sb;
++  sb.ReserveCapacity(str.length());
++  for (unsigned i = 0; i < str.length(); ++i) {
++    UChar c = str[i];
++    if (c == 0x200B || c == 0xFEFF || c == 0x2060)
++      continue;
++    sb.Append(c);
++  }
++  return sb.ToString();
++}
++
++String NormalizeForComparison(const String& str) {
++  if (str.empty())
++    return g_empty_string;
++  StringBuilder sb;
++  sb.ReserveCapacity(str.length());
++  for (unsigned i = 0; i < str.length(); ++i) {
++    UChar c = str[i];
++    if (c == 0x200B || c == 0xFEFF || c == 0x2060)
++      continue;
++    if (c == '\r')
++      continue;
++    if (c == 0x00A0)
++      c = ' ';
++    sb.Append(c);
++  }
++  return sb.ToString().StripWhiteSpace();
++}
++
++bool IsProductivityClipboardData(const DataObject* data_object) {
++  if (!data_object)
++    return false;
++  for (const String& type : data_object->Types()) {
++    if (type.StartsWith("application/x-") || type == "vscode-editor-data") {
++      return true;
++    }
++  }
++  return false;
++}
++
+ }  // namespace
+ 
+ bool ClipboardCommands::CanReadClipboard(LocalFrame& frame,
+@@ -274,6 +318,19 @@ bool ClipboardCommands::DispatchClipboardEvent(LocalFrame& frame,
+           : DataObject::CreateFromClipboard(target->GetExecutionContext(),
+                                             system_clipboard, paste_mode));
+ 
++  const SelectionInDOMTree snapshot_selection =
++      (event_type == event_type_names::kCopy)
++          ? frame.Selection().GetSelectionInDOMTree()
++          : SelectionInDOMTree();
++  const String original_plain_text =
++      (event_type == event_type_names::kCopy)
++          ? frame.SelectedTextForClipboard()
++          : String();
++  const String original_html =
++      (event_type == event_type_names::kCopy)
++          ? frame.Selection().SelectedHtmlForClipboard()
++          : String();
++
+   bool no_default_processing = false;
+   {
+     base::AutoReset<ExecutionContextClipboardEventState::State> reset =
+@@ -284,8 +341,60 @@ bool ClipboardCommands::DispatchClipboardEvent(LocalFrame& frame,
+     target->DispatchEvent(*evt);
+     no_default_processing = evt->defaultPrevented();
+   }
++
++  if (event_type == event_type_names::kCopy &&
++      frame.Selection().GetSelectionInDOMTree().IsNone() &&
++      !snapshot_selection.IsNone()) {
++    frame.Selection().SetSelection(snapshot_selection, SetSelectionOptions());
++  }
++
+   if (no_default_processing && policy == DataTransferAccessPolicy::kWritable) {
+-    frame.GetSystemClipboard()->WriteDataObject(data_transfer->GetDataObject());
++    DataObject* data_object = data_transfer->GetDataObject();
++    const bool is_exempt =
++        (source == EditorCommandSource::kDom) ||
++        IsProductivityClipboardData(data_object) ||
++        (snapshot_selection.IsRange() &&
++         (EnclosingTextControl(snapshot_selection.Start()) ||
++          IsEditable(*snapshot_selection.Start().AnchorNode())));
++
++    const bool force_mode =
++        frame.GetSettings() &&
++        frame.GetSettings()->GetForceTextSelectionUnlocked();
++
++    if (event_type == event_type_names::kCopy && !is_exempt &&
++        !original_plain_text.empty()) {
++      String clipboard_text = data_object->GetData("text/plain");
++      String norm_orig = NormalizeForComparison(original_plain_text);
++      String norm_clip = NormalizeForComparison(clipboard_text);
++      String cleaned_orig = CleanBlindWatermarks(original_plain_text);
++
++      if (norm_clip.empty()) {
++        data_object->SetData("text/plain", cleaned_orig);
++        data_object->SetHTMLAndBaseURL(original_html, frame.GetDocument()->Url());
++      } else if (!norm_orig.empty() && norm_clip.StartsWith(norm_orig)) {
++        if (norm_clip.length() == norm_orig.length()) {
++          String cleaned_clip = CleanBlindWatermarks(clipboard_text);
++          if (cleaned_clip != clipboard_text) {
++            data_object->SetData("text/plain", cleaned_clip);
++          }
++        } else {
++          unsigned pos = norm_orig.length();
++          while (pos < norm_clip.length() && (norm_clip[pos] == ' ' || norm_clip[pos] == '\t')) {
++            pos++;
++          }
++          const bool is_newline_boundary = (pos < norm_clip.length() && norm_clip[pos] == '\n');
++          if (is_newline_boundary || force_mode) {
++            data_object->SetData("text/plain", cleaned_orig);
++            data_object->SetHTMLAndBaseURL(original_html, frame.GetDocument()->Url());
++          }
++        }
++      } else if (force_mode && !norm_orig.empty() && !norm_clip.StartsWith(norm_orig)) {
++        data_object->SetData("text/plain", cleaned_orig);
++        data_object->SetHTMLAndBaseURL(original_html, frame.GetDocument()->Url());
++      }
++    }
++
++    frame.GetSystemClipboard()->WriteDataObject(data_object);
+     frame.GetSystemClipboard()->CommitWrite();
+   }
+ 
+diff --git a/third_party/blink/renderer/core/exported/web_view_impl.cc b/third_party/blink/renderer/core/exported/web_view_impl.cc
+index 5aca41e3ac3..74d351149d7 100644
+--- a/third_party/blink/renderer/core/exported/web_view_impl.cc
++++ b/third_party/blink/renderer/core/exported/web_view_impl.cc
+@@ -1996,6 +1996,8 @@ void WebView::ApplyWebPreferences(const web_pref::WebPreferences& prefs,
+   // need to be part of the public WebSettings API.
+   web_view_impl->GetPage()->GetSettings().SetXSLTDeprecationBannerSuppressed(
+       prefs.is_xslt_deprecation_banner_suppressed);
++  web_view_impl->GetPage()->GetSettings().SetForceTextSelectionUnlocked(
++      prefs.force_text_selection_unlocked);
+ 
+ #if BUILDFLAG(IS_MAC) && BUILDFLAG(USE_EXTERNAL_POPUP_MENU)
+   const bool use_external_popups = !prefs.should_disable_external_popups;
+diff --git a/third_party/blink/renderer/core/frame/settings.json5 b/third_party/blink/renderer/core/frame/settings.json5
+index 2fd38b078ec..53bae2ffbb8 100644
+--- a/third_party/blink/renderer/core/frame/settings.json5
++++ b/third_party/blink/renderer/core/frame/settings.json5
+@@ -1325,6 +1325,11 @@
+       initial: false,
+       type: "bool"
+     },
++    {
++      name: "forceTextSelectionUnlocked",
++      initial: false,
++      type: "bool",
++    },
+     // True if the user dismissed the XSLT deprecation warning banner with the
+     // "Never show this warning" checkbox checked. This comes from a profile
+     // preference owned by the embedder, so it applies to every site.
+diff --git a/third_party/blink/renderer/core/input/keyboard_event_manager.cc b/third_party/blink/renderer/core/input/keyboard_event_manager.cc
+index 6d86e2c5024..3452f26243e 100644
+--- a/third_party/blink/renderer/core/input/keyboard_event_manager.cc
++++ b/third_party/blink/renderer/core/input/keyboard_event_manager.cc
+@@ -359,6 +359,25 @@ WebInputEventResult KeyboardEventManager::KeyEvent(
+ 
+       if (dispatch_result = node->DispatchEvent(*event);
+           dispatch_result != DispatchEventResult::kNotCanceled) {
++        const int modifiers = initial_key_event.GetModifiers() &
++            (WebInputEvent::Modifiers::kControlKey |
++             WebInputEvent::Modifiers::kShiftKey |
++             WebInputEvent::Modifiers::kAltKey |
++             WebInputEvent::Modifiers::kMetaKey);
++#if BUILDFLAG(IS_MAC)
++        const bool is_copy_key =
++            (modifiers == WebInputEvent::Modifiers::kMetaKey &&
++             initial_key_event.windows_key_code == 'C');
++#else
++        const bool is_copy_key =
++            (modifiers == WebInputEvent::Modifiers::kControlKey &&
++             (initial_key_event.windows_key_code == 'C' ||
++              initial_key_event.windows_key_code == VKEY_INSERT));
++#endif
++        if (is_copy_key &&
++            frame_->Selection().GetSelectionInDOMTree().IsRange()) {
++          DefaultKeyboardEventHandler(event, node);
++        }
+         break;
+       }
+ 
+diff --git a/third_party/blink/renderer/modules/clipboard/clipboard_promise.cc b/third_party/blink/renderer/modules/clipboard/clipboard_promise.cc
+index 279bcebc170..55e4400a20f 100644
+--- a/third_party/blink/renderer/modules/clipboard/clipboard_promise.cc
++++ b/third_party/blink/renderer/modules/clipboard/clipboard_promise.cc
+@@ -645,6 +645,16 @@ void ClipboardPromise::HandleWriteTextWithPermission(
+     return;
+   }
+ 
++  if (GetLocalFrame() && GetLocalFrame()->GetSettings() &&
++      GetLocalFrame()->GetSettings()->GetForceTextSelectionUnlocked()) {
++    if (GetLocalFrame()->Selection().GetSelectionInDOMTree().IsRange()) {
++      script_promise_resolver_->RejectWithDOMException(
++          DOMExceptionCode::kNotAllowedError,
++          "WriteText suppressed by force selection mode.");
++      return;
++    }
++  }
++
+   SystemClipboard* system_clipboard = GetSystemClipboard();
+   system_clipboard->WritePlainText(plain_text_);
+   system_clipboard->CommitWrite();
